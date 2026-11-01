@@ -2,20 +2,25 @@
   <div class="intro">
     <img src="static/apple-icon.png" alt="" class="logo" />
     <div>
-      Welcome to the (unofficial)
-      <b>Virtual Town Square and Grimoire</b> for Blood on the Clocktower!
-      Please add more players through the
+      {{ $t("Welcome to the (unofficial)") }}
+      <b>{{ $t("Virtual Town Square and Grimoire") }}</b>
+      {{ $t("for Blood on the Clocktower!") }}
+      {{ $t("Please add more players through the") }}
       <span class="button" @click="toggleMenu">
-        <font-awesome-icon icon="cog" /> Menu
+        <font-awesome-icon icon="cog" /> {{ $t("Menu") }}
       </span>
-      on the top right or by pressing <b>[A]</b>. You can also join a game
-      session by pressing <b>[J]</b>.<br />
+      {{ $t("on the top right or by pressing") }} <b>[A]</b>.
+      {{ $t("You can also join a game session by pressing") }}
+      <b>[J]</b>.<br />
       <div class="footer">
-        This project is free and open source and can be found on
+        {{ $t("This project is free and open source and can be found on") }}
         <a href="https://github.com/bra1n/townsquare" target="_blank">GitHub</a
-        >. It is not affiliated with The Pandemonium Institute. "Blood on the
-        Clocktower" is a trademark of Steven Medway and The Pandemonium
-        Institute.
+        >.
+        {{
+          $t(
+            'It is not affiliated with The Pandemonium Institute. "Blood on the Clocktower" is a trademark of Steven Medway and The Pandemonium Institute.'
+          )
+        }}
       </div>
     </div>
     <a

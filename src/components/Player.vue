@@ -47,38 +47,38 @@
         <font-awesome-icon
           icon="hand-paper"
           class="vote"
-          title="Hand UP"
+          :title="$t('Hand UP')"
           @click="vote()"
         />
         <font-awesome-icon
           icon="times"
           class="vote"
-          title="Hand DOWN"
+          :title="$t('Hand DOWN')"
           @click="vote()"
         />
         <font-awesome-icon
           icon="times-circle"
           class="cancel"
-          title="Cancel"
+          :title="$t('Cancel')"
           @click="cancel()"
         />
         <font-awesome-icon
           icon="exchange-alt"
           class="swap"
           @click="swapPlayer(player)"
-          title="Swap seats with this player"
+          :title="$t('Swap seats with this player')"
         />
         <font-awesome-icon
           icon="redo-alt"
           class="move"
           @click="movePlayer(player)"
-          title="Move player to this seat"
+          :title="$t('Move player to this seat')"
         />
         <font-awesome-icon
           icon="hand-point-right"
           class="nominate"
           @click="nominatePlayer(player)"
-          title="Nominate this player"
+          :title="$t('Nominate this player')"
         />
       </div>
 
@@ -96,7 +96,7 @@
         class="has-vote"
         v-if="player.isDead && !player.isVoteless"
         @click="updatePlayer('isVoteless', true)"
-        title="Ghost vote"
+        :title="$t('Ghost vote')"
       />
 
       <!-- On block icon -->
@@ -124,35 +124,35 @@
                 (session.isSpectator && player.id === session.playerId)
             "
           >
-            <font-awesome-icon icon="venus-mars" />Change Pronouns
+            <font-awesome-icon icon="venus-mars" />{{ $t("Change Pronouns") }}
           </li>
           <template v-if="!session.isSpectator">
             <li @click="changeName">
-              <font-awesome-icon icon="user-edit" />Rename
+              <font-awesome-icon icon="user-edit" />{{ $t("Rename") }}
             </li>
             <li @click="movePlayer()" :class="{ disabled: session.lockedVote }">
               <font-awesome-icon icon="redo-alt" />
-              Move player
+              {{ $t("Move player") }}
             </li>
             <li @click="swapPlayer()" :class="{ disabled: session.lockedVote }">
               <font-awesome-icon icon="exchange-alt" />
-              Swap seats
+              {{ $t("Swap seats") }}
             </li>
             <li @click="removePlayer" :class="{ disabled: session.lockedVote }">
               <font-awesome-icon icon="times-circle" />
-              Remove
+              {{ $t("Remove") }}
             </li>
             <li
               @click="updatePlayer('id', '', true)"
               v-if="player.id && session.sessionId"
             >
               <font-awesome-icon icon="chair" />
-              Empty seat
+              {{ $t("Empty seat") }}
             </li>
             <template v-if="!session.nomination">
               <li @click="nominatePlayer()">
                 <font-awesome-icon icon="hand-point-right" />
-                Nomination
+                {{ $t("Nomination") }}
               </li>
             </template>
           </template>
@@ -163,12 +163,12 @@
           >
             <font-awesome-icon icon="chair" />
             <template v-if="!player.id">
-              Claim seat
+              {{ $t("Claim seat") }}
             </template>
             <template v-else-if="player.id === session.playerId">
-              Vacate seat
+              {{ $t("Vacate seat") }}
             </template>
-            <template v-else> Seat occupied</template>
+            <template v-else> {{ $t("Seat occupied") }}</template>
           </li>
         </ul>
       </transition>
@@ -186,7 +186,8 @@
           class="icon"
           :style="{
             backgroundImage: `url(${
-              reminder.image && grimoire.isImageOptIn
+              reminder.image &&
+              (grimoire.isImageOptIn || /^data:image\//.test(reminder.image))
                 ? reminder.image
                 : require('../assets/icons/' +
                     (reminder.imageAlt || reminder.role) +
@@ -256,7 +257,7 @@ export default {
     changePronouns() {
       if (this.session.isSpectator && this.player.id !== this.session.playerId)
         return;
-      const pronouns = prompt("Player pronouns", this.player.pronouns);
+      const pronouns = prompt(this.$t("Player pronouns"), this.player.pronouns);
       //Only update pronouns if not null (prompt was not cancelled)
       if (pronouns !== null) {
         this.updatePlayer("pronouns", pronouns, true);
@@ -287,7 +288,7 @@ export default {
     },
     changeName() {
       if (this.session.isSpectator) return;
-      const name = prompt("Player name", this.player.name) || this.player.name;
+      const name = prompt(this.$t("Player name"), this.player.name) || this.player.name;
       this.updatePlayer("name", name, true);
     },
     removeReminder(reminder) {

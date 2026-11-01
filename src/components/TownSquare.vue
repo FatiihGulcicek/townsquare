@@ -30,8 +30,8 @@
       :class="{ closed: !isBluffsOpen }"
     >
       <h3>
-        <span v-if="session.isSpectator">Other characters</span>
-        <span v-else>Demon bluffs</span>
+        <span v-if="session.isSpectator">{{ $t("Other characters") }}</span>
+        <span v-else>{{ $t("Demon bluffs") }}</span>
         <font-awesome-icon icon="times-circle" @click.stop="toggleBluffs" />
         <font-awesome-icon icon="plus-circle" @click.stop="toggleBluffs" />
       </h3>
@@ -48,7 +48,7 @@
 
     <div class="fabled" :class="{ closed: !isFabledOpen }" v-if="fabled.length">
       <h3>
-        <span>Fabled</span>
+        <span>{{ $t("Fabled") }}</span>
         <font-awesome-icon icon="times-circle" @click.stop="toggleFabled" />
         <font-awesome-icon icon="plus-circle" @click.stop="toggleFabled" />
       </h3>
@@ -155,7 +155,9 @@ export default {
       if (this.session.isSpectator || this.session.lockedVote) return;
       if (
         confirm(
-          `Do you really want to remove ${this.players[playerIndex].name}?`
+          this.$t("Do you really want to remove {name}?", {
+            name: this.players[playerIndex].name
+          })
         )
       ) {
         const { nomination } = this.session;
