@@ -24,6 +24,22 @@ const EXTRA_ORIGINS = (process.env.ALLOWED_ORIGINS || "")
   .filter(Boolean);
 // optional protection for the /metrics endpoint
 const METRICS_TOKEN = process.env.METRICS_TOKEN || "";
+// message contents (which include secret role assignments) are only logged when explicitly enabled
+const LOG_MESSAGES = process.env.LOG_MESSAGES === "true";
+// maximum size of a single message (custom scripts with homebrew roles can be large)
+const MAX_PAYLOAD = parseInt(
+  process.env.MAX_PAYLOAD || String(1024 * 1024),
+  10,
+);
+// maximum number of connections per channel (20 players + travelers + spectators)
+const MAX_PER_CHANNEL = parseInt(process.env.MAX_PER_CHANNEL || "40", 10);
+const VALID_ID = /^[a-z0-9_\-.~%]{1,64}$/i;
+
+function logMessage(ws, data) {
+  if (!LOG_MESSAGES) return;
+  // eslint-disable-next-line no-use-before-define
+  console.log(new Date(), wss.clients.size, ws.channel, ws.playerId, data);
+}
 
 // TLS is optional: use it only if cert files are provided.
 // Behind a reverse proxy / PaaS (Render, Fly, Railway, Caddy, nginx) plain HTTP is fine.
@@ -57,6 +73,7 @@ function isAllowedOrigin(origin, host) {
 
 const wss = new WebSocket.Server({
   server,
+  maxPayload: MAX_PAYLOAD,
   verifyClient: (info) => isAllowedOrigin(info.origin, info.req.headers.host),
 });
 
@@ -139,6 +156,17 @@ wss.on("connection", function connection(ws, req) {
   const url = req.url.toLocaleLowerCase().split("/");
   ws.playerId = url.pop();
   ws.channel = url.pop();
+  if (!VALID_ID.test(ws.playerId || "") || !VALID_ID.test(ws.channel || "")) {
+    ws.close(1000, "Invalid channel name");
+    return;
+  }
+  const open = (channels[ws.channel] || []).filter(
+    (c) => c.readyState === WebSocket.OPEN,
+  ).length;
+  if (open >= MAX_PER_CHANNEL) {
+    ws.close(1000, "This channel is full");
+    return;
+  }
   // check for another host on this channel
   if (
     ws.playerId === "host" &&
@@ -163,11 +191,18 @@ wss.on("connection", function connection(ws, req) {
     channels[ws.channel] = [];
   }
   channels[ws.channel].push(ws);
+  ws.on("close", () => {
+    const list = channels[ws.channel];
+    if (list) channels[ws.channel] = list.filter((c) => c !== ws);
+  });
+  ws.on("error", (err) => console.log(ws.channel, "socket error", err.message));
   // start ping pong
   ws.ping(noop);
   ws.on("pong", heartbeat);
   // handle message
-  ws.on("message", function incoming(data) {
+  ws.on("message", function incoming(raw, isBinary) {
+    if (isBinary) return;
+    const data = raw.toString();
     metrics.messages_incoming.inc();
     // check rate limit (max 5msg/second)
     ws.counter++;
@@ -180,7 +215,7 @@ wss.on("connection", function connection(ws, req) {
       metrics.connection_terminated_spam.inc();
       return;
     }
-    const messageType = data.toLocaleLowerCase().substr(1).split(",", 1).pop();
+    const messageType = data.toLowerCase().slice(1).split(",", 1).pop();
     switch (messageType) {
       case '"ping"':
         // ping messages will only be sent host -> all or all -> host
@@ -202,13 +237,7 @@ wss.on("connection", function connection(ws, req) {
         break;
       case '"direct"':
         // handle "direct" messages differently
-        console.log(
-          new Date(),
-          wss.clients.size,
-          ws.channel,
-          ws.playerId,
-          data,
-        );
+        logMessage(ws, data);
         try {
           const dataToPlayer = JSON.parse(data)[1];
           channels[ws.channel].forEach(function each(client) {
@@ -227,13 +256,7 @@ wss.on("connection", function connection(ws, req) {
         break;
       default:
         // all other messages
-        console.log(
-          new Date(),
-          wss.clients.size,
-          ws.channel,
-          ws.playerId,
-          data,
-        );
+        logMessage(ws, data);
         channels[ws.channel].forEach(function each(client) {
           if (client !== ws && client.readyState === WebSocket.OPEN) {
             client.send(data);

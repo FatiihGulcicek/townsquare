@@ -11,7 +11,7 @@ FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production PORT=8080
 # the server only needs these two packages at runtime
-RUN npm init -y >/dev/null && npm install --no-audit --no-fund ws@^7.4.6 prom-client@^13.0.0 && npm cache clean --force
+RUN npm init -y >/dev/null && npm install --no-audit --no-fund ws@^8.18.0 prom-client@^15.1.0 && npm cache clean --force
 COPY server ./server
 COPY --from=build /app/dist ./dist
 EXPOSE 8080
