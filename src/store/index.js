@@ -4,6 +4,7 @@ import persistence from "./persistence";
 import socket from "./socket";
 import players from "./modules/players";
 import session from "./modules/session";
+import "../locales/localizeRoles";
 import editionJSON from "../editions.json";
 import rolesJSON from "../roles.json";
 import fabledJSON from "../fabled.json";

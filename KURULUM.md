@@ -1,11 +1,16 @@
-# Kendi Townsquare sunucunuz
+# Kasaba Meydanı
 
-Bu fork, [bra1n/townsquare](https://github.com/bra1n/townsquare) üzerine şunları ekler:
+Kasaba Meydanı, [bra1n/townsquare](https://github.com/bra1n/townsquare) projesinin topluluk yapımı, ücretsiz bir çatalıdır (GPL-3.0). The Pandemonium Institute ile bağlantılı değildir. Topluluk içeriği politikası gereği uygulama ücretsiz kalmalı ve uygulama mağazalarında yayınlanmamalıdır; bu yüzden PWA olarak dağıtılır.
+
+Özgün projeye eklenenler:
 
 - **Tek süreçli sunucu:** Site ve canlı oyun bağlantısı (WebSocket) aynı adresten, aynı porttan çalışır.
 - **Türkçe arayüz:** Menü → Grimuar sekmesi → *Dil* ile Türkçe/İngilizce arasında geçiş yapılır. Tarayıcı dili Türkçeyse varsayılan olarak Türkçe açılır.
 - **Güncel karakterler:** Resmî toolmaker kaynaklarından 38 yeni karakter (Loric dahil), 27 jinx seti ve resmî gece sırası.
 - **Ev yapımı karakter düzenleyici:** Menü → Karakterler → *Ev yapımı karakterler*. Burada karakter oluşturup görsel yükleyebilir ve gece sırasını seçebilirsiniz. Karakterleri senaryoya eklediğinizde canlı oturumdaki oyunculara otomatik gider.
+- **Tam Türkçe karakterler:** 182 karakterin adı, yeteneği, hatırlatıcı jetonları ve gece notları, ayrıca 131 jinx Türkçeye çevrildi (`src/locales/roles.tr.json`, `src/locales/jinxes.tr.json`). Menüden İngilizce seçildiğinde karakterler de İngilizceye döner.
+- **Uygulama olarak kurulum (PWA):** Telefonda "Ana ekrana ekle" ile uygulama gibi kurulur ve internet yokken de açılır. Ana ekran ikonuna basılı tutunca *Oyun aç*, *Katıl*, *Karakterler* ve *Gece* kısayolları çıkar.
+- **Jeton efektleri:** Rol açılınca dönme, ölümde kırmızı parlama, adayda kırmızı nabız, aday gösterende mavi, el kaldıranda altın halka. Menüdeki *Animasyonları kapat* seçeneği bu efektleri de kapatır.
 - **Gizlilik ve güvenlik:** Sunucu, rol dağıtımı gibi oyun mesajlarını loglara yazmaz. Mesaj boyutu ve kanal doluluğu sınırlıdır, kanal adları da doğrulanır.
 
 ## Render'a kurulum (ücretsiz)
@@ -68,4 +73,8 @@ Betik eksik ikonları listeler. Bu ikonlar `/tmp/botc-release/resources/characte
 
 ## Çeviri
 
-Arayüz metinleri `src/locales/tr.json` dosyasındadır. Anahtar İngilizce metin, değer ise Türkçe karşılığıdır. Çevirisi olmayan metinler İngilizce görünür. Karakter adları ve yetenek metinleri şimdilik resmî İngilizce hâlleriyle duruyor.
+- Arayüz metinleri `src/locales/tr.json` dosyasındadır. Anahtar İngilizce metin, değer ise Türkçe karşılığıdır.
+- Karakterler `src/locales/roles.tr.json` dosyasındadır ve karakter kimliğiyle eşleşir. Gece notlarındaki `*BÜYÜK HARF*` ifadeleri hatırlatıcı jetonlarını, `[hatırlatıcı]` ise jeton koyulacak yeri gösterir.
+- Jinx'ler `src/locales/jinxes.tr.json` dosyasındadır ve `karakter1|karakter2` anahtarıyla eşleşir.
+
+`scripts/update-roles.js` ile yeni karakterler eklendiğinde, onlar için `roles.tr.json` dosyasına da çeviri eklenmelidir; eklenmezse karakter İngilizce görünür.

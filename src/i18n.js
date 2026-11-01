@@ -46,6 +46,8 @@ export function setLocale(locale) {
   } catch (e) {
     // ignore
   }
+  // character texts are applied at startup, so reload to switch them too
+  window.location.reload();
 }
 
 export default {

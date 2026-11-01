@@ -71,7 +71,13 @@ export default {
     return {};
   },
   filters: {
-    nameToFontSize: name => (name && name.length > 10 ? "90%" : "110%")
+    nameToFontSize: name => {
+      const length = (name || "").length;
+      if (length <= 10) return "110%";
+      if (length <= 14) return "90%";
+      if (length <= 18) return "76%";
+      return "64%";
+    }
   },
   methods: {
     setRole() {

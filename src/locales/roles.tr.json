@@ -1,0 +1,1373 @@
+{
+ "acrobat": {
+  "name": "Akrobat",
+  "ability": "Her gece* bir oyuncu seç: o gece sarhoşsa ya da zehirliyse veya öyle olursa sen ölürsün.",
+  "otherNightReminder": "Akrobat bir oyuncu seçer. [hatırlatıcı]",
+  "reminders": [
+   "Ölü",
+   "Seçildi"
+  ]
+ },
+ "alchemist": {
+  "name": "Simyacı",
+  "ability": "Bir Yardakçı yeteneğin var. Bunu kullanırken Anlatıcı senden başka bir seçim yapmanı isteyebilir.",
+  "firstNightReminder": "*SEN* bilgi jetonunu ve bir Yardakçı jetonunu gösterin.",
+  "remindersGlobal": [
+   "Simyacı bu"
+  ]
+ },
+ "alhadikhia": {
+  "name": "El-Hadikiya",
+  "ability": "Her gece* 3 oyuncu seçebilirsin (herkes kim olduklarını öğrenir): her biri sessizce yaşamayı ya da ölmeyi seçer, ama hepsi yaşamayı seçerse hepsi ölür.",
+  "otherNightReminder": "El-Hadikiya 3 oyuncu seçer. [hatırlatıcı] [hatırlatıcı] [hatırlatıcı] Sırayla her hedefi uyandırın. Başlarını evet ya da hayır anlamında sallarlar. Sıradakini uyandırmadan önce onları uyutun.",
+  "reminders": [
+   "1",
+   "2",
+   "3"
+  ]
+ },
+ "alsaahir": {
+  "name": "Alsahir",
+  "ability": "Her gün, hangi oyuncuların Yardakçı ve hangilerinin İblis olduğunu herkesin önünde doğru tahmin edersen iyiler kazanır."
+ },
+ "amnesiac": {
+  "name": "Unutkan",
+  "ability": "Yeteneğinin ne olduğunu bilmezsin. Her gün baş başa ne olduğunu tahmin et: ne kadar yaklaştığını öğrenirsin.",
+  "firstNightReminder": "Unutkan'ın yeteneği için ne gerekiyorsa yapın.",
+  "otherNightReminder": "Unutkan'ın yeteneği için ne gerekiyorsa yapın.",
+  "reminders": [
+   "?",
+   "?",
+   "?"
+  ]
+ },
+ "angel": {
+  "name": "Melek",
+  "ability": "Yeni bir oyuncunun ölümünden en çok sorumlu olan kişinin başına kötü bir şey gelebilir.",
+  "firstNightReminder": "Hangi oyuncuların Melek tarafından korunduğunu duyurun. [hatırlatıcı]",
+  "reminders": [
+   "Korunuyor",
+   "Korunuyor",
+   "Kötü bir şey"
+  ]
+ },
+ "apprentice": {
+  "name": "Çırak",
+  "ability": "İlk gecende bir Kasabalı yeteneği (iyiysen) ya da bir Yardakçı yeteneği (kötüysen) kazanırsın.",
+  "firstNightReminder": "*SEN* bilgi jetonunu, ardından bir Kasabalı ya da Yardakçı jetonu gösterin. Çırak jetonu ile o jetonu değiştirin. [hatırlatıcı]",
+  "reminders": [
+   "Çırak bu"
+  ]
+ },
+ "artist": {
+  "name": "Ressam",
+  "ability": "Oyun boyunca bir kez, gündüz Anlatıcı'ya baş başa evet/hayır ile cevaplanacak herhangi bir soru sor.",
+  "reminders": [
+   "Yetenek yok"
+  ]
+ },
+ "assassin": {
+  "name": "Suikastçı",
+  "ability": "Oyun boyunca bir kez, gece*, bir oyuncu seç: bir sebepten ölemeyecek olsa bile ölür.",
+  "otherNightReminder": "Suikastçı bir oyuncu seçebilir. [hatırlatıcı] [hatırlatıcı]",
+  "reminders": [
+   "Ölü",
+   "Yetenek yok"
+  ]
+ },
+ "atheist": {
+  "name": "Ateist",
+  "ability": "Anlatıcı oyun kurallarını çiğneyebilir; Anlatıcı infaz edilirse, sen ölmüş olsan bile iyiler kazanır. [Kötü karakter yok]"
+ },
+ "balloonist": {
+  "name": "Balon Pilotu",
+  "ability": "Her gece, dün geceki oyuncudan farklı karakter türünde bir oyuncu öğrenirsin. [+0 ya da +1 Yabancı]",
+  "firstNightReminder": "Herhangi bir oyuncuyu işaret edin. [hatırlatıcı]",
+  "otherNightReminder": "Önceki gösterilenden farklı karakter türünde bir oyuncuyu işaret edin. [hatırlatıcı]",
+  "reminders": [
+   "Biliyor"
+  ]
+ },
+ "banshee": {
+  "name": "Bansi",
+  "ability": "İblis seni öldürürse herkes bunu öğrenir. Bundan sonra günde iki kez aday gösterebilir ve her adaya iki kez oy verebilirsin.",
+  "otherNightReminder": "Bansi bu gece İblis tarafından öldürüldüyse Bansi'nin öldüğünü duyurun. [hatırlatıcı]",
+  "reminders": [
+   "Yeteneği var"
+  ]
+ },
+ "barber": {
+  "name": "Berber",
+  "ability": "Bugün ya da bu gece öldüysen İblis, karakterlerini değiştirmek için 2 oyuncu (başka bir İblis olmayan) seçebilir.",
+  "otherNightReminder": "Berber bugün ya da bu gece öldüyse İblis'e *BU KARAKTER SENİ SEÇTİ* ve Berber jetonlarını gösterin. İblis 2 oyuncu seçtiyse onları teker teker uyandırın. *SEN* jetonunu ve yeni karakter jetonlarını gösterin.",
+  "reminders": [
+   "Bu gece tıraş var"
+  ]
+ },
+ "barista": {
+  "name": "Barista",
+  "ability": "Her gece, alacakaranlığa kadar bir oyuncu 1) ayık ve sağlıklı olur ve doğru bilgi alır ya da 2) yeteneği iki kez çalışır. Hangisi olduğunu öğrenir.",
+  "firstNightReminder": "Bir oyuncu seçin. Onu uyandırıp *BU KARAKTER SENİ SEÇTİ* ve Barista jetonlarını gösterin, sonra parmakla sayı gösterin. [hatırlatıcı]",
+  "otherNightReminder": "Bir oyuncu seçin. Onu uyandırıp *BU KARAKTER SENİ SEÇTİ* ve Barista jetonlarını gösterin, sonra parmakla sayı gösterin. [hatırlatıcı]",
+  "reminders": [
+   "Ayık ve sağlıklı",
+   "İki kez çalışır",
+   "?",
+   "?"
+  ]
+ },
+ "baron": {
+  "name": "Baron",
+  "ability": "Oyunda fazladan Yabancılar vardır. [+2 Yabancı]"
+ },
+ "beggar": {
+  "name": "Dilenci",
+  "ability": "Oy vermek için bir oy jetonu kullanmalısın. Ölü bir oyuncu sana jetonunu verirse onun tarafını öğrenirsin. Ayık ve sağlıklısın."
+ },
+ "bigwig": {
+  "name": "Kodaman",
+  "ability": "Her aday bir oyuncu seçer: oylamaya kadar yalnızca o konuşabilir ve adayın iyi olduğu konusunda çılgın davranmalıdır, yoksa ölebilir."
+ },
+ "bishop": {
+  "name": "Piskopos",
+  "ability": "Yalnızca Anlatıcı aday gösterebilir. Her gün karşı taraftan en az 1 oyuncu aday gösterilmelidir.",
+  "reminders": [
+   "İyiyi aday göster",
+   "Kötüyü aday göster"
+  ]
+ },
+ "boffin": {
+  "name": "Dâhi",
+  "ability": "İblis (sarhoş ya da zehirli olsa bile) oyunda olmayan iyi bir karakterin yeteneğine sahiptir. İkiniz de hangisi olduğunu bilirsiniz.",
+  "firstNightReminder": "Dâhi'yi ve İblis'i uyandırın. *BU KARAKTER SENİ SEÇTİ* ve Dâhi jetonlarını, ardından oyunda olmayan iyi karakterin jetonunu gösterin."
+ },
+ "bonecollector": {
+  "name": "Kemik Toplayıcı",
+  "ability": "Oyun boyunca bir kez, gece*, ölü bir oyuncu seç: alacakaranlığa kadar yeteneğini geri kazanır.",
+  "otherNightReminder": "Kemik Toplayıcı ölü bir oyuncu seçebilir. [hatırlatıcı] Gerekirse seçilen oyuncuyu yeteneğini kullanması için uyandırın.",
+  "reminders": [
+   "Yetenek yok",
+   "Yeteneği var"
+  ]
+ },
+ "boomdandy": {
+  "name": "Bombacı",
+  "ability": "İnfaz edilirsen 3 oyuncu dışında herkes ölür. 10'dan 1'e geri sayımdan sonra en çok oyuncunun işaret ettiği kişi ölür."
+ },
+ "bootlegger": {
+  "name": "Kaçakçı",
+  "ability": "Bu senaryoda ev yapımı karakterler ya da kurallar var.",
+  "reminders": [
+   "?",
+   "?"
+  ]
+ },
+ "bountyhunter": {
+  "name": "Ödül Avcısı",
+  "ability": "1 kötü oyuncuyu bilerek başlarsın. Bildiğin oyuncu ölürse o gece başka bir kötü oyuncu öğrenirsin. [1 Kasabalı kötüdür]",
+  "firstNightReminder": "*BİLİYOR* olarak işaretli oyuncuyu gösterin.",
+  "otherNightReminder": "*BİLİYOR* olarak işaretli oyuncu bugün ya da bu gece öldüyse yeni *BİLİYOR* oyuncusunu gösterin.",
+  "reminders": [
+   "Biliyor"
+  ]
+ },
+ "buddhist": {
+  "name": "Budist",
+  "ability": "Her günün ilk 2 dakikasında deneyimli oyuncular konuşamaz.",
+  "firstNightReminder": "Hangi oyuncuların Budist'ten etkilendiğini duyurun."
+ },
+ "bureaucrat": {
+  "name": "Bürokrat",
+  "ability": "Her gece bir oyuncu seç (kendin hariç): yarın oyu 3 oy sayılır.",
+  "firstNightReminder": "Bürokrat bir oyuncu seçer. [hatırlatıcı]",
+  "otherNightReminder": "Bürokrat bir oyuncu seçer. [hatırlatıcı]",
+  "reminders": [
+   "3 oy"
+  ]
+ },
+ "butcher": {
+  "name": "Kasap",
+  "ability": "Her gün, ilk infazdan sonra tekrar aday gösterebilirsin."
+ },
+ "butler": {
+  "name": "Uşak",
+  "ability": "Her gece bir oyuncu seç (kendin hariç): yarın yalnızca o da oy veriyorsa oy verebilirsin.",
+  "firstNightReminder": "Uşak bir oyuncu seçer. [hatırlatıcı]",
+  "otherNightReminder": "Uşak bir oyuncu seçer. [hatırlatıcı]",
+  "reminders": [
+   "Efendi"
+  ]
+ },
+ "cacklejack": {
+  "name": "Kıkırdak",
+  "ability": "Her gün bir oyuncu seç: başka bir oyuncu bu gece karakter değiştirir.",
+  "otherNightReminder": "Şafaktan önce *BEN DEĞİL* ile işaretli olmayan bir oyuncu seçin. Hedefi uyandırın. *SEN* bilgi jetonunu ve yeni karakter jetonunu gösterin.",
+  "reminders": [
+   "Ben değil"
+  ]
+ },
+ "cannibal": {
+  "name": "Yamyam",
+  "ability": "En son infaz edilip ölen oyuncunun yeteneğine sahipsin. O kötüyse, iyi bir oyuncu infazla ölene kadar zehirlisin.",
+  "reminders": [
+   "Zehirli",
+   "Öğle yemeği"
+  ]
+ },
+ "cerenovus": {
+  "name": "Serenovus",
+  "ability": "Her gece bir oyuncu ve iyi bir karakter seç: o oyuncu yarın bu karakter olduğu konusunda “çılgın” davranmalıdır, yoksa infaz edilebilir.",
+  "firstNightReminder": "Serenovus bir oyuncu ve bir karakter seçer. [hatırlatıcı] Serenovus'u uyutun. Hedefi uyandırın. *BU KARAKTER SENİ SEÇTİ* jetonunu, Serenovus jetonunu, ardından çılgınlık karakterinin jetonunu gösterin.",
+  "otherNightReminder": "Serenovus bir oyuncu ve bir karakter seçer. [hatırlatıcı] Serenovus'u uyutun. Hedefi uyandırın. *BU KARAKTER SENİ SEÇTİ* jetonunu, Serenovus jetonunu, ardından çılgınlık karakterinin jetonunu gösterin.",
+  "reminders": [
+   "Çılgın"
+  ]
+ },
+ "chambermaid": {
+  "name": "Oda Hizmetçisi",
+  "ability": "Her gece, yaşayan 2 oyuncu seç (kendin hariç): o gece kaçının yeteneği yüzünden uyandığını öğrenirsin.",
+  "firstNightReminder": "Oda Hizmetçisi yaşayan 2 oyuncu seçer. Parmakla sayı gösterin.",
+  "otherNightReminder": "Oda Hizmetçisi yaşayan 2 oyuncu seçer. Parmakla sayı gösterin."
+ },
+ "chef": {
+  "name": "Aşçı",
+  "ability": "Oyunda kaç çift kötü oyuncunun yan yana oturduğunu bilerek başlarsın.",
+  "firstNightReminder": "Parmakla sayı gösterin."
+ },
+ "choirboy": {
+  "name": "Koro Çocuğu",
+  "ability": "İblis Kral'ı öldürürse hangi oyuncunun İblis olduğunu öğrenirsin. [+Kral]",
+  "otherNightReminder": "İblis Kral'ı öldürdüyse İblis oyuncusunu işaret edin."
+ },
+ "clockmaker": {
+  "name": "Saatçi",
+  "ability": "İblis'in en yakın Yardakçısına kaç adım uzakta olduğunu bilerek başlarsın.",
+  "firstNightReminder": "Parmakla sayı gösterin."
+ },
+ "courtier": {
+  "name": "Saray Nedimi",
+  "ability": "Oyun boyunca bir kez, gece bir karakter seç: 3 gece ve 3 gün boyunca sarhoştur.",
+  "firstNightReminder": "Saray Nedimi bir karakter seçebilir. [hatırlatıcı] [hatırlatıcı]",
+  "otherNightReminder": "Saray Nedimi bir karakter seçebilir. [hatırlatıcı] [hatırlatıcı]",
+  "reminders": [
+   "Sarhoş 3",
+   "Sarhoş 2",
+   "Sarhoş 1",
+   "Yetenek yok"
+  ]
+ },
+ "cultleader": {
+  "name": "Tarikat Lideri",
+  "ability": "Her gece yaşayan bir komşunun tarafına geçersin. Tüm iyi oyuncular tarikatına katılmayı seçerse takımın kazanır.",
+  "firstNightReminder": "Tarikat Lideri taraf değiştirebilir. Değiştirirse *SEN* bilgi jetonunu gösterip başparmakla işaret verin.",
+  "otherNightReminder": "Tarikat Lideri taraf değiştirebilir. Değiştirirse *SEN* bilgi jetonunu gösterip başparmakla işaret verin."
+ },
+ "damsel": {
+  "name": "Genç Kız",
+  "ability": "Tüm Yardakçılar oyunda bir Genç Kız olduğunu bilir. Bir Yardakçı herkesin önünde seni doğru tahmin ederse (bir kez) takımın kaybeder.",
+  "firstNightReminder": "Yardakçı bilgisi sırasında Yardakçılara Genç Kız jetonunu gösterin. Henüz yapmadıysanız şimdi yapın. Genç Kız'ı Avcıbaşı seçtiyse *SEN* bilgi jetonunu ve yeni karakter jetonunu gösterin.",
+  "otherNightReminder": "Genç Kız'ı Avcıbaşı seçtiyse *SEN* bilgi jetonunu ve yeni karakter jetonunu gösterin.",
+  "reminders": [
+   "Tahmin kullanıldı"
+  ]
+ },
+ "deusexfiasco": {
+  "name": "Deus ex Fiyasko",
+  "ability": "Oyun boyunca en az bir kez Anlatıcı bir hata yapar, düzeltir ve bunu herkesin önünde itiraf eder.",
+  "reminders": [
+   "Hoppala"
+  ]
+ },
+ "deviant": {
+  "name": "Sapkın",
+  "ability": "Bugün komik olduysan sürgünle ölemezsin."
+ },
+ "devilsadvocate": {
+  "name": "Şeytanın Avukatı",
+  "ability": "Her gece, yaşayan bir oyuncu seç (dün geceki dışında): yarın infaz edilirse ölmez.",
+  "firstNightReminder": "Şeytanın Avukatı yaşayan bir oyuncu seçer. [hatırlatıcı]",
+  "otherNightReminder": "Şeytanın Avukatı yaşayan bir oyuncu seçer. [hatırlatıcı]",
+  "reminders": [
+   "İnfazdan kurtulur"
+  ]
+ },
+ "djinn": {
+  "name": "Cin",
+  "ability": "Cin'in özel kuralını kullanın. Herkes bu kuralın ne olduğunu bilir."
+ },
+ "doomsayer": {
+  "name": "Kıyamet Habercisi",
+  "ability": "4 veya daha fazla oyuncu yaşıyorsa yaşayan her oyuncu (oyun boyunca bir kez) herkesin önünde kendi tarafından bir oyuncunun ölmesini seçebilir."
+ },
+ "dreamer": {
+  "name": "Rüyacı",
+  "ability": "Her gece bir oyuncu seç (kendin ve Gezginler hariç): biri doğru olan 1 iyi ve 1 kötü karakter öğrenirsin.",
+  "firstNightReminder": "Rüyacı bir oyuncuyu işaret eder. Biri o oyuncunun karakteri olan 1 iyi ve 1 kötü karakter jetonu gösterin.",
+  "otherNightReminder": "Rüyacı bir oyuncuyu işaret eder. Biri o oyuncunun karakteri olan 1 iyi ve 1 kötü karakter jetonu gösterin."
+ },
+ "drunk": {
+  "name": "Sarhoş",
+  "ability": "Sarhoş olduğunu bilmezsin. Bir Kasabalı karakter olduğunu sanırsın ama değilsin.",
+  "remindersGlobal": [
+   "Sarhoş bu"
+  ]
+ },
+ "duchess": {
+  "name": "Düşes",
+  "ability": "Her gün 3 oyuncu seni ziyaret etmeyi seçebilir. Gece* her ziyaretçi, ziyaretçilerden kaçının kötü olduğunu öğrenir, ama biri yanlış bilgi alır.",
+  "otherNightReminder": "Teker teker: *ZİYARETÇİ* ya da *YANLIŞ BİLGİ* ile işaretli her oyuncuyu uyandırın. *BU KARAKTER SENİ SEÇTİ* ve Düşes jetonlarını gösterip parmakla sayı gösterin.",
+  "reminders": [
+   "Ziyaretçi",
+   "Ziyaretçi",
+   "Yanlış bilgi"
+  ]
+ },
+ "empath": {
+  "name": "Empat",
+  "ability": "Her gece, yaşayan 2 komşundan kaçının kötü olduğunu öğrenirsin.",
+  "firstNightReminder": "Parmakla sayı gösterin.",
+  "otherNightReminder": "Parmakla sayı gösterin."
+ },
+ "engineer": {
+  "name": "Mühendis",
+  "ability": "Oyun boyunca bir kez, gece oyunda hangi Yardakçıların ya da hangi İblis'in olacağını seç.",
+  "firstNightReminder": "Mühendis Yardakçıları ya da İblis'i seçebilir. Mühendis'i uyutun. Hedef(ler)i teker teker uyandırın. *SEN* bilgi jetonunu ve yeni karakter jetonlarını gösterin. [hatırlatıcı]",
+  "otherNightReminder": "Mühendis Yardakçıları ya da İblis'i seçebilir. Mühendis'i uyutun. Hedef(ler)i teker teker uyandırın. *SEN* bilgi jetonunu ve yeni karakter jetonlarını gösterin. [hatırlatıcı]",
+  "reminders": [
+   "Yetenek yok"
+  ]
+ },
+ "eviltwin": {
+  "name": "Kötü İkiz",
+  "ability": "Sen ve karşı taraftan bir oyuncu birbirinizi bilirsiniz. İyi oyuncu infaz edilirse kötüler kazanır. İkiniz de yaşarken iyiler kazanamaz.",
+  "firstNightReminder": "İki ikizi de uyandırın. Göz göze gelmelerine izin verin. İyi ikizin karakter jetonunu Kötü İkiz'e, Kötü İkiz'inkini de iyi ikize gösterin.",
+  "reminders": [
+   "İkiz"
+  ]
+ },
+ "exorcist": {
+  "name": "Şeytan Kovucu",
+  "ability": "Her gece*, bir oyuncu seç (dün geceki dışında): İblis seçilirse kim olduğunu öğrenir ve o gece uyanmaz.",
+  "otherNightReminder": "Şeytan Kovucu bir oyuncu seçer. [hatırlatıcı] Şeytan Kovucu'yu uyutun. İblis'i seçtiyse: İblis'i uyandırın. *BU KARAKTER SENİ SEÇTİ* ve Şeytan Kovucu jetonlarını gösterin. Şeytan Kovucu'yu işaret edin.",
+  "reminders": [
+   "Seçildi"
+  ]
+ },
+ "fanggu": {
+  "name": "Fang Gu",
+  "ability": "Her gece* bir oyuncu seç: ölür. Bu şekilde öldürülen ilk Yabancı kötü bir Fang Gu olur ve onun yerine sen ölürsün. [+1 Yabancı]",
+  "otherNightReminder": "Fang Gu bir oyuncu seçer. [hatırlatıcı] Bir Yabancı seçtiyse (yalnızca bir kez): Yabancı jetonunu yedek Fang Gu jetonuyla değiştirin. Fang Gu'yu uyutun. Hedefi uyandırın. *SEN* ve Fang Gu jetonlarını gösterip başparmağınızı aşağı çevirin. [hatırlatıcı]",
+  "reminders": [
+   "Ölü",
+   "Bir kez"
+  ]
+ },
+ "farmer": {
+  "name": "Çiftçi",
+  "ability": "Gece öldüğünde yaşayan iyi bir oyuncu Çiftçi olur.",
+  "otherNightReminder": "Çiftçi bu gece öldüyse yaşayan iyi bir oyuncuyu uyandırın. *SEN* bilgi jetonunu ve bir Çiftçi jetonunu gösterin."
+ },
+ "fearmonger": {
+  "name": "Korku Tüccarı",
+  "ability": "Her gece bir oyuncu seç: onu aday gösterip infaz ettirirsen takımı kaybeder. Yeni bir oyuncu seçersen herkes bunu öğrenir.",
+  "firstNightReminder": "Korku Tüccarı bir oyuncu seçer. [hatırlatıcı] Korku Tüccarı'nın bir oyuncu seçtiğini duyurun.",
+  "otherNightReminder": "Korku Tüccarı bir oyuncu seçer. [hatırlatıcı] Hedef dün geceden farklıysa Korku Tüccarı'nın bir oyuncu seçtiğini duyurun.",
+  "reminders": [
+   "Korku"
+  ]
+ },
+ "ferryman": {
+  "name": "Kayıkçı",
+  "ability": "Son gün tüm ölü oyuncular oy jetonlarını geri kazanır."
+ },
+ "fibbin": {
+  "name": "Fibbin",
+  "ability": "Oyun boyunca bir kez, 1 iyi oyuncu yanlış bilgi alabilir.",
+  "reminders": [
+   "Yetenek yok"
+  ]
+ },
+ "fiddler": {
+  "name": "Kemancı",
+  "ability": "Oyun boyunca bir kez İblis gizlice karşı taraftan bir oyuncu seçer: herkes bu 2 oyuncudan hangisinin kazanacağını seçer."
+ },
+ "fisherman": {
+  "name": "Balıkçı",
+  "ability": "Oyun boyunca bir kez, gündüz Anlatıcı'yı ziyaret edip takımının kazanmasına yardımcı olacak bir tavsiye al.",
+  "reminders": [
+   "Yetenek yok"
+  ]
+ },
+ "flowergirl": {
+  "name": "Çiçekçi Kız",
+  "ability": "Her gece*, bugün bir İblis'in oy verip vermediğini öğrenirsin.",
+  "otherNightReminder": "Başınızı evet ya da hayır anlamında sallayın.",
+  "reminders": [
+   "İblis oy verdi",
+   "İblis oy vermedi"
+  ]
+ },
+ "fool": {
+  "name": "Soytarı",
+  "ability": "İlk öldüğünde ölmezsin.",
+  "reminders": [
+   "Yetenek yok"
+  ]
+ },
+ "fortuneteller": {
+  "name": "Falcı",
+  "ability": "Her gece 2 oyuncu seç: aralarında İblis olup olmadığını öğrenirsin. Sana İblis olarak görünen iyi bir oyuncu vardır.",
+  "firstNightReminder": "Falcı 2 oyuncu seçer. Biri İblis (ya da *YANILTMACA*) ise başınızı sallayın.",
+  "otherNightReminder": "Falcı 2 oyuncu seçer. Biri İblis (ya da *YANILTMACA*) ise başınızı sallayın.",
+  "reminders": [
+   "Yanıltmaca"
+  ]
+ },
+ "gambler": {
+  "name": "Kumarbaz",
+  "ability": "Her gece*, bir oyuncu seç ve karakterini tahmin et: yanlış tahmin edersen ölürsün.",
+  "otherNightReminder": "Kumarbaz bir oyuncu ve bir karakter seçer. [hatırlatıcı]",
+  "reminders": [
+   "Ölü"
+  ]
+ },
+ "gangster": {
+  "name": "Gangster",
+  "ability": "Günde bir kez, yaşayan diğer komşun kabul ederse yaşayan bir komşunu öldürmeyi seçebilirsin."
+ },
+ "gardener": {
+  "name": "Bahçıvan",
+  "ability": "Tüm oyuncuların karakterlerini Anlatıcı dağıtır."
+ },
+ "general": {
+  "name": "General",
+  "ability": "Her gece, Anlatıcı'nın hangi tarafın kazandığını düşündüğünü öğrenirsin: iyiler, kötüler ya da hiçbiri.",
+  "firstNightReminder": "Başparmakla işaret verin.",
+  "otherNightReminder": "Başparmakla işaret verin."
+ },
+ "gnome": {
+  "name": "Cüce",
+  "ability": "Herkes senin tarafından bir oyuncuyu bilerek başlar. Onu aday gösteren herkesi öldürmeyi seçebilirsin.",
+  "reminders": [
+   "Amigo"
+  ]
+ },
+ "goblin": {
+  "name": "Goblin",
+  "ability": "Aday gösterildiğinde herkesin önünde Goblin olduğunu iddia eder ve o gün infaz edilirsen takımın kazanır.",
+  "reminders": [
+   "İddia etti"
+  ]
+ },
+ "godfather": {
+  "name": "Baba",
+  "ability": "Oyunda hangi Yabancıların olduğunu bilerek başlarsın. Bugün biri öldüyse bu gece bir oyuncu seç: ölür. [-1 ya da +1 Yabancı]",
+  "firstNightReminder": "Oyundaki tüm Yabancıların karakter jetonlarını gösterin.",
+  "otherNightReminder": "Bugün bir Yabancı öldüyse Baba bir oyuncu seçer. [hatırlatıcı]",
+  "reminders": [
+   "Bugün öldü",
+   "Ölü"
+  ]
+ },
+ "godofug": {
+  "name": "Ug Tanrısı",
+  "ability": "Bir Ug şapkası. Ug şapkası giyince tek seferde bir ses çıkarmalı ama iki kez oy vermeli. Başaramazsan Ug şapkasını devret.",
+  "reminders": [
+   "Şapka"
+  ]
+ },
+ "golem": {
+  "name": "Golem",
+  "ability": "Oyun boyunca yalnızca bir kez aday gösterebilirsin. Gösterdiğinde aday İblis değilse ölür.",
+  "reminders": [
+   "Aday gösteremez"
+  ]
+ },
+ "goon": {
+  "name": "Kabadayı",
+  "ability": "Her gece, yeteneğiyle seni ilk seçen oyuncu alacakaranlığa kadar sarhoştur. Onun tarafına geçersin.",
+  "reminders": [
+   "Sarhoş"
+  ]
+ },
+ "gossip": {
+  "name": "Dedikoducu",
+  "ability": "Her gün herkesin önünde bir açıklama yapabilirsin. Bu gece, söylediğin doğruysa bir oyuncu ölür.",
+  "otherNightReminder": "Dedikoducu yüzünden bir oyuncu ölecekse ölür. [hatırlatıcı]",
+  "reminders": [
+   "Ölü"
+  ]
+ },
+ "grandmother": {
+  "name": "Büyükanne",
+  "ability": "İyi bir oyuncuyu ve karakterini bilerek başlarsın. İblis onu öldürürse sen de ölürsün.",
+  "firstNightReminder": "Torun olan oyuncuyu işaret edip karakter jetonunu gösterin.",
+  "otherNightReminder": "Torunu İblis öldürdüyse Büyükanne de ölür. [hatırlatıcı]",
+  "reminders": [
+   "Torun",
+   "Ölü"
+  ]
+ },
+ "gunslinger": {
+  "name": "Silahşor",
+  "ability": "Her gün, ilk oylama sayıldıktan sonra oy veren bir oyuncuyu seçebilirsin: ölür."
+ },
+ "harlot": {
+  "name": "Fahişe",
+  "ability": "Her gece*, yaşayan bir oyuncu seç: kabul ederse karakterini öğrenirsin, ama ikiniz de ölebilirsiniz.",
+  "otherNightReminder": "Fahişe yaşayan bir oyuncu seçer. Fahişe'yi uyutun. Seçilen oyuncuyu uyandırıp *BU KARAKTER SENİ SEÇTİ* jetonunu, ardından Fahişe jetonunu gösterin. Oyuncu başını sallarsa Fahişe'yi uyandırıp seçilen oyuncunun karakter jetonunu gösterin. İkisi de ölebilir. [hatırlatıcı] [hatırlatıcı]",
+  "reminders": [
+   "Ölü",
+   "Ölü"
+  ]
+ },
+ "harpy": {
+  "name": "Harpi",
+  "ability": "Her gece 2 oyuncu seç: yarın ilk oyuncu, ikincinin kötü olduğu konusunda çılgın davranmalıdır, yoksa biri ya da ikisi ölebilir.",
+  "firstNightReminder": "Harpi 2 oyuncu seçer. [hatırlatıcı] [hatırlatıcı] Harpi'yi uyutun. İlk hedefi uyandırın. *BU KARAKTER SENİ SEÇTİ* jetonunu, Harpi jetonunu gösterip ikinci hedefi işaret edin.",
+  "otherNightReminder": "Harpi 2 oyuncu seçer. [hatırlatıcı] [hatırlatıcı] Harpi'yi uyutun. İlk hedefi uyandırın. *BU KARAKTER SENİ SEÇTİ* jetonunu, Harpi jetonunu gösterip ikinci hedefi işaret edin.",
+  "reminders": [
+   "Çılgın",
+   "İkinci"
+  ]
+ },
+ "hatter": {
+  "name": "Şapkacı",
+  "ability": "Bugün ya da bu gece öldüysen Yardakçı ve İblis oyuncuları yeni Yardakçı ve İblis karakterleri seçebilir.",
+  "otherNightReminder": "Şapkacı öldüyse Yardakçıları ve İblisleri uyandırın. Her biri yeni bir karakter seçebilir. Seçerse *SEN* jetonunu ve yeni karakter jetonunu gösterin.",
+  "reminders": [
+   "Bu gece çay partisi"
+  ]
+ },
+ "hellslibrarian": {
+  "name": "Cehennem Kütüphanecisi",
+  "ability": "Anlatıcı sessizlik istediğinde konuşan kişinin başına kötü bir şey gelebilir.",
+  "reminders": [
+   "Kötü bir şey"
+  ]
+ },
+ "heretic": {
+  "name": "Sapkın Mürit",
+  "ability": "Sen ölmüş olsan bile kazanan kaybeder, kaybeden kazanır."
+ },
+ "hermit": {
+  "name": "Erem",
+  "ability": "Tüm Yabancı yeteneklerine sahipsin. [-0 ya da -1 Yabancı]",
+  "reminders": [
+   "1",
+   "2",
+   "3"
+  ]
+ },
+ "highpriestess": {
+  "name": "Başrahibe",
+  "ability": "Her gece, Anlatıcı'nın en çok konuşman gerektiğini düşündüğü oyuncuyu öğrenirsin.",
+  "firstNightReminder": "Bir oyuncuyu işaret edin.",
+  "otherNightReminder": "Bir oyuncuyu işaret edin."
+ },
+ "hindu": {
+  "name": "Hindu",
+  "ability": "Ölen ilk 4 oyuncu hemen aynı tarafta Gezgin olarak yeniden doğar."
+ },
+ "huntsman": {
+  "name": "Avcıbaşı",
+  "ability": "Oyun boyunca bir kez, gece yaşayan bir oyuncu seç: seçilen Genç Kız, oyunda olmayan bir Kasabalı olur. [+Genç Kız]",
+  "firstNightReminder": "Avcıbaşı bir oyuncu seçebilir. [hatırlatıcı] Genç Kız'ı seçtiyse: Avcıbaşı'nı uyutun. Hedefi uyandırın. *SEN* bilgi jetonunu ve yeni karakter jetonunu gösterin.",
+  "otherNightReminder": "Avcıbaşı bir oyuncu seçebilir. [hatırlatıcı] Genç Kız'ı seçtiyse: Avcıbaşı'nı uyutun. Hedefi uyandırın. *SEN* bilgi jetonunu ve yeni karakter jetonunu gösterin.",
+  "reminders": [
+   "Yetenek yok"
+  ]
+ },
+ "imp": {
+  "name": "İmp",
+  "ability": "Her gece* bir oyuncu seç: ölür. Kendini bu şekilde öldürürsen bir Yardakçı İmp olur.",
+  "otherNightReminder": "İmp bir oyuncu seçer. [hatırlatıcı] İmp kendini seçtiyse: Yaşayan bir Yardakçının jetonunu yedek İmp jetonuyla değiştirin. Eski İmp'i uyutun. Yeni İmp'i uyandırıp *SEN* jetonunu, ardından İmp jetonunu gösterin.",
+  "reminders": [
+   "Ölü"
+  ]
+ },
+ "innkeeper": {
+  "name": "Hancı",
+  "ability": "Her gece*, 2 oyuncu seç: o gece ölemezler, ama biri alacakaranlığa kadar sarhoştur.",
+  "otherNightReminder": "Hancı 2 oyuncu seçer. [hatırlatıcı] [hatırlatıcı] [hatırlatıcı]",
+  "reminders": [
+   "Güvende",
+   "Güvende",
+   "Sarhoş"
+  ]
+ },
+ "investigator": {
+  "name": "Dedektif",
+  "ability": "2 oyuncudan birinin belirli bir Yardakçı olduğunu bilerek başlarsın.",
+  "firstNightReminder": "Yardakçının karakter jetonunu gösterin. *YARDAKÇI* ve *YANLIŞ* oyuncuları işaret edin.",
+  "reminders": [
+   "Yardakçı",
+   "Yanlış"
+  ]
+ },
+ "judge": {
+  "name": "Yargıç",
+  "ability": "Oyun boyunca bir kez, başka bir oyuncu aday gösterdiyse, mevcut infazın geçmesini ya da reddedilmesini zorunlu kılabilirsin.",
+  "reminders": [
+   "Yetenek yok"
+  ]
+ },
+ "juggler": {
+  "name": "Hokkabaz",
+  "ability": "İlk gününde herkesin önünde en fazla 5 oyuncunun karakterini tahmin et. O gece kaç tanesini doğru bildiğini öğrenirsin.",
+  "otherNightReminder": "Parmakla sayı gösterin.",
+  "reminders": [
+   "Doğru",
+   "Doğru",
+   "Doğru",
+   "Doğru",
+   "Doğru"
+  ]
+ },
+ "kazali": {
+  "name": "Kazali",
+  "ability": "Her gece* bir oyuncu seç: ölür. [Hangi oyuncunun hangi Yardakçı olacağını sen seçersin. -? ile +? arası Yabancı]",
+  "firstNightReminder": "Kazali hangi oyuncunun hangi Yardakçı olacağını seçer. Her hedefi uyandırın. *SEN* ve Yardakçı jetonlarını gösterip başparmağınızı aşağı çevirin.",
+  "otherNightReminder": "Kazali bir oyuncu seçer. [hatırlatıcı]",
+  "reminders": [
+   "Ölü"
+  ]
+ },
+ "king": {
+  "name": "Kral",
+  "ability": "Her gece, ölüler yaşayanlara eşit ya da onlardan fazlaysa yaşayan 1 karakter öğrenirsin. İblis senin Kral olduğunu bilir.",
+  "firstNightReminder": "İblis'i uyandırın: *BU OYUNCU* ve Kral jetonlarını gösterip Kral'ı işaret edin.",
+  "otherNightReminder": "Ölüler yaşayanlara eşit ya da onlardan fazlaysa yaşayan bir oyuncunun karakter jetonunu gösterin."
+ },
+ "klutz": {
+  "name": "Sakar",
+  "ability": "Öldüğünü öğrendiğinde herkesin önünde yaşayan 1 oyuncu seç: kötüyse takımın kaybeder."
+ },
+ "knaves": {
+  "name": "Düzenbazlar",
+  "ability": "2 Anlatıcı vardır: biri yalan söyler, biri doğruyu. Oyun boyunca bir kez, alacakaranlıkta yer değiştirebilirler."
+ },
+ "knight": {
+  "name": "Şövalye",
+  "ability": "İblis olmayan 2 oyuncuyu bilerek başlarsın.",
+  "firstNightReminder": "*BİLİYOR* olarak işaretli 2 oyuncuyu gösterin.",
+  "reminders": [
+   "Biliyor",
+   "Biliyor"
+  ]
+ },
+ "legion": {
+  "name": "Lejyon",
+  "ability": "Her gece* bir oyuncu ölebilir. Yalnızca kötüler oy verdiyse infazlar başarısız olur. Ayrıca Yardakçı olarak da görünürsün. [Oyuncuların çoğu Lejyon'dur]",
+  "otherNightReminder": "Bir oyuncu ölebilir. [hatırlatıcı]",
+  "reminders": [
+   "Ölü",
+   "Ölmek üzere"
+  ]
+ },
+ "leviathan": {
+  "name": "Leviathan",
+  "ability": "1'den fazla iyi oyuncu infaz edilirse kötüler kazanır. Herkes senin oyunda olduğunu bilir. 5. günden sonra kötüler kazanır.",
+  "firstNightReminder": "Leviathan'ın oyunda olduğunu duyurun. [hatırlatıcı]",
+  "otherNightReminder": "Leviathan hatırlatıcısını ilgili güne çevirin. [hatırlatıcı] Leviathan'ın oyunda olduğunu duyurabilirsiniz.",
+  "reminders": [
+   "1. gün",
+   "2. gün",
+   "3. gün",
+   "4. gün",
+   "5. gün",
+   "İyi oyuncu infaz edildi"
+  ]
+ },
+ "librarian": {
+  "name": "Kütüphaneci",
+  "ability": "2 oyuncudan birinin belirli bir Yabancı olduğunu bilerek başlarsın. (Ya da oyunda hiç Yabancı olmadığını.)",
+  "firstNightReminder": "Yabancının karakter jetonunu gösterin. *YABANCI* ve *YANLIŞ* oyuncuları işaret edin.",
+  "reminders": [
+   "Yabancı",
+   "Yanlış"
+  ]
+ },
+ "lilmonsta": {
+  "name": "Küçük Canavar",
+  "ability": "Her gece Yardakçılar Küçük Canavar'a kimin bakıcılık edeceğini ve “İblis olacağını” seçer. Her gece* bir oyuncu ölebilir. [+1 Yardakçı]",
+  "firstNightReminder": "Yardakçıları uyandırın. Bir oyuncu seçerler. [hatırlatıcı] Yardakçıları uyutun. Hedefi uyandırın. *SEN* ve Küçük Canavar jetonlarını gösterin.",
+  "otherNightReminder": "Yardakçıları uyandırın. Bir oyuncu seçerler. [hatırlatıcı] Yardakçıları uyutun. Hedefi uyandırın. *SEN* ve Küçük Canavar jetonlarını gösterin. Bir oyuncu ölebilir. [hatırlatıcı]",
+  "remindersGlobal": [
+   "İblis bu",
+   "Ölü"
+  ]
+ },
+ "lleech": {
+  "name": "Sülük",
+  "ability": "Her gece* bir oyuncu seç: ölür. Başlarken bir oyuncu seçersin: zehirlenir. Yalnızca ve yalnızca o ölüyse sen ölürsün.",
+  "firstNightReminder": "Sülük bir oyuncu seçer. [hatırlatıcı]",
+  "otherNightReminder": "Sülük bir oyuncu seçer. [hatırlatıcı]",
+  "reminders": [
+   "Ölü",
+   "Zehirli"
+  ]
+ },
+ "lordoftyphon": {
+  "name": "Tayfun Lordu",
+  "ability": "Her gece* bir oyuncu seç: ölür. [Kötü karakterler yan yana oturur. Sen ortadasın. +1 Yardakçı. -? ile +? arası Yabancı]",
+  "firstNightReminder": "Tayfun Lordu'nun komşularını uyandırın. *SEN* ve Yardakçı jetonlarını gösterip başparmağınızı aşağı çevirin.",
+  "otherNightReminder": "Tayfun Lordu bir oyuncu seçer. [hatırlatıcı]",
+  "reminders": [
+   "Ölü"
+  ]
+ },
+ "lunatic": {
+  "name": "Meczup",
+  "ability": "İblis olduğunu sanırsın ama değilsin. İblis kim olduğunu ve gece kimi seçtiğini bilir.",
+  "firstNightReminder": "7 veya daha fazla oyuncu varsa Meczup'u uyandırın: *BUNLAR SENİN YARDAKÇILARIN* jetonunu gösterip herhangi oyuncuları işaret edin. *BU KARAKTERLER OYUNDA DEĞİL* jetonunu gösterip 3 iyi karakter jetonu gösterin. Meczup'u uyutun. İblis'i uyandırın. *SEN* bilgi jetonunu ve İblis jetonunu gösterin. *BU OYUNCU* bilgi jetonunu ve Meczup jetonunu gösterip Meczup'u işaret edin.",
+  "otherNightReminder": "İblis'in hareketini taklit etmek için ne gerekiyorsa yapın. Meczup'u uyutun. İblis'i uyandırın. Meczup jetonunu gösterip onu, ardından hedef(ler)ini işaret edin.",
+  "reminders": [
+   "Seçildi",
+   "Seçildi",
+   "Seçildi"
+  ]
+ },
+ "lycanthrope": {
+  "name": "Kurtadam",
+  "ability": "Her gece* yaşayan bir oyuncu seç. İyiyse ölür ve İblis o gece öldürmez. İyi bir oyuncu kötü olarak görünür.",
+  "otherNightReminder": "Kurtadam bir oyuncu seçer. [hatırlatıcı]",
+  "reminders": [
+   "Sahte pati",
+   "Ölü"
+  ]
+ },
+ "magician": {
+  "name": "Sihirbaz",
+  "ability": "İblis senin bir Yardakçı olduğunu sanır. Yardakçılar senin İblis olduğunu sanır.",
+  "firstNightReminder": "Yardakçı bilgisi sırasında Sihirbaz'ı ve İblis'i işaret edin. İblis bilgisi sırasında Sihirbaz'ı ve Yardakçıları işaret edin."
+ },
+ "marionette": {
+  "name": "Kukla",
+  "ability": "İyi bir karakter olduğunu sanırsın ama değilsin. İblis kim olduğunu bilir. [İblis'in komşususun]",
+  "firstNightReminder": "İblis'i uyandırın. *BU OYUNCU* ve Kukla jetonlarını gösterip Kukla'yı işaret edin.",
+  "remindersGlobal": [
+   "Kukla bu"
+  ]
+ },
+ "mastermind": {
+  "name": "Beyin",
+  "ability": "İblis infazla ölürse (oyunu bitirecek şekilde) 1 gün daha oynanır. O gün bir oyuncu infaz edilirse onun takımı kaybeder."
+ },
+ "mathematician": {
+  "name": "Matematikçi",
+  "ability": "Her gece, (şafaktan beri) başka bir karakterin yeteneği yüzünden kaç oyuncunun yeteneğinin normal dışı çalıştığını öğrenirsin.",
+  "firstNightReminder": "Parmakla sayı gösterin.",
+  "otherNightReminder": "Parmakla sayı gösterin.",
+  "reminders": [
+   "Normal dışı",
+   "Normal dışı",
+   "Normal dışı",
+   "Normal dışı",
+   "Normal dışı"
+  ]
+ },
+ "matron": {
+  "name": "Başhemşire",
+  "ability": "Her gün, yer değiştirecek en fazla 3 oyuncu çifti seçebilirsin. Oyuncular baş başa konuşmak için yerlerinden kalkamaz."
+ },
+ "mayor": {
+  "name": "Belediye Başkanı",
+  "ability": "Yalnızca 3 oyuncu yaşıyorsa ve infaz olmazsa takımın kazanır. Gece ölürsen yerine başka bir oyuncu ölebilir."
+ },
+ "mephit": {
+  "name": "Mefit",
+  "ability": "Gizli bir kelimeyi bilerek başlarsın. Bu kelimeyi söyleyen ilk iyi oyuncu o gece kötü olur.",
+  "firstNightReminder": "Mefit'e gizli kelimesini gösterin.",
+  "otherNightReminder": "Mefit'in gizli kelimesini söyleyen ilk iyi oyuncuyu uyandırıp *SEN* kartını ve başparmak aşağı kötü işaretini gösterin.",
+  "reminders": [
+   "Kötüye döner",
+   "Yetenek yok"
+  ]
+ },
+ "mezepheles": {
+  "name": "Mezefeles",
+  "ability": "Gizli bir kelimeyi bilerek başlarsın. Bu kelimeyi söyleyen ilk iyi oyuncu o gece kötü olur.",
+  "firstNightReminder": "Gizli kelimeyi gösterin.",
+  "otherNightReminder": "İyi bir oyuncu gizli kelimeyi söylediyse o oyuncuyu uyandırın. *SEN* bilgi jetonunu gösterip başparmağınızı aşağı çevirin. [hatırlatıcı] [hatırlatıcı]",
+  "reminders": [
+   "Kötüye döner",
+   "Yetenek yok"
+  ]
+ },
+ "minstrel": {
+  "name": "Ozan",
+  "ability": "Bir Yardakçı infazla öldüğünde, diğer tüm oyuncular (Gezginler hariç) yarın alacakaranlığa kadar sarhoştur.",
+  "reminders": [
+   "Herkes sarhoş"
+  ]
+ },
+ "monk": {
+  "name": "Keşiş",
+  "ability": "Her gece*, bir oyuncu seç (kendin hariç): o gece İblis'e karşı güvendedir.",
+  "otherNightReminder": "Keşiş bir oyuncu seçer. [hatırlatıcı]",
+  "reminders": [
+   "Güvende"
+  ]
+ },
+ "moonchild": {
+  "name": "Ay Çocuğu",
+  "ability": "Öldüğünü öğrendiğinde herkesin önünde yaşayan 1 oyuncu seç. Bu gece, seçtiğin iyi bir oyuncuysa ölür.",
+  "otherNightReminder": "Ay Çocuğu iyi bir oyuncuyu öldürecekse o oyuncu ölür. [hatırlatıcı]",
+  "reminders": [
+   "Ölü"
+  ]
+ },
+ "mutant": {
+  "name": "Mutant",
+  "ability": "Yabancı olduğun konusunda “çılgın” davranırsan infaz edilebilirsin."
+ },
+ "nightwatchman": {
+  "name": "Gece Bekçisi",
+  "ability": "Oyun boyunca bir kez, gece bir oyuncu seç: senin Gece Bekçisi olduğunu öğrenir.",
+  "firstNightReminder": "Gece Bekçisi bir oyuncu seçebilir. Gece Bekçisi'ni uyutun. Hedefi uyandırın. *BU OYUNCU* ve Gece Bekçisi jetonlarını gösterip Gece Bekçisi'ni işaret edin. [hatırlatıcı]",
+  "otherNightReminder": "Gece Bekçisi bir oyuncu seçebilir. Gece Bekçisi'ni uyutun. Hedefi uyandırın. *BU OYUNCU* ve Gece Bekçisi jetonlarını gösterip Gece Bekçisi'ni işaret edin. [hatırlatıcı]",
+  "reminders": [
+   "Yetenek yok"
+  ]
+ },
+ "noble": {
+  "name": "Soylu",
+  "ability": "Biri ve yalnızca biri kötü olan 3 oyuncuyu bilerek başlarsın.",
+  "firstNightReminder": "*BİLİYOR* olarak işaretli 3 oyuncuyu gösterin.",
+  "reminders": [
+   "Biliyor",
+   "Biliyor",
+   "Biliyor"
+  ]
+ },
+ "nodashii": {
+  "name": "No Dashii",
+  "ability": "Her gece* bir oyuncu seç: ölür. Kasabalı olan 2 komşun zehirlidir.",
+  "otherNightReminder": "No Dashii bir oyuncu seçer. [hatırlatıcı]",
+  "reminders": [
+   "Ölü",
+   "Zehirli",
+   "Zehirli"
+  ]
+ },
+ "ogre": {
+  "name": "Dev",
+  "ability": "İlk gecende bir oyuncu seç (kendin hariç): sarhoş ya da zehirli olsan bile onun tarafına geçersin (hangisi olduğunu bilmezsin).",
+  "firstNightReminder": "Dev bir oyuncu seçer. [hatırlatıcı]",
+  "reminders": [
+   "Dost"
+  ]
+ },
+ "ojo": {
+  "name": "Ojo",
+  "ability": "Her gece* bir karakter seç: ölür. O karakter oyunda değilse kimin öleceğini Anlatıcı seçer.",
+  "otherNightReminder": "Ojo bir karakter seçer. [hatırlatıcı]",
+  "reminders": [
+   "Ölü"
+  ]
+ },
+ "oracle": {
+  "name": "Kâhin",
+  "ability": "Her gece*, ölü oyunculardan kaçının kötü olduğunu öğrenirsin.",
+  "otherNightReminder": "Parmakla sayı gösterin."
+ },
+ "organgrinder": {
+  "name": "Laternacı",
+  "ability": "Oy verirken herkes gözlerini kapalı tutar ve oy sayısı gizlidir. Her gece, alacakaranlığa kadar sarhoş olup olmayacağını seç.",
+  "firstNightReminder": "Laternacı sarhoş olmak için başını evet anlamında, ayık kalmak için hayır anlamında sallar. [hatırlatıcı]",
+  "otherNightReminder": "Laternacı sarhoş olmak için başını evet anlamında, ayık kalmak için hayır anlamında sallar. [hatırlatıcı]",
+  "reminders": [
+   "Ölmek üzere",
+   "Sarhoş"
+  ]
+ },
+ "pacifist": {
+  "name": "Barışsever",
+  "ability": "İnfaz edilen iyi oyuncular ölmeyebilir."
+ },
+ "philosopher": {
+  "name": "Filozof",
+  "ability": "Oyun boyunca bir kez, gece iyi bir karakter seç: onun yeteneğini kazanırsın. O karakter oyundaysa sarhoş olur.",
+  "firstNightReminder": "Filozof bir karakter seçebilir. Gerekirse karakter jetonunu değiştirin. [hatırlatıcı]",
+  "otherNightReminder": "Filozof bir karakter seçebilir. Gerekirse karakter jetonunu değiştirin. [hatırlatıcı]",
+  "reminders": [
+   "Sarhoş"
+  ],
+  "remindersGlobal": [
+   "Filozof bu"
+  ]
+ },
+ "pithag": {
+  "name": "Kuyu Cadısı",
+  "ability": "Her gece*, bir oyuncu ve (oyunda değilse) dönüşeceği karakteri seç. Bir İblis yaratılırsa o geceki ölümler keyfidir.",
+  "otherNightReminder": "Kuyu Cadısı bir oyuncu ve bir karakter seçer. Oyunda olmayan bir karakter seçtiyse: Kuyu Cadısı'nı uyutun. Hedefi uyandırın. *SEN* jetonunu ve yeni karakter jetonunu gösterin."
+ },
+ "pixie": {
+  "name": "Peri",
+  "ability": "Oyundaki 1 Kasabalıyı bilerek başlarsın. O karakter olduğun konusunda çılgın davrandıysan, o öldüğünde yeteneğini kazanırsın.",
+  "firstNightReminder": "*ÇILGIN* olarak işaretli Kasabalının karakter jetonunu gösterin.",
+  "reminders": [
+   "Çılgın",
+   "Yeteneği var"
+  ]
+ },
+ "plaguedoctor": {
+  "name": "Veba Doktoru",
+  "ability": "Öldüğünde Anlatıcı bir Yardakçı yeteneği kazanır.",
+  "otherNightReminder": "Veba Doktoru öldüyse Anlatıcı bir Yardakçı yeteneği kazandı. Henüz yapmadıysanız şimdi yapın. [hatırlatıcı]",
+  "reminders": [
+   "Anlatıcı yeteneği"
+  ]
+ },
+ "po": {
+  "name": "Po",
+  "ability": "Her gece* bir oyuncu seçebilirsin: ölür. Son seçimin kimse değilse bu gece 3 oyuncu seç.",
+  "otherNightReminder": "Po bir oyuncu seçebilir YA DA dün gece kimseyi seçmediyse 3 oyuncu seçer. [hatırlatıcı] ya da [hatırlatıcı] [hatırlatıcı] [hatırlatıcı]",
+  "reminders": [
+   "Ölü",
+   "Ölü",
+   "Ölü",
+   "3 saldırı"
+  ]
+ },
+ "poisoner": {
+  "name": "Zehirci",
+  "ability": "Her gece bir oyuncu seç: o gece ve ertesi gün zehirlidir.",
+  "firstNightReminder": "Zehirci bir oyuncu seçer. [hatırlatıcı]",
+  "otherNightReminder": "Zehirci bir oyuncu seçer. [hatırlatıcı]",
+  "reminders": [
+   "Zehirli"
+  ]
+ },
+ "politician": {
+  "name": "Politikacı",
+  "ability": "Takımının kaybetmesinde en çok payı olan oyuncu sensen, ölmüş olsan bile taraf değiştirir ve kazanırsın."
+ },
+ "pope": {
+  "name": "Papa",
+  "ability": "Oyunda aynı iyi karakterden birden fazla vardır. Bunlar blöf olarak da verilebilir."
+ },
+ "poppygrower": {
+  "name": "Haşhaş Yetiştiricisi",
+  "ability": "Yardakçılar ve İblisler birbirini bilmez. Ölürsen o gece birbirlerinin kim olduğunu öğrenirler.",
+  "firstNightReminder": "Yardakçı ve İblis bilgisini atlayın. İblis'i uyandırın. *BU KARAKTERLER OYUNDA DEĞİL* jetonunu gösterip oyunda olmayan 3 iyi karakter jetonu gösterin.",
+  "otherNightReminder": "Haşhaş Yetiştiricisi bugün ya da bu gece öldüyse tüm Yardakçıları uyandırın. *İBLİS BU* jetonunu gösterip İblis'i işaret edin. Yardakçıları uyutun. İblis'i uyandırın. *BUNLAR SENİN YARDAKÇILARIN* jetonunu gösterip Yardakçıları işaret edin.",
+  "reminders": [
+   "Kötüler uyanır"
+  ]
+ },
+ "preacher": {
+  "name": "Vaiz",
+  "ability": "Her gece bir oyuncu seç: seçilen bir Yardakçı bunu öğrenir. Seçilen tüm Yardakçıların yeteneği yoktur.",
+  "firstNightReminder": "Vaiz bir oyuncu seçer. [hatırlatıcı] Bir Yardakçı seçtiyse: Vaiz'i uyutun. Hedefi uyandırın. *BU KARAKTER SENİ SEÇTİ* ve Vaiz jetonlarını gösterin.",
+  "otherNightReminder": "Vaiz bir oyuncu seçer. [hatırlatıcı] Bir Yardakçı seçtiyse: Vaiz'i uyutun. Hedefi uyandırın. *BU KARAKTER SENİ SEÇTİ* ve Vaiz jetonlarını gösterin.",
+  "reminders": [
+   "Yetenek yok",
+   "Yetenek yok",
+   "Yetenek yok"
+  ]
+ },
+ "princess": {
+  "name": "Prenses",
+  "ability": "İlk gününde bir oyuncuyu aday gösterip infaz ettirdiysen İblis o gece öldürmez.",
+  "otherNightReminder": "Bugün infaz edilen oyuncuyu Prenses aday gösterdiyse İblis'i normal şekilde uyandırın, ama İblis'in yeteneğiyle kimse ölmez. [hatırlatıcı]",
+  "reminders": [
+   "Öldürmez"
+  ]
+ },
+ "professor": {
+  "name": "Profesör",
+  "ability": "Oyun boyunca bir kez, gece*, ölü bir oyuncu seç: Kasabalıysa diriltilir.",
+  "otherNightReminder": "Profesör ölü bir oyuncu seçebilir. [hatırlatıcı] [hatırlatıcı]",
+  "reminders": [
+   "Canlı",
+   "Yetenek yok"
+  ]
+ },
+ "psychopath": {
+  "name": "Psikopat",
+  "ability": "Her gün, aday göstermelerden önce herkesin önünde bir oyuncu seçebilirsin: ölür. İnfaz edilirsen yalnızca taş-kâğıt-makası kaybedersen ölürsün."
+ },
+ "pukka": {
+  "name": "Pukka",
+  "ability": "Her gece bir oyuncu seç: zehirlenir. Önceden zehirlenen oyuncu ölür, sonra sağlığına kavuşur.",
+  "firstNightReminder": "Pukka bir oyuncu seçer. [hatırlatıcı]",
+  "otherNightReminder": "Pukka bir oyuncu seçer. [hatırlatıcı] Önceden zehirlenen oyuncu ölür, sonra sağlığına kavuşur. [hatırlatıcı]",
+  "reminders": [
+   "Zehirli",
+   "Zehirli",
+   "Ölü"
+  ]
+ },
+ "puzzlemaster": {
+  "name": "Bulmaca Ustası",
+  "ability": "Sen ölsen bile 1 oyuncu sarhoştur. Kim olduğunu (bir kez) doğru tahmin edersen İblis oyuncusunu öğrenirsin; yanlış tahmin edersen yanlış bilgi alırsın.",
+  "reminders": [
+   "Sarhoş",
+   "Tahmin kullanıldı"
+  ]
+ },
+ "ravenkeeper": {
+  "name": "Kuzgun Bekçisi",
+  "ability": "Gece ölürsen uyandırılırsın ve bir oyuncu seçersin: onun karakterini öğrenirsin.",
+  "otherNightReminder": "Kuzgun Bekçisi bu gece öldüyse bir oyuncu seçer. O oyuncunun karakter jetonunu gösterin."
+ },
+ "recluse": {
+  "name": "Münzevi",
+  "ability": "Ölmüş olsan bile kötü ve Yardakçı ya da İblis olarak görünebilirsin."
+ },
+ "revolutionary": {
+  "name": "Devrimci",
+  "ability": "Komşu 2 oyuncunun aynı tarafta olduğu bilinir. Oyun boyunca bir kez, biri yanlış görünür.",
+  "reminders": [
+   "Yanlış görünsün mü?",
+   "Aynı taraf",
+   "Aynı taraf"
+  ]
+ },
+ "riot": {
+  "name": "İsyan",
+  "ability": "3. gün Yardakçılar İsyan olur; adaylar ölür ama hemen yaşayan bir oyuncuyu aday gösterir. Bu olmak zorundadır.",
+  "otherNightReminder": "İsyan hatırlatıcısını ilgili güne çevirin. [hatırlatıcı] 3. geceyse Yardakçıları uyandırabilirsiniz. *SEN* ve İsyan jetonlarını gösterin.",
+  "reminders": [
+   "1. gün",
+   "2. gün",
+   "3. gün"
+  ]
+ },
+ "sage": {
+  "name": "Bilge",
+  "ability": "İblis seni öldürürse onun 2 oyuncudan biri olduğunu öğrenirsin.",
+  "otherNightReminder": "İblis Bilge'yi öldürdüyse Bilge'yi uyandırın ve biri İblis olan 2 oyuncuyu işaret edin."
+ },
+ "sailor": {
+  "name": "Denizci",
+  "ability": "Her gece, yaşayan bir oyuncu seç: ya sen ya o alacakaranlığa kadar sarhoşsunuz. Ölemezsin.",
+  "firstNightReminder": "Denizci yaşayan bir oyuncu seçer. [hatırlatıcı]",
+  "otherNightReminder": "Denizci yaşayan bir oyuncu seçer. [hatırlatıcı]",
+  "reminders": [
+   "Sarhoş"
+  ]
+ },
+ "saint": {
+  "name": "Aziz",
+  "ability": "İnfazla ölürsen takımın kaybeder."
+ },
+ "savant": {
+  "name": "Âlim",
+  "ability": "Her gün Anlatıcı'yı ziyaret edip baş başa 2 şey öğrenebilirsin: biri doğru, biri yanlıştır."
+ },
+ "scapegoat": {
+  "name": "Günah Keçisi",
+  "ability": "Senin tarafından bir oyuncu infaz edilirse onun yerine sen infaz edilebilirsin."
+ },
+ "scarletwoman": {
+  "name": "Kızıl Kadın",
+  "ability": "5 veya daha fazla oyuncu yaşarken İblis ölürse İblis sen olursun. (Gezginler sayılmaz.)",
+  "otherNightReminder": "Kızıl Kadın bugün İblis olduysa ona *SEN* jetonunu, ardından İblis jetonunu gösterin.",
+  "reminders": [
+   "İblis bu"
+  ]
+ },
+ "seamstress": {
+  "name": "Terzi",
+  "ability": "Oyun boyunca bir kez, gece 2 oyuncu seç (kendin hariç): aynı tarafta olup olmadıklarını öğrenirsin.",
+  "firstNightReminder": "Terzi 2 oyuncu seçebilir. Başınızı evet ya da hayır anlamında sallayın. [hatırlatıcı]",
+  "otherNightReminder": "Terzi 2 oyuncu seçebilir. Başınızı evet ya da hayır anlamında sallayın. [hatırlatıcı]",
+  "reminders": [
+   "Yetenek yok"
+  ]
+ },
+ "sentinel": {
+  "name": "Nöbetçi",
+  "ability": "Oyunda 1 fazla ya da 1 eksik Yabancı olabilir."
+ },
+ "shabaloth": {
+  "name": "Şabalot",
+  "ability": "Her gece*, 2 oyuncu seç: ölürler. Dün gece seçtiğin ölü bir oyuncu geri kusulabilir.",
+  "otherNightReminder": "Önceden seçilen bir oyuncu diriltilebilir. [hatırlatıcı] Şabalot 2 oyuncu seçer. [hatırlatıcı] [hatırlatıcı]",
+  "reminders": [
+   "Ölü",
+   "Ölü",
+   "Canlı"
+  ]
+ },
+ "shugenja": {
+  "name": "Şugenja",
+  "ability": "Sana en yakın kötü oyuncunun saat yönünde mi ters yönde mi olduğunu bilerek başlarsın. Uzaklıklar eşitse bu bilgi keyfidir.",
+  "firstNightReminder": "Saat yönünü ya da ters yönü işaret edin."
+ },
+ "slayer": {
+  "name": "Avcı",
+  "ability": "Oyun boyunca bir kez, gündüz herkesin önünde bir oyuncu seç: İblis ise ölür.",
+  "reminders": [
+   "Yetenek yok"
+  ]
+ },
+ "snakecharmer": {
+  "name": "Yılan Oynatıcı",
+  "ability": "Her gece yaşayan bir oyuncu seç: seçilen İblis seninle karakterini ve tarafını değiştirir, sonra zehirlenir.",
+  "firstNightReminder": "Yılan Oynatıcı bir oyuncu seçer. İblis'i seçtiyse: *SEN* ve İblis jetonlarını gösterin. Başparmağınızı aşağı çevirin. Yılan Oynatıcı ile İblis jetonlarını değiştirin. Eski Yılan Oynatıcı'yı uyutun. Eski İblis'i uyandırın. *SEN* ve Yılan Oynatıcı jetonlarını gösterip başparmağınızı yukarı kaldırın. [hatırlatıcı]",
+  "otherNightReminder": "Yılan Oynatıcı bir oyuncu seçer. İblis'i seçtiyse: *SEN* ve İblis jetonlarını gösterin. Başparmağınızı aşağı çevirin. Yılan Oynatıcı ile İblis jetonlarını değiştirin. Eski Yılan Oynatıcı'yı uyutun. Eski İblis'i uyandırın. *SEN* ve Yılan Oynatıcı jetonlarını gösterip başparmağınızı yukarı kaldırın. [hatırlatıcı]",
+  "reminders": [
+   "Zehirli"
+  ]
+ },
+ "snitch": {
+  "name": "Muhbir",
+  "ability": "Her Yardakçı 3 blöf alır.",
+  "firstNightReminder": "Her Yardakçıyı uyandırın. *BU KARAKTERLER OYUNDA DEĞİL* jetonunu gösterip oyunda olmayan 3 karakter jetonu gösterin."
+ },
+ "soldier": {
+  "name": "Asker",
+  "ability": "İblis'e karşı güvendesin."
+ },
+ "spiritofivory": {
+  "name": "Fildişi Ruhu",
+  "ability": "1'den fazla ekstra kötü oyuncu olamaz.",
+  "reminders": [
+   "Daha fazla kötü yok"
+  ]
+ },
+ "spy": {
+  "name": "Casus",
+  "ability": "Her gece Grimuar'ı görürsün. Ölmüş olsan bile iyi ve Kasabalı ya da Yabancı olarak görünebilirsin.",
+  "firstNightReminder": "Casus'a Grimuar'ı istediği kadar gösterin.",
+  "otherNightReminder": "Casus'a Grimuar'ı istediği kadar gösterin."
+ },
+ "steward": {
+  "name": "Kâhya",
+  "ability": "1 iyi oyuncuyu bilerek başlarsın.",
+  "firstNightReminder": "*BİLİYOR* olarak işaretli oyuncuyu gösterin.",
+  "reminders": [
+   "Biliyor"
+  ]
+ },
+ "stormcatcher": {
+  "name": "Fırtına Avcısı",
+  "ability": "İyi bir karakter söyle. Oyundaysa yalnızca infazla ölebilir, ama kötü oyuncular onun hangi oyuncu olduğunu öğrenir.",
+  "firstNightReminder": "Fırtınaya yakalanan karakteri duyurun. O karakter oyundaysa oyuncuyu *FIRTINAYA YAKALANDI* olarak işaretleyin. Her kötü oyuncuyu uyandırıp karakter jetonunu, ardından işaretli oyuncuyu gösterin. Oyunda değilse her kötü oyuncuyu uyandırıp *BU KARAKTERLER OYUNDA DEĞİL* jetonunu ve ilgili karakter jetonunu gösterin.",
+  "reminders": [
+   "Fırtınaya yakalandı"
+  ]
+ },
+ "summoner": {
+  "name": "Çağırıcı",
+  "ability": "3 blöf alırsın. 3. gece bir oyuncu seç: seçtiğin kötü bir İblis olur. [İblis yok]",
+  "firstNightReminder": "*BU KARAKTERLER OYUNDA DEĞİL* jetonunu gösterip oyunda olmayan 3 iyi karakter jetonu gösterin.",
+  "otherNightReminder": "Çağırıcı hatırlatıcısını ilgili geceye çevirin. [hatırlatıcı] 3. geceyse Çağırıcı bir oyuncu ve bir İblis karakteri seçer. Çağırıcı'yı uyutun. Hedefi uyandırın. *SEN* ve İblis jetonlarını gösterip başparmağınızı aşağı çevirin.",
+  "reminders": [
+   "1. gece",
+   "2. gece",
+   "3. gece"
+  ]
+ },
+ "sweetheart": {
+  "name": "Sevgili",
+  "ability": "Öldüğünde 1 oyuncu bundan sonra hep sarhoş olur.",
+  "otherNightReminder": "Sevgili öldüyse bir oyuncu hemen sarhoş oldu. Henüz yapmadıysanız şimdi yapın. [hatırlatıcı]",
+  "reminders": [
+   "Sarhoş"
+  ]
+ },
+ "tealady": {
+  "name": "Çaycı Hanım",
+  "ability": "Yaşayan iki komşun da iyiyse ölemezler.",
+  "reminders": [
+   "Ölemez",
+   "Ölemez"
+  ]
+ },
+ "thief": {
+  "name": "Hırsız",
+  "ability": "Her gece bir oyuncu seç (kendin hariç): yarın oyu eksi olarak sayılır.",
+  "firstNightReminder": "Hırsız bir oyuncu seçer. [hatırlatıcı]",
+  "otherNightReminder": "Hırsız bir oyuncu seçer. [hatırlatıcı]",
+  "reminders": [
+   "Eksi oy"
+  ]
+ },
+ "tinker": {
+  "name": "Tamirci",
+  "ability": "Her an ölebilirsin.",
+  "otherNightReminder": "Tamirci ölebilir. [hatırlatıcı]",
+  "reminders": [
+   "Ölü"
+  ]
+ },
+ "tor": {
+  "name": "Tor",
+  "ability": "Oyuncular karakterlerini ve taraflarını bilmez. Öldüklerinde öğrenirler.",
+  "firstNightReminder": "Yardakçı ve İblis bilgisini atlayın.",
+  "otherNightReminder": "Bu gece bir oyuncu öldüyse *SEN* bilgi jetonunu ve karakter jetonunu gösterip başparmakla işaret verin."
+ },
+ "towncrier": {
+  "name": "Tellal",
+  "ability": "Her gece*, bugün bir Yardakçının aday gösterip göstermediğini öğrenirsin.",
+  "otherNightReminder": "Başınızı evet ya da hayır anlamında sallayın.",
+  "reminders": [
+   "Yardakçı aday göstermedi",
+   "Yardakçı aday gösterdi"
+  ]
+ },
+ "toymaker": {
+  "name": "Oyuncakçı",
+  "ability": "İblis saldırmamayı seçebilir ve bunu oyun boyunca en az bir kez yapmalıdır. Kötü oyuncular normal başlangıç bilgilerini alır.",
+  "firstNightReminder": "7'den az oyuncu olsa bile Yardakçı ve İblis bilgisini verin.",
+  "otherNightReminder": "Bir İblis saldırısı oyunu bitirebilecekse ve İblis *SON GECE: SALDIRI YOK* ile işaretliyse İblis'i uyandırmayın.",
+  "reminders": [
+   "Son gece: saldırı yok"
+  ]
+ },
+ "undertaker": {
+  "name": "Mezar Kazıcı",
+  "ability": "Her gece*, bugün infazla ölen oyuncunun karakterini öğrenirsin.",
+  "otherNightReminder": "Bugün bir oyuncu infaz edildiyse onun karakter jetonunu gösterin.",
+  "reminders": [
+   "Bugün öldü"
+  ]
+ },
+ "ventriloquist": {
+  "name": "Vantrilok",
+  "ability": "Bir oyuncu aday gösterildiğinde yeni bir karakter olduğu konusunda çılgın davranırsa bugün infaz edilse bile ölmeyebilir.",
+  "reminders": [
+   "Çılgın"
+  ]
+ },
+ "vigormortis": {
+  "name": "Vigormortis",
+  "ability": "Her gece* bir oyuncu seç: ölür. Öldürdüğün Yardakçılar yeteneklerini korur ve Kasabalı bir komşularını zehirler. [-1 Yabancı]",
+  "otherNightReminder": "Vigormortis bir oyuncu seçer. [hatırlatıcı] O oyuncu bir Yardakçıysa Kasabalı bir komşusunu zehirleyin. [hatırlatıcı] [hatırlatıcı]",
+  "reminders": [
+   "Ölü",
+   "Yeteneği var",
+   "Yeteneği var",
+   "Yeteneği var",
+   "Zehirli",
+   "Zehirli",
+   "Zehirli"
+  ]
+ },
+ "villageidiot": {
+  "name": "Köyün Delisi",
+  "ability": "Her gece bir oyuncu seç: tarafını öğrenirsin. [+0 ile +2 arası Köyün Delisi. Fazlalardan biri sarhoştur]",
+  "firstNightReminder": "Birden fazla Köyün Delisi varsa birini *SARHOŞ* olarak işaretleyin. [hatırlatıcı] Köyün Delilerini teker teker uyandırıp bir oyuncu seçtirin. Başparmakla işaret verin.",
+  "otherNightReminder": "Köyün Delilerini teker teker uyandırıp bir oyuncu seçtirin. Başparmakla işaret verin.",
+  "reminders": [
+   "Sarhoş"
+  ]
+ },
+ "virgin": {
+  "name": "Bakire",
+  "ability": "İlk kez aday gösterildiğinde, seni aday gösteren bir Kasabalıysa hemen infaz edilir.",
+  "reminders": [
+   "Yetenek yok"
+  ]
+ },
+ "vizier": {
+  "name": "Vezir",
+  "ability": "Herkes senin Vezir olduğunu bilir. Gündüz ölemezsin. İyiler oy verdiyse hemen infaz etmeyi seçebilirsin.",
+  "firstNightReminder": "Hangi oyuncunun Vezir olduğunu duyurun."
+ },
+ "vortox": {
+  "name": "Vortoks",
+  "ability": "Her gece* bir oyuncu seç: ölür. Kasabalı yetenekleri yanlış bilgi verir. Bir günde kimse infaz edilmezse kötüler kazanır.",
+  "otherNightReminder": "Vortoks bir oyuncu seçer. [hatırlatıcı]",
+  "reminders": [
+   "Ölü"
+  ]
+ },
+ "voudon": {
+  "name": "Vudu Rahibi",
+  "ability": "Yalnızca sen ve ölüler oy verebilirsiniz. Ölülerin bunun için oy jetonuna ihtiyacı yoktur. %50 çoğunluk gerekmez."
+ },
+ "washerwoman": {
+  "name": "Çamaşırcı Kadın",
+  "ability": "2 oyuncudan birinin belirli bir Kasabalı olduğunu bilerek başlarsın.",
+  "firstNightReminder": "Kasabalının karakter jetonunu gösterin. *KASABALI* ve *YANLIŞ* oyuncuları işaret edin.",
+  "reminders": [
+   "Kasabalı",
+   "Yanlış"
+  ]
+ },
+ "widow": {
+  "name": "Dul",
+  "ability": "İlk gecende Grimuar'a bak ve bir oyuncu seç: zehirlenir. 1 iyi oyuncu oyunda bir Dul olduğunu bilir.",
+  "firstNightReminder": "Dul'a Grimuar'ı istediği kadar gösterin. Dul bir oyuncu seçer. [hatırlatıcı] Dul'u uyutun. *BİLİYOR* olarak işaretli oyuncuyu uyandırıp Dul jetonunu gösterin. [hatırlatıcı]",
+  "reminders": [
+   "Zehirli",
+   "Biliyor"
+  ]
+ },
+ "witch": {
+  "name": "Cadı",
+  "ability": "Her gece bir oyuncu seç: yarın aday gösterirse ölür. Yalnızca 3 oyuncu yaşıyorsa bu yeteneğini kaybedersin.",
+  "firstNightReminder": "Cadı bir oyuncu seçer. [hatırlatıcı]",
+  "otherNightReminder": "Cadı bir oyuncu seçer. [hatırlatıcı]",
+  "reminders": [
+   "Lanetli"
+  ]
+ },
+ "wizard": {
+  "name": "Büyücü",
+  "ability": "Oyun boyunca bir kez bir dilek dileyebilirsin. Gerçekleşirse bir bedeli olabilir ve doğası hakkında bir ipucu bırakabilir.",
+  "firstNightReminder": "Büyücü'nün yeteneği için ne gerekiyorsa yapın.",
+  "otherNightReminder": "Büyücü'nün yeteneği için ne gerekiyorsa yapın.",
+  "reminders": [
+   "?",
+   "?"
+  ]
+ },
+ "wraith": {
+  "name": "Hortlak",
+  "ability": "Gece gözlerini açmayı seçebilirsin. Diğer kötü oyuncular uyandığında sen de uyanırsın.",
+  "firstNightReminder": "Diğer kötü oyuncular her uyandığında Hortlak'ı da uyandırın.",
+  "otherNightReminder": "Diğer kötü oyuncular her uyandığında Hortlak'ı da uyandırın."
+ },
+ "xaan": {
+  "name": "Ksaan",
+  "ability": "X. gece tüm Kasabalılar alacakaranlığa kadar zehirlidir. [X Yabancı]",
+  "firstNightReminder": "X 1 ise Ksaan'ı *X* hatırlatıcısıyla işaretleyin. [hatırlatıcı] [hatırlatıcı]",
+  "otherNightReminder": "Ksaan hatırlatıcısını ilgili geceye çevirin. X. geceyse Ksaan'ı *X* hatırlatıcısıyla işaretleyin. [hatırlatıcı] [hatırlatıcı]",
+  "reminders": [
+   "1. gece",
+   "2. gece",
+   "3. gece",
+   "X"
+  ]
+ },
+ "yaggababble": {
+  "name": "Yakabakbıl",
+  "ability": "Gizli bir cümleyi bilerek başlarsın. Bugün onu herkesin önünde her söyleyişinde bir oyuncu ölebilir.",
+  "firstNightReminder": "Yakabakbıl'a gizli cümlesini gösterin.",
+  "otherNightReminder": "Yakabakbıl'ın bugün cümlesini her söyleyişi için bir oyuncu ölebilir. [hatırlatıcı]",
+  "reminders": [
+   "Ölü",
+   "Ölü",
+   "Ölü"
+  ]
+ },
+ "zealot": {
+  "name": "Fanatik",
+  "ability": "5 veya daha fazla oyuncu yaşıyorsa her adaya oy vermek zorundasın."
+ },
+ "zenomancer": {
+  "name": "Zenomans",
+  "ability": "Bir ya da daha fazla oyuncunun birer hedefi vardır. Hedefe ulaşınca o oyuncu doğru bir bilgi öğrenir.",
+  "reminders": [
+   "Hedef",
+   "Hedef",
+   "Hedef"
+  ]
+ },
+ "zombuul": {
+  "name": "Zombul",
+  "ability": "Her gece*, bugün kimse ölmediyse bir oyuncu seç: ölür. İlk öldüğünde yaşarsın ama ölü olarak görünürsün.",
+  "otherNightReminder": "Bugün kimse ölmediyse Zombul bir oyuncu seçer. [hatırlatıcı]",
+  "reminders": [
+   "Bugün öldü",
+   "Ölü"
+  ]
+ }
+}
