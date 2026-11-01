@@ -602,16 +602,25 @@ export default {
   }
   .menu {
     width: min(88vw, 340px);
-    transform-origin: calc(100% - 22px) 22px;
-    transform: scale(0.6);
-    opacity: 0;
-    pointer-events: none;
-    transition:
-      transform 220ms ease,
-      opacity 180ms ease;
+    // only the panel is hidden when closed, the cog button always stays visible
+    transform: none;
+    transition: none;
+
+    > ul {
+      transform-origin: calc(100% - 22px) 0;
+      transform: scale(0.6);
+      opacity: 0;
+      pointer-events: none;
+      transition:
+        transform 220ms ease,
+        opacity 180ms ease;
+    }
 
     > svg {
-      pointer-events: all;
+      position: relative;
+      z-index: 2;
+      display: block;
+      margin-left: auto;
       width: 44px;
       height: 44px;
       margin-bottom: 0;
@@ -624,8 +633,11 @@ export default {
 
     &.open {
       transform: none;
-      opacity: 1;
-      pointer-events: all;
+      > ul {
+        transform: none;
+        opacity: 1;
+        pointer-events: all;
+      }
       > svg {
         border-color: rgba(255, 255, 255, 0.35);
       }
