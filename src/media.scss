@@ -147,4 +147,122 @@
   .night-reference .modal ul li {
     width: 100% !important;
   }
+
+  // reference + night order sheets: solid background and a header that fits
+  .characters .modal,
+  .night-reference .modal {
+    background: rgba(8, 10, 18, 0.97);
+    padding: 12px 10px;
+    > .top-right-buttons .top-right-button:first-child {
+      display: none; // maximize makes no sense on a phone
+    }
+    h3 {
+      margin: 0 34px 8px 34px !important;
+      font-size: 112%;
+      line-height: 1.25;
+    }
+    .toggle {
+      left: 12px !important;
+      top: 14px !important;
+      font-size: 120%;
+    }
+  }
+
+  // night order: one column, icon first, the storyteller note always visible
+  .night-reference .modal .night {
+    flex-direction: column;
+    align-items: stretch;
+    > ul {
+      width: 100%;
+      margin: 0 0 14px !important;
+    }
+    ul li {
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 6px;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      &.headline {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        font-size: 105%;
+        padding: 6px 0;
+      }
+      .icon {
+        order: 0;
+        width: 46px;
+        margin: 0 8px 0 0;
+      }
+      .name {
+        order: 1;
+        flex: 1 1 0;
+        width: auto;
+        text-align: left !important;
+        border: 0 !important;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-weight: bold;
+        small {
+          font-weight: normal;
+          color: #aab;
+        }
+      }
+      .reminder {
+        order: 2;
+        position: static;
+        opacity: 1;
+        width: auto;
+        flex: 1 1 100%;
+        margin: 4px 0 0 54px;
+        padding: 0;
+        background: none;
+        border: 0;
+        filter: none;
+        font-size: 88%;
+        line-height: 1.35;
+        color: #cfd3e6;
+      }
+    }
+    .first li .name,
+    .other li .name {
+      background-image: none;
+    }
+    .townsfolk .name {
+      background: linear-gradient(90deg, rgba(31, 101, 255, 0.45), transparent 70%) !important;
+    }
+    .outsider .name {
+      background: linear-gradient(90deg, rgba(70, 213, 255, 0.4), transparent 70%) !important;
+    }
+    .minion .name {
+      background: linear-gradient(90deg, rgba(255, 105, 0, 0.45), transparent 70%) !important;
+    }
+    .demon .name {
+      background: linear-gradient(90deg, rgba(206, 1, 0, 0.5), transparent 70%) !important;
+    }
+    .fabled .name {
+      background: linear-gradient(90deg, rgba(255, 233, 31, 0.35), transparent 70%) !important;
+    }
+  }
+
+  // character reference: tighter rows, readable ability text
+  .characters .modal {
+    .team aside {
+      width: 22px;
+    }
+    ul li {
+      align-items: flex-start;
+      padding: 4px 0;
+      .icon {
+        width: 44px !important;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .role {
+        padding-left: 6px;
+      }
+      .ability {
+        font-size: 92%;
+        line-height: 1.35;
+      }
+    }
+  }
 }

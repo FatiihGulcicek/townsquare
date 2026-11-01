@@ -212,32 +212,12 @@
             {{ $t("Night Order Sheet") }}
             <em>[N]</em>
           </li>
-          <li @click="toggleModal('gameState')">
-            {{ $t("Game State JSON") }}
-            <em><font-awesome-icon icon="file-code" /></em>
-          </li>
           <li
             v-if="!pwa.isStandalone && (pwa.canInstall || pwa.isIOS)"
             @click="installApp"
           >
             {{ $t("Add to home screen") }}
             <em><font-awesome-icon icon="file-upload" /></em>
-          </li>
-          <li>
-            <a
-              href="https://github.com/FatiihGulcicek/townsquare"
-              target="_blank"
-            >
-              {{ $t("Source code") }}
-            </a>
-            <em>
-              <a
-                href="https://github.com/FatiihGulcicek/townsquare"
-                target="_blank"
-              >
-                <font-awesome-icon :icon="['fab', 'github']" />
-              </a>
-            </em>
           </li>
         </template>
       </ul>
