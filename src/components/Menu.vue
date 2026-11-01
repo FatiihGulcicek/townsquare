@@ -641,9 +641,11 @@ export default {
   }
   .menu {
     width: min(88vw, 340px);
-    // only the panel is hidden when closed, the cog button always stays visible
+    // only the panel is hidden when closed, the cog button always stays visible;
+    // the (invisible) closed panel must not swallow taps on the table below
     transform: none;
     transition: none;
+    pointer-events: none;
 
     > ul {
       transform-origin: calc(100% - 22px) 0;
@@ -660,6 +662,7 @@ export default {
       z-index: 2;
       display: block;
       margin-left: auto;
+      pointer-events: all;
       width: 44px;
       height: 44px;
       margin-bottom: 0;

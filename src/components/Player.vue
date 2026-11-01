@@ -120,7 +120,7 @@
       </div>
 
       <transition name="fold">
-        <ul class="menu" v-if="isMenuOpen">
+        <ul class="menu" v-if="isMenuOpen" :data-name="player.name">
           <li
             @click="changePronouns"
             v-if="
@@ -226,6 +226,27 @@ export default {
     },
   },
   watch: {
+    // on phones the seat menu opens as a bottom sheet so it never covers the
+    // tokens or runs off screen (moved to <body> to escape the rotated circle)
+    isMenuOpen(open) {
+      document.removeEventListener("pointerdown", this._sheetOutside, true);
+      if (!open || !window.matchMedia("(max-width: 767.98px)").matches) return;
+      this.$nextTick(() => {
+        const sheet = this.$el.querySelector("ul.menu");
+        if (!sheet) return;
+        sheet.classList.add("sheet");
+        document.body.appendChild(sheet);
+        this._sheet = sheet;
+        this._sheetOutside = (event) => {
+          if (!sheet.contains(event.target)) {
+            event.stopPropagation();
+            event.preventDefault();
+            this.isMenuOpen = false;
+          }
+        };
+        document.addEventListener("pointerdown", this._sheetOutside, true);
+      });
+    },
     "player.isDead"(dead) {
       if (!dead) return;
       this.justDied = true;
@@ -274,6 +295,12 @@ export default {
       isMenuOpen: false,
       isSwap: false,
     };
+  },
+  beforeDestroy() {
+    document.removeEventListener("pointerdown", this._sheetOutside, true);
+    if (this._sheet && this._sheet.parentNode === document.body) {
+      document.body.removeChild(this._sheet);
+    }
   },
   methods: {
     changePronouns() {
