@@ -1,3 +1,5 @@
+import { t } from "../i18n";
+
 class LiveSession {
   constructor(store) {
     // Live server URL. Override at build time with VUE_APP_WSS, otherwise
@@ -52,7 +54,7 @@ class LiveSession {
         );
       } else {
         this._store.commit("session/setSessionId", "");
-        if (err.reason) alert(err.reason);
+        if (err.reason) alert(t(err.reason));
       }
     };
   }
@@ -409,9 +411,10 @@ class LiveSession {
           }
         });
         alert(
-          `This session contains custom characters that can't be found. ` +
-            `Please load them before joining! ` +
-            `Missing roles: ${missing.join(", ")}`,
+          t(
+            "This session contains custom characters that can't be found. Please load them before joining! Missing roles: {roles}",
+            { roles: missing.join(", ") },
+          ),
         );
         this.disconnect();
         this._store.commit("toggleModal", "edition");

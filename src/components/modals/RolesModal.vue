@@ -4,7 +4,13 @@
     v-if="modals.roles && nonTravelers >= 5"
     @close="toggleModal('roles')"
   >
-    <h3>Select the characters for {{ nonTravelers }} players:</h3>
+    <h3>
+      {{
+        $t("Select the characters for {count} players:", {
+          count: nonTravelers
+        })
+      }}
+    </h3>
     <ul class="tokens" v-for="(teamRoles, team) in roleSelection" :key="team">
       <li class="count" :class="[team]">
         {{ teamRoles.reduce((a, { selected }) => a + selected, 0) }} /
@@ -31,14 +37,17 @@
     <div class="warning" v-if="hasSelectedSetupRoles">
       <font-awesome-icon icon="exclamation-triangle" />
       <span>
-        Warning: there are characters selected that modify the game setup! The
-        randomizer does not account for these characters.
+        {{
+          $t(
+            "Warning: there are characters selected that modify the game setup! The randomizer does not account for these characters."
+          )
+        }}
       </span>
     </div>
     <label class="multiple" :class="{ checked: allowMultiple }">
       <font-awesome-icon :icon="allowMultiple ? 'check-square' : 'square'" />
       <input type="checkbox" name="allow-multiple" v-model="allowMultiple" />
-      Allow duplicate characters
+      {{ $t("Allow duplicate characters") }}
     </label>
     <div class="button-group">
       <div
@@ -49,11 +58,11 @@
         }"
       >
         <font-awesome-icon icon="people-arrows" />
-        Assign {{ selectedRoles }} characters randomly
+        {{ $t("Assign {count} characters randomly", { count: selectedRoles }) }}
       </div>
       <div class="button" @click="selectRandomRoles">
         <font-awesome-icon icon="random" />
-        Shuffle characters
+        {{ $t("Shuffle characters") }}
       </div>
     </div>
   </Modal>

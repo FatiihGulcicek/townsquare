@@ -8,12 +8,12 @@
       @click="toggleModal('nightOrder')"
       icon="cloud-moon"
       class="toggle"
-      title="Show Night Order"
+      :title="$t('Show Night Order')"
     />
     <h3>
-      Character Reference
+      {{ $t("Character Reference") }}
       <font-awesome-icon icon="address-card" />
-      {{ edition.name || "Custom Script" }}
+      {{ edition.name || $t("Custom Script") }}
     </h3>
     <div
       v-for="(teamRoles, team) in rolesGrouped"
@@ -21,7 +21,7 @@
       :class="['team', team]"
     >
       <aside>
-        <h4>{{ team }}</h4>
+        <h4>{{ $t(team) }}</h4>
       </aside>
       <ul>
         <li v-for="role in teamRoles" :class="[team]" :key="role.id">
@@ -30,7 +30,8 @@
             v-if="role.id"
             :style="{
               backgroundImage: `url(${
-                role.image && grimoire.isImageOptIn
+                role.image &&
+              (grimoire.isImageOptIn || /^data:image\//.test(role.image))
                   ? role.image
                   : require('../../assets/icons/' +
                       (role.imageAlt || role.id) +
@@ -53,7 +54,7 @@
 
     <div class="team jinxed" v-if="jinxed.length">
       <aside>
-        <h4>Jinxed</h4>
+        <h4>{{ $t("Jinxed") }}</h4>
       </aside>
       <ul>
         <li v-for="(jinx, index) in jinxed" :key="index">

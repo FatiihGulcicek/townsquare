@@ -8,16 +8,16 @@
       @click="toggleModal('reference')"
       icon="address-card"
       class="toggle"
-      title="Show Character Reference"
+      :title="$t('Show Character Reference')"
     />
     <h3>
-      Night Order
+      {{ $t("Night Order") }}
       <font-awesome-icon icon="cloud-moon" />
-      {{ edition.name || "Custom Script" }}
+      {{ edition.name || $t("Custom Script") }}
     </h3>
     <div class="night">
       <ul class="first">
-        <li class="headline">First Night</li>
+        <li class="headline">{{ $t("First Night") }}</li>
         <li
           v-for="role in rolesFirstNight"
           :key="role.name"
@@ -42,7 +42,8 @@
             v-if="role.id"
             :style="{
               backgroundImage: `url(${
-                role.image && grimoire.isImageOptIn
+                role.image &&
+              (grimoire.isImageOptIn || /^data:image\//.test(role.image))
                   ? role.image
                   : require(
                       '../../assets/icons/' +
@@ -58,7 +59,7 @@
         </li>
       </ul>
       <ul class="other">
-        <li class="headline">Other Nights</li>
+        <li class="headline">{{ $t("Other Nights") }}</li>
         <li
           v-for="role in rolesOtherNight"
           :key="role.name"
@@ -69,7 +70,8 @@
             v-if="role.id"
             :style="{
               backgroundImage: `url(${
-                role.image && grimoire.isImageOptIn
+                role.image &&
+              (grimoire.isImageOptIn || /^data:image\//.test(role.image))
                   ? role.image
                   : require(
                       '../../assets/icons/' +
@@ -105,6 +107,7 @@
 <script>
 import Modal from "./Modal";
 import nightsheet from "../../nightsheet.json";
+import { t } from "../../i18n";
 import { mapMutations, mapState } from "vuex";
 
 export default {
@@ -119,24 +122,23 @@ export default {
         rolesFirstNight.push(
           {
             id: "evil",
-            name: "Minion info",
+            name: t("Minion info"),
             firstNight: nightsheet.minioninfo,
             team: "minion",
             players: this.players.filter((p) => p.role.team === "minion"),
-            firstNightReminder:
-              "• If more than one Minion, they all make eye contact with each other. " +
-              "• Show the “This is the Demon” card. Point to the Demon.",
+            firstNightReminder: t(
+              "• If more than one Minion, they all make eye contact with each other. • Show the “This is the Demon” card. Point to the Demon."
+            ),
           },
           {
             id: "evil",
-            name: "Demon info & bluffs",
+            name: t("Demon info & bluffs"),
             firstNight: nightsheet.demoninfo,
             team: "demon",
             players: this.players.filter((p) => p.role.team === "demon"),
-            firstNightReminder:
-              "• Show the “These are your minions” card. Point to each Minion. " +
-              "• Show the “These characters are not in play” card. Show 3 character tokens of good " +
-              "characters not in play.",
+            firstNightReminder: t(
+              "• Show the “These are your minions” card. Point to each Minion. • Show the “These characters are not in play” card. Show 3 character tokens of good characters not in play."
+            ),
           },
         );
       }

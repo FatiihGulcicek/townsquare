@@ -179,7 +179,7 @@ wss.on("connection", function connection(ws, req) {
     )
   ) {
     console.log(ws.channel, "duplicate host");
-    ws.close(1000, `The channel "${ws.channel}" already has a host`);
+    ws.close(1000, "This channel already has a host");
     metrics.connection_terminated_host.inc();
     return;
   }

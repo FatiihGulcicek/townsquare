@@ -5,7 +5,8 @@
       v-if="role.id"
       :style="{
         backgroundImage: `url(${
-          role.image && grimoire.isImageOptIn
+          role.image &&
+              (grimoire.isImageOptIn || /^data:image\//.test(role.image))
             ? role.image
             : require('../assets/icons/' + (role.imageAlt || role.id) + '.png')
         })`
