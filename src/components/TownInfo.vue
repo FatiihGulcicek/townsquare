@@ -131,7 +131,8 @@ export default {
     .meta {
       text-align: center;
       flex-basis: 100%;
-      font-family: PiratesBay, sans-serif;
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-weight: 700;
       font-weight: normal;
     }
 

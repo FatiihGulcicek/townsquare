@@ -572,7 +572,8 @@ export default {
     }
 
     .headline {
-      font-family: PiratesBay, sans-serif;
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-weight: 700;
       letter-spacing: 1px;
       padding: 0 10px;
       text-align: center;

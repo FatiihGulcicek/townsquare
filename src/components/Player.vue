@@ -10,9 +10,13 @@
           'no-vote': player.isVoteless,
           you: session.sessionId && player.id && player.id === session.playerId,
           'vote-yes': session.votes[index],
-          'vote-lock': voteLocked
+          'vote-lock': voteLocked,
+          nominee: session.nomination && session.nomination[1] === index,
+          nominator: session.nomination && session.nomination[0] === index,
+          'just-died': justDied,
+          revealed: justRevealed,
         },
-        player.role.team
+        player.role.team,
       ]"
     >
       <div class="shroud" @click="toggleStatus()"></div>
@@ -121,7 +125,7 @@
             @click="changePronouns"
             v-if="
               !session.isSpectator ||
-                (session.isSpectator && player.id === session.playerId)
+              (session.isSpectator && player.id === session.playerId)
             "
           >
             <font-awesome-icon icon="venus-mars" />{{ $t("Change Pronouns") }}
@@ -189,10 +193,12 @@
               reminder.image &&
               (grimoire.isImageOptIn || /^data:image\//.test(reminder.image))
                 ? reminder.image
-                : require('../assets/icons/' +
-                    (reminder.imageAlt || reminder.role) +
-                    '.webp')
-            })`
+                : require(
+                    '../assets/icons/' +
+                      (reminder.imageAlt || reminder.role) +
+                      '.webp',
+                  )
+            })`,
           }"
         ></span>
         <span class="text">{{ reminder.name }}</span>
@@ -211,22 +217,36 @@ import { mapGetters, mapState } from "vuex";
 
 export default {
   components: {
-    Token
+    Token,
   },
   props: {
     player: {
       type: Object,
-      required: true
-    }
+      required: true,
+    },
+  },
+  watch: {
+    "player.isDead"(dead) {
+      if (!dead) return;
+      this.justDied = true;
+      clearTimeout(this._deathTimer);
+      this._deathTimer = setTimeout(() => (this.justDied = false), 1400);
+    },
+    "player.role.id"(id, old) {
+      if (!id || id === old) return;
+      this.justRevealed = true;
+      clearTimeout(this._revealTimer);
+      this._revealTimer = setTimeout(() => (this.justRevealed = false), 900);
+    },
   },
   computed: {
     ...mapState("players", ["players"]),
     ...mapState(["grimoire", "session"]),
     ...mapGetters({ nightOrder: "players/nightOrder" }),
-    index: function() {
+    index: function () {
       return this.players.indexOf(this.player);
     },
-    voteLocked: function() {
+    voteLocked: function () {
       const session = this.session;
       const players = this.players.length;
       if (!session.nomination) return false;
@@ -234,7 +254,7 @@ export default {
         (this.index - 1 + players - session.nomination[1]) % players;
       return indexAdjusted < session.lockedVote - 1;
     },
-    zoom: function() {
+    zoom: function () {
       const unit = window.innerWidth > window.innerHeight ? "vh" : "vw";
       if (this.players.length < 7) {
         return { width: 18 + this.grimoire.zoom + unit };
@@ -245,12 +265,14 @@ export default {
       } else {
         return { width: 12 + this.grimoire.zoom + unit };
       }
-    }
+    },
   },
   data() {
     return {
+      justDied: false,
+      justRevealed: false,
       isMenuOpen: false,
-      isSwap: false
+      isSwap: false,
     };
   },
   methods: {
@@ -288,7 +310,8 @@ export default {
     },
     changeName() {
       if (this.session.isSpectator) return;
-      const name = prompt(this.$t("Player name"), this.player.name) || this.player.name;
+      const name =
+        prompt(this.$t("Player name"), this.player.name) || this.player.name;
       this.updatePlayer("name", name, true);
     },
     removeReminder(reminder) {
@@ -306,7 +329,7 @@ export default {
       this.$store.commit("players/update", {
         player: this.player,
         property,
-        value
+        value,
       });
       if (closeMenu) {
         this.isMenuOpen = false;
@@ -343,10 +366,10 @@ export default {
       if (!this.voteLocked) return;
       this.$store.commit("session/voteSync", [
         this.index,
-        !this.session.votes[this.index]
+        !this.session.votes[this.index],
       ]);
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -870,7 +893,10 @@ li.move:not(.from) .player .overlay svg.move {
     width: 100%;
     position: absolute;
     top: 15%;
-    text-shadow: 0 1px 1px #f6dfbd, 0 -1px 1px #f6dfbd, 1px 0 1px #f6dfbd,
+    text-shadow:
+      0 1px 1px #f6dfbd,
+      0 -1px 1px #f6dfbd,
+      1px 0 1px #f6dfbd,
       -1px 0 1px #f6dfbd;
   }
 
@@ -953,5 +979,124 @@ li.move:not(.from) .player .overlay svg.move {
 #townsquare.public .reminder {
   opacity: 0;
   pointer-events: none;
+}
+
+/***** Kasaba Meydanı token effects *****/
+.circle .player {
+  > .token {
+    transition:
+      filter 600ms ease,
+      box-shadow 300ms ease,
+      transform 200ms ease-in-out;
+  }
+  // death: red burst, then the token fades towards grey
+  &.dead > .token {
+    filter: grayscale(0.55) brightness(0.85);
+  }
+  &.just-died:after {
+    content: " ";
+    position: absolute;
+    left: -15%;
+    top: -15%;
+    width: 130%;
+    height: 0;
+    padding-bottom: 130%;
+    border-radius: 50%;
+    pointer-events: none;
+    background: radial-gradient(
+      circle,
+      rgba(206, 1, 0, 0.55) 0%,
+      rgba(206, 1, 0, 0) 65%
+    );
+    animation: km-burst 1300ms ease-out forwards;
+    z-index: 4;
+  }
+  // nomination: the nominee pulses red, the nominator glows blue
+  &.nominee > .token {
+    animation: km-pulse-red 1.6s ease-in-out infinite;
+  }
+  &.nominator > .token {
+    box-shadow:
+      0 0 0 3px rgba(31, 101, 255, 0.8),
+      0 0 22px rgba(31, 101, 255, 0.6);
+  }
+  // raised hand during a vote
+  &.vote-yes > .token {
+    box-shadow:
+      0 0 0 3px rgba(233, 180, 76, 0.9),
+      0 0 26px rgba(233, 180, 76, 0.7);
+  }
+}
+// transform based effects only in the grimoire view: in the public town square
+// the tokens are turned away and must never flip back into view
+#townsquare:not(.public) .circle .player {
+  // a new character arrives with a short flip and golden flash
+  &.revealed > .token {
+    animation: km-reveal 850ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  &.just-died > .token {
+    animation: km-death 1300ms ease-out;
+  }
+}
+#app.night .circle .player:not(.dead) > .token {
+  filter: brightness(0.92) saturate(0.9);
+}
+#app.static .circle .player:after {
+  display: none;
+}
+
+@keyframes km-reveal {
+  0% {
+    transform: perspective(400px) rotateY(90deg) scale(0.9);
+    box-shadow: 0 0 0 rgba(233, 180, 76, 0);
+  }
+  60% {
+    transform: perspective(400px) rotateY(-8deg) scale(1.04);
+    box-shadow: 0 0 34px rgba(233, 180, 76, 0.9);
+  }
+  100% {
+    transform: perspective(400px) rotateY(0deg);
+  }
+}
+@keyframes km-death {
+  0%,
+  100% {
+    transform: perspective(400px) rotateY(0deg);
+  }
+  15% {
+    transform: perspective(400px) scale(1.08) rotate(-3deg);
+  }
+  30% {
+    transform: perspective(400px) scale(0.97) rotate(2deg);
+  }
+}
+@keyframes km-burst {
+  from {
+    opacity: 1;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.3);
+  }
+}
+@keyframes km-pulse-red {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px rgba(206, 1, 0, 0.6),
+      0 0 14px rgba(206, 1, 0, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px rgba(206, 1, 0, 0.95),
+      0 0 32px rgba(206, 1, 0, 0.8);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .circle .player > .token,
+  .circle .player:after {
+    animation: none !important;
+  }
 }
 </style>

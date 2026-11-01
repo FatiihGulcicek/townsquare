@@ -3,8 +3,8 @@ import App from "./App";
 import store from "./store";
 import i18n from "./i18n";
 import { registerServiceWorker } from "./pwa";
-import "@fontsource/cinzel/400.css";
 import "@fontsource/cinzel/700.css";
+import "@fontsource/cormorant-garamond/700.css";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import {
   faAddressCard,

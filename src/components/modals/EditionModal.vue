@@ -213,7 +213,8 @@ export default {
 
 <style scoped lang="scss">
 ul.editions .edition {
-  font-family: PiratesBay, sans-serif;
+  font-family: "Cormorant Garamond", Georgia, serif;
+      font-weight: 700;
   letter-spacing: 1px;
   text-align: center;
   padding-top: 15%;

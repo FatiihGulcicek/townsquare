@@ -215,8 +215,8 @@ h4,
 h5 {
   margin: 0;
   text-align: center;
-  font-family: "Cinzel", Georgia, serif;
-  letter-spacing: 0.5px;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  letter-spacing: 0.3px;
   font-weight: 700;
 }
 
