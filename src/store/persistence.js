@@ -3,14 +3,12 @@ module.exports = (store) => {
     (document.title = isPublic ? "Kasaba Meydanı" : "Kasaba Meydanı · Grimuar");
 
   // initialize data
-  if (localStorage.getItem("background")) {
-    store.commit("setBackground", localStorage.background);
-  }
+  // custom backgrounds and "disable animations" are no longer offered in the
+  // menu, so clear any old setting that could not be turned off anymore
+  localStorage.removeItem("background");
+  localStorage.removeItem("static");
   if (localStorage.getItem("muted")) {
     store.commit("toggleMuted", true);
-  }
-  if (localStorage.getItem("static")) {
-    store.commit("toggleStatic", true);
   }
   if (localStorage.getItem("imageOptIn")) {
     store.commit("toggleImageOptIn", true);

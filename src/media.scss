@@ -36,10 +36,13 @@
 }
 
 // Small devices (landscape phones, less than 768px)
+// html and body sizes are set separately so the em values don't compound
 @media screen and (max-width: 767.98px) {
-  html,
+  html {
+    font-size: 16px;
+  }
   body {
-    font-size: 0.9em;
+    font-size: 1.05em;
   }
   .player > .name {
     top: 0;
@@ -52,11 +55,29 @@
   }
 }
 
-// Old phones
+// Phones
 @media screen and (max-width: 575.98px) {
-  html,
+  html {
+    font-size: 16px;
+  }
   body {
-    font-size: 0.8em;
+    font-size: 1em;
+  }
+  // names around the circle stay compact so neighbours don't overlap
+  .circle .player > .name {
+    font-size: 85%;
+  }
+  // centre info stays compact inside the circle
+  #app > .info {
+    font-size: 78%;
+    width: 46%;
+    padding-top: 16px;
+    li svg {
+      margin-right: 4px;
+    }
+    li > span {
+      margin: 0 3px;
+    }
   }
 }
 

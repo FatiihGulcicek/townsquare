@@ -35,17 +35,6 @@
       >
       (<b>A</b>) · {{ $t("join with") }} <b>J</b>
     </p>
-    <div class="footer">
-      {{
-        $t(
-          "Community made and free. Not affiliated with The Pandemonium Institute; \"Blood on the Clocktower\" is a trademark of Steven Medway and The Pandemonium Institute. Based on the open source"
-        )
-      }}
-      <a href="https://github.com/bra1n/townsquare" target="_blank" rel="noopener"
-        >townsquare</a
-      >
-      (GPL-3.0).
-    </div>
   </div>
 </template>
 
@@ -162,14 +151,6 @@ export default {
   opacity: 0.8;
 }
 
-.footer {
-  font-size: 62%;
-  opacity: 0.6;
-  line-height: 1.4;
-  a {
-    color: inherit;
-  }
-}
 
 @keyframes intro-in {
   from {

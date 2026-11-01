@@ -90,10 +90,6 @@
               />
             </em>
           </li>
-          <li @click="setBackground">
-            {{ $t("Background image") }}
-            <em><font-awesome-icon icon="image" /></em>
-          </li>
           <li v-if="!edition.isOfficial" @click="imageOptIn">
             <small>{{ $t("Show Custom Images") }}</small>
             <em
@@ -102,13 +98,6 @@
                   'fas',
                   grimoire.isImageOptIn ? 'check-square' : 'square',
                 ]"
-            /></em>
-          </li>
-          <li @click="toggleStatic">
-            {{ $t("Disable Animations") }}
-            <em
-              ><font-awesome-icon
-                :icon="['fas', grimoire.isStatic ? 'check-square' : 'square']"
             /></em>
           </li>
           <li @click="toggleMuted">
@@ -235,7 +224,10 @@
             <em><font-awesome-icon icon="file-upload" /></em>
           </li>
           <li>
-            <a href="https://github.com/FatiihGulcicek/townsquare" target="_blank">
+            <a
+              href="https://github.com/FatiihGulcicek/townsquare"
+              target="_blank"
+            >
               {{ $t("Source code") }}
             </a>
             <em>
@@ -280,8 +272,8 @@ export default {
       } else {
         alert(
           this.$t(
-            'In Safari, tap the Share button and choose "Add to Home Screen".'
-          )
+            'In Safari, tap the Share button and choose "Add to Home Screen".',
+          ),
         );
       }
     },
