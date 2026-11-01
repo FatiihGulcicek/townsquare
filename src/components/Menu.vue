@@ -31,7 +31,11 @@
       "
     >
       <font-awesome-icon icon="broadcast-tower" />
-      {{ session.playerCount }}
+      {{
+        session.isSpectator
+          ? players.filter((p) => p.id).length
+          : session.playerCount
+      }}
     </span>
     <div class="menu" :class="{ open: grimoire.isMenuOpen }">
       <font-awesome-icon icon="cog" @click="toggleMenu" />
@@ -106,6 +110,13 @@
               ><font-awesome-icon
                 :icon="['fas', grimoire.isMuted ? 'volume-mute' : 'volume-up']"
             /></em>
+          </li>
+          <li
+            v-if="notificationPermission !== 'granted'"
+            @click="enableNotifications"
+          >
+            {{ $t("Notifications") }}
+            <em><font-awesome-icon icon="bell" /></em>
           </li>
           <li @click="toggleLocale">
             {{ $t("Language") }}
@@ -233,6 +244,7 @@
 import { mapMutations, mapState } from "vuex";
 import { languages, setLocale } from "../i18n";
 import { pwaState, install } from "../pwa";
+import { notify, requestPermission, permissionState } from "../notify";
 
 export default {
   computed: {
@@ -246,6 +258,7 @@ export default {
   data() {
     return {
       pwa: pwaState,
+      notificationPermission: permissionState(),
       tab: "grimoire",
     };
   },
@@ -295,10 +308,36 @@ export default {
         this.copySessionUrl();
       }
     },
-    copySessionUrl() {
-      const url = window.location.href.split("#")[0];
+    async copySessionUrl() {
+      const url = window.location.href.split("#")[0].split("?")[0];
       const link = url + "#" + this.session.sessionId;
-      navigator.clipboard.writeText(link);
+      try {
+        if (
+          navigator.share &&
+          /iphone|ipad|android/i.test(navigator.userAgent)
+        ) {
+          await navigator.share({ title: "Kasaba Meydanı", url: link });
+          return;
+        }
+        await navigator.clipboard.writeText(link);
+        notify("Player link copied", null, { type: "success" });
+      } catch (e) {
+        if (e && e.name === "AbortError") return; // share sheet closed
+        prompt(this.$t("Copy the player link:"), link);
+      }
+    },
+    async enableNotifications() {
+      const result = await requestPermission();
+      this.notificationPermission = result;
+      if (result === "granted") {
+        notify("Notifications are on", null, { type: "success" });
+      } else if (result === "unsupported") {
+        alert(
+          this.$t(
+            "This browser can't show notifications. On iPhone, add the app to your home screen first.",
+          ),
+        );
+      }
     },
     distributeRoles() {
       if (this.session.isSpectator) return;

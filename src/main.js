@@ -7,6 +7,8 @@ import "@fontsource/cinzel/700.css";
 import "@fontsource/cormorant-garamond/700.css";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import {
+  faBell,
+  faSun,
   faAddressCard,
   faBookOpen,
   faBookDead,
@@ -86,6 +88,8 @@ library.add(
   faRandom,
   faRedoAlt,
   faSearchMinus,
+  faSun,
+  faBell,
   faSearchPlus,
   faSkull,
   faSquare,

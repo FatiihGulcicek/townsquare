@@ -3,7 +3,7 @@
  * - hashed build assets (js/css/img/fonts/media): cache first, they never change
  * - live game traffic (WebSocket) and server endpoints are never cached
  */
-const SHELL = "km-shell-v2";
+const SHELL = "km-shell-v3";
 const ASSETS = "km-assets-v2";
 const MAX_ASSETS = 400;
 
@@ -45,6 +45,18 @@ async function trim(cache) {
     );
   }
 }
+
+// tapping a notification brings the game back to the front
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clients) =>
+        clients.length ? clients[0].focus() : self.clients.openWindow("/"),
+      ),
+  );
+});
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;

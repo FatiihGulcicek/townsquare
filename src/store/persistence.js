@@ -10,6 +10,9 @@ module.exports = (store) => {
   if (localStorage.getItem("muted")) {
     store.commit("toggleMuted", true);
   }
+  if (localStorage.getItem("isNight")) {
+    store.commit("toggleNight", true);
+  }
   if (localStorage.getItem("imageOptIn")) {
     store.commit("toggleImageOptIn", true);
   }
@@ -71,6 +74,13 @@ module.exports = (store) => {
   // listen to mutations
   store.subscribe(({ type, payload }, state) => {
     switch (type) {
+      case "toggleNight":
+        if (state.grimoire.isNight) {
+          localStorage.setItem("isNight", 1);
+        } else {
+          localStorage.removeItem("isNight");
+        }
+        break;
       case "toggleGrimoire":
         if (!state.grimoire.isPublic) {
           localStorage.setItem("isGrimoire", 1);

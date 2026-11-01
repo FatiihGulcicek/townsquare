@@ -1,4 +1,5 @@
 import { t } from "../i18n";
+import { notify } from "../notify";
 
 class LiveSession {
   constructor(store) {
@@ -138,6 +139,7 @@ class LiveSession {
     switch (command) {
       case "getGamestate":
         this.sendGamestate(params);
+        this._resendRole(params);
         break;
       case "edition":
         this._updateEdition(params);
@@ -169,6 +171,7 @@ class LiveSession {
             this._store.state.players.players,
           );
         }
+        if (params) this._notifyNomination(params);
         this._store.commit("session/nomination", { nomination: params });
         break;
       case "swap":
@@ -189,6 +192,16 @@ class LiveSession {
         break;
       case "isNight":
         if (!this._isSpectator) return;
+        if (!!params !== this._store.state.grimoire.isNight) {
+          if (params) {
+            notify("Night falls. Close your eyes…", null, {
+              type: "night",
+              important: true,
+            });
+          } else {
+            notify("Day breaks. Wake up!", null, { type: "day" });
+          }
+        }
         this._store.commit("toggleNight", params);
         break;
       case "isVoteHistoryAllowed":
@@ -206,6 +219,12 @@ class LiveSession {
         break;
       case "isVoteInProgress":
         if (!this._isSpectator) return;
+        if (params && !this._store.state.session.isVoteInProgress) {
+          notify("Voting has started: raise or lower your hand", null, {
+            type: "vote",
+            important: true,
+          });
+        }
         this._store.commit("session/setVoteInProgress", params);
         break;
       case "vote":
@@ -358,9 +377,22 @@ class LiveSession {
         this._store.commit("players/remove", x - 1);
       }
     }
+    const myId = this._store.state.session.playerId;
+    const wasSeated = players.some((p) => p.id === myId);
     // update status for each player
     gamestate.forEach((state, x) => {
       const player = players[x];
+      if (
+        state.id === myId &&
+        player.id === myId &&
+        state.isDead &&
+        !player.isDead
+      ) {
+        notify("You died. You still have one ghost vote.", null, {
+          type: "death",
+          important: true,
+        });
+      }
       const { roleId } = state;
       // update relevant properties
       ["name", "id", "isDead", "isVoteless", "pronouns"].forEach((property) => {
@@ -389,6 +421,18 @@ class LiveSession {
         });
       }
     });
+    const mySeat = this._store.state.players.players.find((p) => p.id === myId);
+    if (!mySeat) {
+      this.sendJoin();
+    } else if (!wasSeated) {
+      notify(
+        "You are seated at the table as {name}",
+        { name: mySeat.name },
+        {
+          type: "success",
+        },
+      );
+    }
     if (!isLightweight) {
       this._store.commit("toggleNight", !!isNight);
       this._store.commit("session/setVoteHistoryAllowed", isVoteHistoryAllowed);
@@ -531,6 +575,20 @@ class LiveSession {
           this._store.state.roles.get(value) ||
           this._store.getters.rolesJSONbyId.get(value) ||
           {};
+        if (
+          role.id &&
+          player.id === this._store.state.session.playerId &&
+          player.role.id !== role.id
+        ) {
+          notify(
+            "Your character: {name}",
+            { name: role.name },
+            {
+              type: "role",
+              important: true,
+            },
+          );
+        }
         this._store.commit("players/update", {
           player,
           property: "role",
@@ -538,6 +596,27 @@ class LiveSession {
         });
       }
     } else {
+      const myId = this._store.state.session.playerId;
+      if (property === "id" && value === myId && player.id !== myId) {
+        notify(
+          "You are seated at the table as {name}",
+          { name: player.name },
+          {
+            type: "success",
+          },
+        );
+      }
+      if (
+        property === "isDead" &&
+        value &&
+        !player.isDead &&
+        player.id === myId
+      ) {
+        notify("You died. You still have one ghost vote.", null, {
+          type: "death",
+          important: true,
+        });
+      }
       // just update the player otherwise
       this._store.commit("players/update", { player, property, value });
     }
@@ -590,20 +669,25 @@ class LiveSession {
       // remove players that haven't sent a ping in twice the timespan
       for (let player in this._players) {
         if (now - this._players[player] > this._pingInterval * 2) {
+          const seat = this._store.state.players.players.find(
+            (p) => p.id === player,
+          );
+          if (seat) {
+            notify(
+              "{name} lost connection",
+              { name: seat.name },
+              {
+                type: "warning",
+              },
+            );
+          }
           delete this._players[player];
           delete this._pings[player];
         }
       }
-      // remove claimed seats from players that are no longer connected
-      this._store.state.players.players.forEach((player) => {
-        if (player.id && !this._players[player.id]) {
-          this._store.commit("players/update", {
-            player,
-            property: "id",
-            value: "",
-          });
-        }
-      });
+      // seats stay reserved for players that drop out (phones suspend tabs,
+      // the Storyteller may reload); they reconnect into the same seat.
+      // The Storyteller can still free a seat manually ("Empty seat").
       // store new player data
       if (playerIdOrCount) {
         this._players[playerIdOrCount] = now;
@@ -638,6 +722,12 @@ class LiveSession {
    */
   _handleBye(playerId) {
     if (this._isSpectator) return;
+    const seat = this._store.state.players.players.find(
+      (p) => p.id === playerId,
+    );
+    if (seat && this._players[playerId]) {
+      notify("{name} left the game", { name: seat.name }, { type: "warning" });
+    }
     delete this._players[playerId];
     this._store.commit(
       "session/setPlayerCount",
@@ -688,6 +778,86 @@ class LiveSession {
   }
 
   /**
+   * Show who nominated whom; warn the player who got nominated. Player only.
+   * @param nomination [nominator, nominee]
+   * @private
+   */
+  _notifyNomination([from, to]) {
+    const players = this._store.state.players.players;
+    const nominator = players[from];
+    const nominee = players[to];
+    if (!nominator || !nominee) return;
+    if (nominee.id === this._store.state.session.playerId) {
+      notify(
+        "{name} nominated you!",
+        { name: nominator.name },
+        {
+          type: "vote",
+          important: true,
+        },
+      );
+    } else {
+      notify(
+        "{nominator} nominated {nominee}",
+        {
+          nominator: nominator.name,
+          nominee: nominee.name,
+        },
+        { type: "vote" },
+      );
+    }
+  }
+
+  /**
+   * Characters already handed out, so a player who reloads gets theirs back. ST only.
+   * @private
+   */
+  _loadSentRoles() {
+    try {
+      const data = JSON.parse(localStorage.getItem("sentRoles") || "{}");
+      return data.sessionId === this._store.state.session.sessionId
+        ? data.roles || {}
+        : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  _saveSentRoles(roles) {
+    try {
+      localStorage.setItem(
+        "sentRoles",
+        JSON.stringify({
+          sessionId: this._store.state.session.sessionId,
+          roles,
+        }),
+      );
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  /**
+   * Send a reconnecting player the character they were given before. ST only.
+   * @param playerId
+   * @private
+   */
+  _resendRole(playerId) {
+    if (this._isSpectator || !playerId) return;
+    const roleId = this._loadSentRoles()[playerId];
+    if (!roleId) return;
+    const index = this._store.state.players.players.findIndex(
+      (p) => p.id === playerId,
+    );
+    if (index < 0) return;
+    this._sendDirect(playerId, "player", {
+      index,
+      property: "role",
+      value: roleId,
+    });
+  }
+
+  /**
    * Tell the Storyteller who we are so they can seat us automatically. Player only.
    */
   sendJoin() {
@@ -710,7 +880,11 @@ class LiveSession {
     if (!name) return;
     const players = this._store.state.players.players;
     // already seated: nothing to do (reconnect)
-    if (players.some((p) => p.id === playerId)) {
+    const existing = players.find((p) => p.id === playerId);
+    if (existing) {
+      if (!this._players[playerId]) {
+        notify("{name} is back", { name: existing.name }, { type: "player" });
+      }
       this._handlePing([true, playerId, 0]);
       return;
     }
@@ -728,6 +902,13 @@ class LiveSession {
       this._store.commit("players/add", seatName);
       index = this._store.state.players.players.length - 1;
     }
+    notify(
+      "{name} joined the game",
+      {
+        name: this._store.state.players.players[index].name,
+      },
+      { type: "player" },
+    );
     this._updateSeat([index, playerId]);
   }
 
@@ -738,14 +919,31 @@ class LiveSession {
   distributeRoles() {
     if (this._isSpectator) return;
     const message = {};
+    const sent = this._loadSentRoles();
     this._store.state.players.players.forEach((player, index) => {
       if (player.id && player.role) {
         message[player.id] = [
           "player",
           { index, property: "role", value: player.role.id },
         ];
+        if (player.role.id) sent[player.id] = player.role.id;
       }
     });
+    this._saveSentRoles(sent);
+    const count = Object.keys(message).length;
+    if (count) {
+      notify(
+        "Characters sent to {count} players",
+        { count },
+        {
+          type: "success",
+        },
+      );
+    } else {
+      notify("No seated players to send characters to", null, {
+        type: "warning",
+      });
+    }
     if (Object.keys(message).length) {
       this._send("direct", message);
     }

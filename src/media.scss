@@ -67,6 +67,16 @@
   .circle .player > .name {
     font-size: 85%;
   }
+  // vote panel gets its own background so it stays readable over the tokens
+  #vote .overlay {
+    background: rgba(8, 10, 18, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    padding: 10px 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    z-index: 30;
+  }
+
   // centre info stays compact inside the circle
   #app > .info {
     font-size: 78%;

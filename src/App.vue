@@ -28,6 +28,7 @@
     </transition>
     <TownSquare></TownSquare>
     <Menu ref="menu"></Menu>
+    <Toasts />
     <EditionModal />
     <FabledModal />
     <RolesModal />
@@ -65,9 +66,12 @@ import VoteHistoryModal from "@/components/modals/VoteHistoryModal";
 import GameStateModal from "@/components/modals/GameStateModal";
 import HomebrewModal from "@/components/modals/HomebrewModal";
 import { takeLaunchAction } from "./pwa";
+import Toasts from "./components/Toasts";
+import { notify } from "./notify";
 
 export default {
   components: {
+    Toasts,
     GameStateModal,
     HomebrewModal,
     VoteHistoryModal,
@@ -96,7 +100,10 @@ export default {
   watch: {
     // warn only if the connection stays down for a few seconds
     "session.isConnected": {
-      handler() {
+      handler(connected) {
+        if (connected && this.showConnectionWarning) {
+          notify("Connection restored", null, { type: "success" });
+        }
         this.updateConnectionWarning();
       },
     },
