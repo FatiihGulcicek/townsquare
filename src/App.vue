@@ -26,7 +26,8 @@
       <TownInfo v-if="players.length && !session.nomination"></TownInfo>
       <Vote v-if="session.nomination"></Vote>
     </transition>
-    <TownSquare></TownSquare>
+    <TownSquare ref="townsquare"></TownSquare>
+    <Guide @action="onGuideAction" />
     <Menu ref="menu"></Menu>
     <Toasts />
     <EditionModal />
@@ -67,11 +68,13 @@ import GameStateModal from "@/components/modals/GameStateModal";
 import HomebrewModal from "@/components/modals/HomebrewModal";
 import { takeLaunchAction } from "./pwa";
 import Toasts from "./components/Toasts";
+import Guide from "./components/Guide";
 import { notify } from "./notify";
 
 export default {
   components: {
     Toasts,
+    Guide,
     GameStateModal,
     HomebrewModal,
     VoteHistoryModal,
@@ -139,6 +142,51 @@ export default {
     }, 400);
   },
   methods: {
+    onGuideAction(id) {
+      const menu = this.$refs.menu;
+      const store = this.$store;
+      switch (id) {
+        case "share":
+          menu.copySessionUrl();
+          break;
+        case "add":
+          menu.addPlayer();
+          break;
+        case "roles":
+        case "edition":
+        case "nightOrder":
+        case "reference":
+        case "voteHistory":
+          store.commit("toggleModal", id);
+          break;
+        case "send":
+          store.commit("session/distributeRoles", true);
+          setTimeout(
+            () => store.commit("session/distributeRoles", false),
+            2000,
+          );
+          break;
+        case "bluff": {
+          const bluffs = store.state.players.bluffs;
+          let index = 0;
+          while (index < 3 && bluffs[index] && bluffs[index].id) index++;
+          this.$refs.townsquare.openRoleModal(-(Math.min(index, 2) + 1));
+          break;
+        }
+        case "night":
+          if (!this.grimoire.isNight) menu.toggleNight();
+          break;
+        case "day":
+          if (this.grimoire.isNight) menu.toggleNight();
+          break;
+        case "newGame":
+          store.dispatch("players/clearRoles");
+          store.commit("session/clearVoteHistory");
+          store.commit("session/setMarkedPlayer", -1);
+          if (this.grimoire.isNight) menu.toggleNight();
+          break;
+      }
+    },
     updateConnectionWarning() {
       clearTimeout(this._connTimer);
       if (!this.session.sessionId || this.session.isConnected) {

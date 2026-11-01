@@ -249,6 +249,14 @@
     }
   }
 
+  // leave room for the storyteller guide at the bottom
+  body.has-guide #townsquare {
+    padding-bottom: calc(170px + env(safe-area-inset-bottom));
+  }
+  body.has-guide #townsquare > .bluffs {
+    bottom: calc(176px + env(safe-area-inset-bottom));
+  }
+
   // seat menu as a bottom sheet
   ul.menu.sheet {
     position: fixed !important;

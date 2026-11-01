@@ -930,6 +930,7 @@ class LiveSession {
       }
     });
     this._saveSentRoles(sent);
+    this._store.commit("session/bumpRolesSent");
     const count = Object.keys(message).length;
     if (count) {
       notify(

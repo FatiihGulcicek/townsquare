@@ -16,6 +16,7 @@ const state = () => ({
   isSpectator: false,
   isReconnecting: false,
   isConnected: false,
+  rolesSentVersion: 0,
   playerCount: 0,
   ping: 0,
   playerId: "",
@@ -47,6 +48,9 @@ const mutations = {
   setSpectator: set("isSpectator"),
   setReconnecting: set("isReconnecting"),
   setConnected: set("isConnected"),
+  bumpRolesSent(state) {
+    state.rolesSentVersion++;
+  },
   setPlayerCount: set("playerCount"),
   setPing: set("ping"),
   setVotingSpeed: set("votingSpeed"),
