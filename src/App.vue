@@ -227,6 +227,7 @@ ul {
 
 #app {
   height: 100%;
+  height: 100dvh;
   background-position: center center;
   background-size: cover;
   display: flex;

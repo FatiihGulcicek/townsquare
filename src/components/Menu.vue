@@ -265,6 +265,17 @@ export default {
       tab: "grimoire",
     };
   },
+  mounted() {
+    this._outside = (event) => {
+      if (this.grimoire.isMenuOpen && !this.$el.contains(event.target)) {
+        this.$store.commit("toggleMenu");
+      }
+    };
+    document.addEventListener("pointerdown", this._outside);
+  },
+  beforeDestroy() {
+    document.removeEventListener("pointerdown", this._outside);
+  },
   methods: {
     async installApp() {
       if (pwaState.canInstall) {
@@ -577,6 +588,125 @@ export default {
         rgba(0, 0, 0, 0.5) 80%,
         $demon 100%
       );
+    }
+  }
+}
+
+// Phones: wider panel, bigger touch targets, respects the notch / status bar
+@media (max-width: 767.98px) {
+  #controls {
+    top: calc(6px + env(safe-area-inset-top));
+    right: calc(6px + env(safe-area-inset-right));
+    padding-right: 52px;
+    > span {
+      margin-top: 12px;
+      font-size: 110%;
+    }
+  }
+  .menu {
+    width: min(88vw, 340px);
+    transform-origin: calc(100% - 22px) 22px;
+    transform: scale(0.6);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      transform 220ms ease,
+      opacity 180ms ease;
+
+    > svg {
+      pointer-events: all;
+      width: 44px;
+      height: 44px;
+      margin-bottom: 0;
+      padding: 9px;
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(6px);
+    }
+
+    &.open {
+      transform: none;
+      opacity: 1;
+      pointer-events: all;
+      > svg {
+        border-color: rgba(255, 255, 255, 0.35);
+      }
+    }
+
+    ul {
+      margin-top: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 16px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+      background: rgba(10, 12, 20, 0.92);
+      backdrop-filter: blur(10px);
+      max-height: calc(100dvh - 80px - env(safe-area-inset-top));
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+
+      li {
+        background: transparent;
+        min-height: 48px;
+        padding: 6px 16px;
+        font-size: 108%;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        &:last-child {
+          border-bottom: 0;
+        }
+        em {
+          font-size: 90%;
+          opacity: 0.85;
+        }
+        &.tabs {
+          position: sticky;
+          top: 0;
+          z-index: 2;
+          padding: 6px;
+          gap: 4px;
+          background: rgba(10, 12, 20, 0.97);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          svg {
+            height: 44px;
+            padding: 10px 0;
+            border: 0;
+            border-radius: 10px;
+            opacity: 0.6;
+            &:hover {
+              color: white;
+            }
+            &:last-child {
+              border-right: 0;
+            }
+          }
+          &.grimoire .fa-book-open,
+          &.players .fa-users,
+          &.characters .fa-theater-masks,
+          &.session .fa-broadcast-tower,
+          &.help .fa-question {
+            opacity: 1;
+            background: linear-gradient(180deg, $townsfolk, #0b2a6b);
+          }
+        }
+        &:not(.headline):not(.tabs):active {
+          background: rgba(255, 255, 255, 0.08);
+        }
+        &:not(.headline):not(.tabs):hover {
+          color: white;
+        }
+      }
+
+      .headline {
+        min-height: 40px;
+        font-size: 115%;
+        background: linear-gradient(
+          to right,
+          rgba(31, 101, 255, 0.35) 0%,
+          transparent 30%,
+          transparent 70%,
+          rgba(206, 1, 0, 0.35) 100%
+        );
+      }
     }
   }
 }
