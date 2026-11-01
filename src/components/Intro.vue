@@ -1,6 +1,6 @@
 <template>
   <div class="intro">
-    <img src="../assets/brand/logo.svg" alt="" class="logo" />
+    <img src="static/apple-icon.png" alt="" class="logo" />
     <h1 class="wordmark">Kasaba Meydanı</h1>
     <p class="tagline">
       {{ $t("A virtual town square and grimoire for your online games") }}
@@ -103,8 +103,9 @@ export default {
 .logo {
   width: min(30vw, 150px);
   margin-top: -100px;
-  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.7))
-    drop-shadow(0 0 30px rgba(233, 180, 76, 0.25));
+  border-radius: 50%;
+  border: 3px solid black;
+  box-shadow: 0 0 10px black;
 }
 
 .wordmark {

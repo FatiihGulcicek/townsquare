@@ -3,8 +3,8 @@
  * - hashed build assets (js/css/img/fonts/media): cache first, they never change
  * - live game traffic (WebSocket) and server endpoints are never cached
  */
-const SHELL = "km-shell-v1";
-const ASSETS = "km-assets-v1";
+const SHELL = "km-shell-v2";
+const ASSETS = "km-assets-v2";
 const MAX_ASSETS = 400;
 
 self.addEventListener("install", (event) => {
@@ -15,8 +15,7 @@ self.addEventListener("install", (event) => {
         cache.addAll([
           "/",
           "/manifest.webmanifest",
-          "/static/icon.svg",
-          "/static/icon-192.png",
+          "/static/android-icon-192x192.png",
         ]),
       )
       .then(() => self.skipWaiting()),
