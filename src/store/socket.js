@@ -1,7 +1,14 @@
 class LiveSession {
   constructor(store) {
-    this._wss = "wss://live.clocktower.online:8080/";
-    // this._wss = "ws://localhost:8081/"; // uncomment if using local server with NODE_ENV=development
+    // Live server URL. Override at build time with VUE_APP_WSS, otherwise
+    // the same host that serves the page is used (single-server setup).
+    this._wss =
+      process.env.VUE_APP_WSS ||
+      (window.location.protocol === "https:" ? "wss://" : "ws://") +
+        (process.env.NODE_ENV === "development"
+          ? window.location.hostname + ":8080"
+          : window.location.host) +
+        "/live/";
     this._socket = null;
     this._isSpectator = true;
     this._gamestate = [];
@@ -28,11 +35,11 @@ class LiveSession {
       this._wss +
         channel +
         "/" +
-        (this._isSpectator ? this._store.state.session.playerId : "host")
+        (this._isSpectator ? this._store.state.session.playerId : "host"),
     );
     this._socket.addEventListener("message", this._handleMessage.bind(this));
     this._socket.onopen = this._onOpen.bind(this);
-    this._socket.onclose = err => {
+    this._socket.onclose = (err) => {
       this._socket = null;
       clearInterval(this._pingTimer);
       this._pingTimer = null;
@@ -41,7 +48,7 @@ class LiveSession {
         this._store.commit("session/setReconnecting", true);
         this._reconnectTimer = setTimeout(
           () => this.connect(channel),
-          3 * 1000
+          3 * 1000,
         );
       } else {
         this._store.commit("session/setSessionId", "");
@@ -87,7 +94,7 @@ class LiveSession {
       this._sendDirect(
         "host",
         "getGamestate",
-        this._store.state.session.playerId
+        this._store.state.session.playerId,
       );
     } else {
       this.sendGamestate();
@@ -105,7 +112,7 @@ class LiveSession {
       this._isSpectator
         ? this._store.state.session.playerId
         : Object.keys(this._players).length,
-      "latency"
+      "latency",
     ]);
     clearTimeout(this._pingTimer);
     this._pingTimer = setTimeout(this._ping.bind(this), this._pingInterval);
@@ -151,7 +158,7 @@ class LiveSession {
           // create vote history record
           this._store.commit(
             "session/addHistory",
-            this._store.state.players.players
+            this._store.state.players.players,
           );
         }
         this._store.commit("session/nomination", { nomination: params });
@@ -217,9 +224,7 @@ class LiveSession {
     if (!this._store.state.session.playerId) {
       this._store.commit(
         "session/setPlayerId",
-        Math.random()
-          .toString(36)
-          .substr(2)
+        Math.random().toString(36).substr(2),
       );
     }
     this._pings = {};
@@ -255,7 +260,7 @@ class LiveSession {
    */
   sendGamestate(playerId = "", isLightweight = false) {
     if (this._isSpectator) return;
-    this._gamestate = this._store.state.players.players.map(player => ({
+    this._gamestate = this._store.state.players.players.map((player) => ({
       name: player.name,
       id: player.id,
       isDead: player.isDead,
@@ -263,12 +268,12 @@ class LiveSession {
       pronouns: player.pronouns,
       ...(player.role && player.role.team === "traveler"
         ? { roleId: player.role.id }
-        : {})
+        : {}),
     }));
     if (isLightweight) {
       this._sendDirect(playerId, "gs", {
         gamestate: this._gamestate,
-        isLightweight
+        isLightweight,
       });
     } else {
       const { session, grimoire } = this._store.state;
@@ -283,8 +288,8 @@ class LiveSession {
         lockedVote: session.lockedVote,
         isVoteInProgress: session.isVoteInProgress,
         markedPlayer: session.markedPlayer,
-        fabled: fabled.map(f => (f.isCustom ? f : { id: f.id })),
-        ...(session.nomination ? { votes: session.votes } : {})
+        fabled: fabled.map((f) => (f.isCustom ? f : { id: f.id })),
+        ...(session.nomination ? { votes: session.votes } : {}),
       });
     }
   }
@@ -307,7 +312,7 @@ class LiveSession {
       lockedVote,
       isVoteInProgress,
       markedPlayer,
-      fabled
+      fabled,
     } = data;
     const players = this._store.state.players.players;
     // adjust number of players
@@ -325,7 +330,7 @@ class LiveSession {
       const player = players[x];
       const { roleId } = state;
       // update relevant properties
-      ["name", "id", "isDead", "isVoteless", "pronouns"].forEach(property => {
+      ["name", "id", "isDead", "isVoteless", "pronouns"].forEach((property) => {
         const value = state[property];
         if (player[property] !== value) {
           this._store.commit("players/update", { player, property, value });
@@ -340,14 +345,14 @@ class LiveSession {
           this._store.commit("players/update", {
             player,
             property: "role",
-            value: role
+            value: role,
           });
         }
       } else if (!roleId && player.role.team === "traveler") {
         this._store.commit("players/update", {
           player,
           property: "role",
-          value: {}
+          value: {},
         });
       }
     });
@@ -359,11 +364,11 @@ class LiveSession {
         votes,
         votingSpeed,
         lockedVote,
-        isVoteInProgress
+        isVoteInProgress,
       });
       this._store.commit("session/setMarkedPlayer", markedPlayer);
       this._store.commit("players/setFabled", {
-        fabled: fabled.map(f => this._store.state.fabled.get(f.id) || f)
+        fabled: fabled.map((f) => this._store.state.fabled.get(f.id) || f),
       });
     }
   }
@@ -381,7 +386,7 @@ class LiveSession {
     }
     this._sendDirect(playerId, "edition", {
       edition: edition.isOfficial ? { id: edition.id } : edition,
-      ...(roles ? { roles } : {})
+      ...(roles ? { roles } : {}),
     });
   }
 
@@ -406,7 +411,7 @@ class LiveSession {
         alert(
           `This session contains custom characters that can't be found. ` +
             `Please load them before joining! ` +
-            `Missing roles: ${missing.join(", ")}`
+            `Missing roles: ${missing.join(", ")}`,
         );
         this.disconnect();
         this._store.commit("toggleModal", "edition");
@@ -422,7 +427,7 @@ class LiveSession {
     const { fabled } = this._store.state.players;
     this._send(
       "fabled",
-      fabled.map(f => (f.isCustom ? f : { id: f.id }))
+      fabled.map((f) => (f.isCustom ? f : { id: f.id })),
     );
   }
 
@@ -434,7 +439,7 @@ class LiveSession {
   _updateFabled(fabled) {
     if (!this._isSpectator) return;
     this._store.commit("players/setFabled", {
-      fabled: fabled.map(f => this._store.state.fabled.get(f.id) || f)
+      fabled: fabled.map((f) => this._store.state.fabled.get(f.id) || f),
     });
   }
 
@@ -454,7 +459,7 @@ class LiveSession {
         this._send("player", {
           index,
           property,
-          value: value.id
+          value: value.id,
         });
       } else if (this._gamestate[index].roleId) {
         // player was previously a traveler
@@ -484,7 +489,7 @@ class LiveSession {
         this._store.commit("players/update", {
           player,
           property: "role",
-          value: {}
+          value: {},
         });
       } else {
         // load role, first from session, the global, then fail gracefully
@@ -495,7 +500,7 @@ class LiveSession {
         this._store.commit("players/update", {
           player,
           property: "role",
-          value: role
+          value: role,
         });
       }
     } else {
@@ -535,7 +540,7 @@ class LiveSession {
       player,
       property: "pronouns",
       value,
-      isFromSockets: true
+      isFromSockets: true,
     });
   }
 
@@ -556,12 +561,12 @@ class LiveSession {
         }
       }
       // remove claimed seats from players that are no longer connected
-      this._store.state.players.players.forEach(player => {
+      this._store.state.players.players.forEach((player) => {
         if (player.id && !this._players[player.id]) {
           this._store.commit("players/update", {
             player,
             property: "id",
-            value: ""
+            value: "",
           });
         }
       });
@@ -575,7 +580,7 @@ class LiveSession {
           const pings = Object.values(this._pings);
           this._store.commit(
             "session/setPing",
-            Math.round(pings.reduce((a, b) => a + b, 0) / pings.length)
+            Math.round(pings.reduce((a, b) => a + b, 0) / pings.length),
           );
         }
       }
@@ -587,7 +592,7 @@ class LiveSession {
     if (!this._isSpectator || playerIdOrCount) {
       this._store.commit(
         "session/setPlayerCount",
-        this._isSpectator ? playerIdOrCount : Object.keys(this._players).length
+        this._isSpectator ? playerIdOrCount : Object.keys(this._players).length,
       );
     }
   }
@@ -602,7 +607,7 @@ class LiveSession {
     delete this._players[playerId];
     this._store.commit(
       "session/setPlayerCount",
-      Object.keys(this._players).length
+      Object.keys(this._players).length,
     );
   }
 
@@ -635,7 +640,7 @@ class LiveSession {
       this._store.commit("players/update", {
         player: players[oldIndex],
         property,
-        value: ""
+        value: "",
       });
     }
     // add playerId to new seat
@@ -659,7 +664,7 @@ class LiveSession {
       if (player.id && player.role) {
         message[player.id] = [
           "player",
-          { index, property: "role", value: player.role.id }
+          { index, property: "role", value: player.role.id },
         ];
       }
     });
@@ -710,7 +715,7 @@ class LiveSession {
     if (this._isSpectator) return;
     this._send(
       "isVoteHistoryAllowed",
-      this._store.state.session.isVoteHistoryAllowed
+      this._store.state.session.isVoteHistoryAllowed,
     );
   }
 
@@ -757,7 +762,7 @@ class LiveSession {
       this._send("vote", [
         index,
         this._store.state.session.votes[index],
-        !this._isSpectator
+        !this._isSpectator,
       ]);
     }
   }
@@ -836,7 +841,7 @@ class LiveSession {
   }
 }
 
-export default store => {
+export default (store) => {
   // setup
   const session = new LiveSession(store);
 
