@@ -54,17 +54,36 @@ const server = useTls
     })
   : http.createServer();
 
-function isAllowedOrigin(origin, host) {
+// hostnames this server is reachable under (Render sets RENDER_EXTERNAL_HOSTNAME)
+const OWN_HOSTS = [
+  process.env.RENDER_EXTERNAL_HOSTNAME,
+  process.env.PUBLIC_HOSTNAME,
+]
+  .filter(Boolean)
+  .map((h) => h.toLowerCase());
+const hostname = (h) =>
+  (h || "").split(",")[0].trim().toLowerCase().replace(/:\d+$/, "");
+
+// connection diagnostics, shown on /healthz
+const diagnostics = { accepted: 0, rejected: 0, lastRejected: null };
+
+function isAllowedOrigin(origin, req) {
   if (!origin) return false;
   let originHost;
   try {
-    originHost = new URL(origin).host;
+    originHost = new URL(origin).hostname.toLowerCase();
   } catch (e) {
     return false;
   }
-  // same host as the server -> always allowed
-  if (host && originHost.toLowerCase() === host.toLowerCase()) return true;
-  if (/^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(originHost)) return true;
+  const headers = (req && req.headers) || {};
+  // same host as the server (ignoring ports and proxies) -> always allowed
+  const candidates = [
+    hostname(headers.host),
+    hostname(headers["x-forwarded-host"]),
+    ...OWN_HOSTS,
+  ].filter(Boolean);
+  if (candidates.includes(originHost)) return true;
+  if (/^(localhost|127\.0\.0\.1)$/i.test(originHost)) return true;
   return EXTRA_ORIGINS.some((o) =>
     new RegExp("^https?://" + o.replace(/^https?:\/\//, "") + "$", "i").test(
       origin,
@@ -75,7 +94,25 @@ function isAllowedOrigin(origin, host) {
 const wss = new WebSocket.Server({
   server,
   maxPayload: MAX_PAYLOAD,
-  verifyClient: (info) => isAllowedOrigin(info.origin, info.req.headers.host),
+  verifyClient: (info) => {
+    const ok = isAllowedOrigin(info.origin, info.req);
+    if (ok) {
+      diagnostics.accepted++;
+    } else {
+      diagnostics.rejected++;
+      diagnostics.lastRejected = {
+        origin: info.origin || null,
+        host: info.req.headers.host || null,
+        forwardedHost: info.req.headers["x-forwarded-host"] || null,
+        at: new Date().toISOString(),
+      };
+      console.log(
+        "rejected websocket",
+        JSON.stringify(diagnostics.lastRejected),
+      );
+    }
+    return ok;
+  },
 });
 
 function noop() {}
@@ -384,6 +421,7 @@ server.on("request", (req, res) => {
         ok: true,
         players: wss.clients.size,
         channels: Object.keys(channels).length,
+        connections: diagnostics,
       }),
     );
   }
