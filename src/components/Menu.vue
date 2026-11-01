@@ -335,6 +335,8 @@ export default {
       }
       if (sessionId) {
         this.askPlayerName();
+        // the table comes from the Storyteller, drop anything left over locally
+        this.$store.commit("players/clear");
         this.$store.commit("session/clearVoteHistory");
         this.$store.commit("session/setSpectator", true);
         this.$store.commit("toggleGrimoire", false);

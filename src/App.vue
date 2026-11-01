@@ -37,6 +37,12 @@
     <GameStateModal />
     <HomebrewModal />
     <Gradients />
+    <transition name="blur">
+      <div class="connection-banner" v-if="showConnectionWarning">
+        <font-awesome-icon icon="broadcast-tower" />
+        {{ $t("Connecting to the game server…") }}
+      </div>
+    </transition>
     <span id="version">v{{ version }}</span>
   </div>
 </template>
@@ -84,7 +90,19 @@ export default {
   data() {
     return {
       version,
+      showConnectionWarning: false,
     };
+  },
+  watch: {
+    // warn only if the connection stays down for a few seconds
+    "session.isConnected": {
+      handler() {
+        this.updateConnectionWarning();
+      },
+    },
+    "session.sessionId"() {
+      this.updateConnectionWarning();
+    },
   },
   mounted() {
     const boot = document.getElementById("boot");
@@ -114,6 +132,17 @@ export default {
     }, 400);
   },
   methods: {
+    updateConnectionWarning() {
+      clearTimeout(this._connTimer);
+      if (!this.session.sessionId || this.session.isConnected) {
+        this.showConnectionWarning = false;
+        return;
+      }
+      this._connTimer = setTimeout(() => {
+        this.showConnectionWarning =
+          !!this.session.sessionId && !this.session.isConnected;
+      }, 4000);
+    },
     keyup({ key, ctrlKey, metaKey }) {
       if (ctrlKey || metaKey) return;
       switch (key.toLocaleLowerCase()) {
@@ -248,6 +277,27 @@ ul {
   }
 }
 
+.connection-banner {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: rgba(206, 1, 0, 0.9);
+  color: white;
+  font-weight: bold;
+  font-size: 90%;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  animation: conn-pulse 1.6s ease-in-out infinite;
+}
+@keyframes conn-pulse {
+  50% {
+    opacity: 0.65;
+  }
+}
 #version {
   position: absolute;
   text-align: right;

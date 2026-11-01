@@ -43,6 +43,7 @@ class LiveSession {
     this._socket.onopen = this._onOpen.bind(this);
     this._socket.onclose = (err) => {
       this._socket = null;
+      this._store.commit("session/setConnected", false);
       clearInterval(this._pingTimer);
       this._pingTimer = null;
       if (err.code !== 1000) {
@@ -92,6 +93,7 @@ class LiveSession {
    * @private
    */
   _onOpen() {
+    this._store.commit("session/setConnected", true);
     if (this._isSpectator) {
       this._sendDirect(
         "host",
@@ -980,6 +982,8 @@ export default (store) => {
   const sessionId = window.location.hash.substr(1);
   if (sessionId) {
     store.commit("session/setSpectator", true);
+    // the table comes from the Storyteller, drop anything left over locally
+    store.commit("players/clear");
     store.commit("session/setSessionId", sessionId);
     store.commit("toggleGrimoire", false);
   }
