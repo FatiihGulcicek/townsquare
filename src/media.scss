@@ -73,12 +73,57 @@
   }
 }
 
-// touch devices
+// touch devices: keep the "add reminder" button small and subtle
 @media (hover: none) {
   .circle li .reminder.add {
-    opacity: 1;
+    opacity: 0.55;
     top: 0;
-    width: 35%;
-    padding-bottom: 35%;
+    width: 24%;
+    padding-bottom: 24%;
+  }
+}
+
+// portrait screens (phones): keep the circle square so every seat stays on screen
+@media (max-aspect-ratio: 1/1) {
+  #townsquare {
+    padding: 10px 0;
+  }
+  .circle {
+    position: relative;
+    flex-shrink: 0;
+    width: calc(100% - 18vw);
+    height: auto;
+    aspect-ratio: 1 / 1;
+  }
+  #townsquare > .bluffs,
+  #townsquare > .fabled {
+    left: 6px;
+    h3 {
+      max-width: 40vw;
+      font-size: 85%;
+    }
+    ul {
+      flex-direction: row;
+      li {
+        width: 13vw;
+        height: 13vw;
+      }
+    }
+  }
+  #townsquare > .fabled {
+    top: 6px;
+  }
+  #townsquare > .bluffs {
+    bottom: 6px;
+  }
+  // modals use the full width on phones, lists wrap instead of being cut off
+  .modal-backdrop .modal {
+    max-width: 96% !important;
+    max-height: 92% !important;
+    padding: 10px 8px;
+  }
+  .characters .modal ul li,
+  .night-reference .modal ul li {
+    width: 100% !important;
   }
 }

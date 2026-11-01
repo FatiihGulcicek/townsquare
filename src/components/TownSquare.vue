@@ -497,7 +497,7 @@ export default {
   content: " ";
   opacity: 0;
   transition: opacity 250ms;
-  background-image: url("../assets/icons/x.png");
+  background-image: url("../assets/icons/x.webp");
   z-index: 2;
 }
 

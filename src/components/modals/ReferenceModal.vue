@@ -35,7 +35,7 @@
                   ? role.image
                   : require('../../assets/icons/' +
                       (role.imageAlt || role.id) +
-                      '.png')
+                      '.webp')
               })`
             }"
           ></span>
@@ -63,7 +63,7 @@
             :style="{
               backgroundImage: `url(${require('../../assets/icons/' +
                 jinx.first.id +
-                '.png')})`
+                '.webp')})`
             }"
           ></span>
           <span
@@ -71,7 +71,7 @@
             :style="{
               backgroundImage: `url(${require('../../assets/icons/' +
                 jinx.second.id +
-                '.png')})`
+                '.webp')})`
             }"
           ></span>
           <div class="role">

@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const http = require("http");
+const zlib = require("zlib");
 const https = require("https");
 const WebSocket = require("ws");
 const client = require("prom-client");
@@ -322,9 +323,23 @@ const MIME = {
   ".webmanifest": "application/manifest+json",
 };
 
-function sendFile(res, file) {
+// text assets are compressed once and kept in memory
+const COMPRESSIBLE = new Set([
+  ".html",
+  ".js",
+  ".css",
+  ".json",
+  ".svg",
+  ".txt",
+  ".map",
+  ".webmanifest",
+]);
+const compressedCache = new Map();
+
+function sendFile(res, file, req) {
   const ext = path.extname(file).toLowerCase();
   res.setHeader("Content-Type", MIME[ext] || "application/octet-stream");
+  const accept = (req && req.headers["accept-encoding"]) || "";
   // hashed assets can be cached forever, index.html never
   res.setHeader(
     "Cache-Control",
@@ -332,6 +347,31 @@ function sendFile(res, file) {
       ? "public, max-age=31536000, immutable"
       : "no-cache",
   );
+  if (COMPRESSIBLE.has(ext)) {
+    res.setHeader("Vary", "Accept-Encoding");
+    const encoding = /\bbr\b/.test(accept)
+      ? "br"
+      : /\bgzip\b/.test(accept)
+      ? "gzip"
+      : null;
+    if (encoding) {
+      const key = encoding + ":" + file;
+      let body = compressedCache.get(key);
+      if (!body) {
+        const raw = fs.readFileSync(file);
+        body =
+          encoding === "br"
+            ? zlib.brotliCompressSync(raw, {
+                params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 9 },
+              })
+            : zlib.gzipSync(raw, { level: 9 });
+        compressedCache.set(key, body);
+      }
+      res.setHeader("Content-Encoding", encoding);
+      res.setHeader("Content-Length", body.length);
+      return res.end(req.method === "HEAD" ? undefined : body);
+    }
+  }
   fs.createReadStream(file).pipe(res);
 }
 
@@ -370,9 +410,9 @@ server.on("request", (req, res) => {
   fs.stat(file, (err, stat) => {
     if (!err && stat.isDirectory()) file = path.join(file, "index.html");
     fs.stat(file, (err2, stat2) => {
-      if (!err2 && stat2.isFile()) return sendFile(res, file);
+      if (!err2 && stat2.isFile()) return sendFile(res, file, req);
       const index = path.join(STATIC_DIR, "index.html");
-      if (fs.existsSync(index)) return sendFile(res, index);
+      if (fs.existsSync(index)) return sendFile(res, index, req);
       res.statusCode = 404;
       res.end("not found - did you run `npm run build`?");
     });

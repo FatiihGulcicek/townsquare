@@ -48,7 +48,7 @@
                   : require(
                       '../../assets/icons/' +
                         (role.imageAlt || role.id) +
-                        '.png',
+                        '.webp',
                     )
               })`,
             }"
@@ -76,7 +76,7 @@
                   : require(
                       '../../assets/icons/' +
                         (role.imageAlt || role.id) +
-                        '.png',
+                        '.webp',
                     )
               })`,
             }"

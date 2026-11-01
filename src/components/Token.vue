@@ -8,7 +8,7 @@
           role.image &&
               (grimoire.isImageOptIn || /^data:image\//.test(role.image))
             ? role.image
-            : require('../assets/icons/' + (role.imageAlt || role.id) + '.png')
+            : require('../assets/icons/' + (role.imageAlt || role.id) + '.webp')
         })`
       }"
     ></span>

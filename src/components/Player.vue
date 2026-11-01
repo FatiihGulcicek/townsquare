@@ -191,7 +191,7 @@
                 ? reminder.image
                 : require('../assets/icons/' +
                     (reminder.imageAlt || reminder.role) +
-                    '.png')
+                    '.webp')
             })`
           }"
         ></span>
@@ -884,12 +884,12 @@ li.move:not(.from) .player .overlay svg.move {
     background-size: 100%;
     background-position: center 0;
     background-repeat: no-repeat;
-    background-image: url("../assets/icons/plus.png");
+    background-image: url("../assets/icons/plus.webp");
     transition: opacity 200ms;
   }
 
   &:after {
-    background-image: url("../assets/icons/x.png");
+    background-image: url("../assets/icons/x.webp");
     opacity: 0;
     top: 5%;
   }

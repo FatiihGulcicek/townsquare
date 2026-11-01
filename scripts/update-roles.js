@@ -111,7 +111,7 @@ write("nightsheet.json", {
 const icons = new Set(
   fs
     .readdirSync(path.join(src, "assets", "icons"))
-    .map((f) => f.replace(/\.png$/, "")),
+    .map((f) => f.replace(/\.webp$/, "")),
 );
 const missing = [...roles, ...fabled]
   .map((r) => r.imageAlt || r.id)

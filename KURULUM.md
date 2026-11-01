@@ -64,7 +64,7 @@ git clone --depth 1 https://github.com/ThePandemoniumInstitute/botc-release.git 
 node scripts/update-roles.js /tmp/botc-release/resources
 ```
 
-Betik eksik ikonları listeler. Bu ikonlar `/tmp/botc-release/resources/characters/` klasöründen PNG'ye çevrilip `src/assets/icons/` klasörüne konmalıdır.
+Betik eksik ikonları listeler. Bu ikonlar `/tmp/botc-release/resources/characters/` klasöründen WebP'ye çevrilip `src/assets/icons/` klasörüne konmalıdır.
 
 ## Çeviri
 
