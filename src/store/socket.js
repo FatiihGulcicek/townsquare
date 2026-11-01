@@ -243,6 +243,31 @@ class LiveSession {
   }
 
   /**
+   * Phones suspend background tabs and drop their sockets. When the page comes
+   * back, reconnect right away (instead of waiting for the retry timer) or ask
+   * the Storyteller for a fresh copy of the table.
+   */
+  resume() {
+    const { sessionId } = this._store.state.session;
+    if (!sessionId) return;
+    if (!this._socket || this._socket.readyState > 1) {
+      clearTimeout(this._reconnectTimer);
+      this.connect(sessionId);
+    } else if (this._socket.readyState === 1) {
+      if (this._isSpectator) {
+        this._sendDirect(
+          "host",
+          "getGamestate",
+          this._store.state.session.playerId,
+        );
+        this.sendJoin();
+      } else {
+        this.sendGamestate();
+      }
+    }
+  }
+
+  /**
    * Close the current session, if any.
    */
   disconnect() {
@@ -897,6 +922,14 @@ class LiveSession {
 export default (store) => {
   // setup
   const session = new LiveSession(store);
+
+  // resync after the phone wakes up / the tab comes back to the foreground
+  const onVisible = () => {
+    if (document.visibilityState === "visible") session.resume();
+  };
+  document.addEventListener("visibilitychange", onVisible);
+  window.addEventListener("pageshow", onVisible);
+  window.addEventListener("online", () => session.resume());
 
   // listen to mutations
   store.subscribe(({ type, payload }, state) => {
