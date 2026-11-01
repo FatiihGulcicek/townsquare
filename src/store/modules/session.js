@@ -18,6 +18,7 @@ const state = () => ({
   playerCount: 0,
   ping: 0,
   playerId: "",
+  playerName: "",
   claimedSeat: -1,
   nomination: false,
   votes: [],
@@ -41,6 +42,7 @@ const set = (key) => (state, val) => {
 
 const mutations = {
   setPlayerId: set("playerId"),
+  setPlayerName: set("playerName"),
   setSpectator: set("isSpectator"),
   setReconnecting: set("isReconnecting"),
   setPlayerCount: set("playerCount"),

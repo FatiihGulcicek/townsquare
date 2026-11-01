@@ -78,3 +78,10 @@ Betik eksik ikonları listeler. Bu ikonlar `/tmp/botc-release/resources/characte
 - Jinx'ler `src/locales/jinxes.tr.json` dosyasındadır ve `karakter1|karakter2` anahtarıyla eşleşir.
 
 `scripts/update-roles.js` ile yeni karakterler eklendiğinde, onlar için `roles.tr.json` dosyasına da çeviri eklenmelidir; eklenmezse karakter İngilizce görünür.
+
+## Nasıl oynanır
+
+1. **Anlatıcı:** Menü → 📡 → *Oyun aç (Anlatıcı)*, sonra *Oyuncu bağlantısını kopyala* ile bağlantıyı paylaşın.
+2. **Oyuncular:** Bağlantıyı açıp adlarını yazar. Masada onlar için otomatik koltuk açılır ve oturtulurlar. Anlatıcı önceden aynı isimde koltuk açtıysa oyuncu o koltuğa yerleşir. Sayfayı yenileyen oyuncu aynı koltuğa geri döner.
+3. **Anlatıcı:** Menü → 🎭 → *Seç ve dağıt* → *Karakterleri karıştır* → *Dağıt ve oyunculara gönder*. Her oyuncu yalnızca kendi karakterini görür.
+4. Oyun sırasında karakter değiştirirseniz Menü → 📡 → *Karakterleri gönder* ile yeniden gönderin.

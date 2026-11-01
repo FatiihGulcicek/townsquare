@@ -136,6 +136,10 @@
               }}
               <em>{{ session.ping }}ms</em>
             </li>
+            <li v-if="session.isSpectator" @click="askPlayerName(true)">
+              {{ $t("Your name") }}
+              <em>{{ session.playerName || "—" }}</em>
+            </li>
             <li @click="copySessionUrl">
               {{ $t("Copy player link") }}
               <em><font-awesome-icon icon="copy" /></em>
@@ -330,10 +334,21 @@ export default {
         sessionId = sessionId.split("#").pop();
       }
       if (sessionId) {
+        this.askPlayerName();
         this.$store.commit("session/clearVoteHistory");
         this.$store.commit("session/setSpectator", true);
         this.$store.commit("toggleGrimoire", false);
         this.$store.commit("session/setSessionId", sessionId);
+      }
+    },
+    askPlayerName(force = false) {
+      if (this.session.playerName && !force) return;
+      const name = prompt(
+        this.$t("Your name (the Storyteller sees it at the table)"),
+        this.session.playerName || "",
+      );
+      if (name && name.trim()) {
+        this.$store.commit("session/setPlayerName", name.trim().substr(0, 30));
       }
     },
     leaveSession() {

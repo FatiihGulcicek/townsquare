@@ -89,6 +89,10 @@ export default {
   mounted() {
     const boot = document.getElementById("boot");
     if (boot) boot.remove();
+    // joined through a player link: make sure we know the player's name
+    if (this.session.isSpectator && this.session.sessionId) {
+      setTimeout(() => this.$refs.menu.askPlayerName(), 600);
+    }
     // home screen shortcuts open the app with ?action=...
     const action = takeLaunchAction();
     if (!action) return;

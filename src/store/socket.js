@@ -98,6 +98,7 @@ class LiveSession {
         "getGamestate",
         this._store.state.session.playerId,
       );
+      this.sendJoin();
     } else {
       this.sendGamestate();
     }
@@ -150,6 +151,9 @@ class LiveSession {
         break;
       case "claim":
         this._updateSeat(params);
+        break;
+      case "join":
+        this._autoSeat(params);
         break;
       case "ping":
         this._handlePing(params);
@@ -657,6 +661,50 @@ class LiveSession {
   }
 
   /**
+   * Tell the Storyteller who we are so they can seat us automatically. Player only.
+   */
+  sendJoin() {
+    if (!this._isSpectator) return;
+    const { playerId, playerName } = this._store.state.session;
+    if (!playerId || !playerName) return;
+    this._sendDirect("host", "join", [playerId, playerName]);
+  }
+
+  /**
+   * Automatically seat a player who joined with a name. ST only.
+   * Reuses an empty seat with the same name, otherwise adds a new seat.
+   * @param playerId
+   * @param name
+   * @private
+   */
+  _autoSeat([playerId, name]) {
+    if (this._isSpectator || !playerId || typeof name !== "string") return;
+    name = name.trim().substr(0, 30);
+    if (!name) return;
+    const players = this._store.state.players.players;
+    // already seated: nothing to do (reconnect)
+    if (players.some((p) => p.id === playerId)) {
+      this._handlePing([true, playerId, 0]);
+      return;
+    }
+    const normalize = (s) => (s || "").trim().toLocaleLowerCase("tr");
+    let index = players.findIndex(
+      (p) => !p.id && normalize(p.name) === normalize(name),
+    );
+    if (index < 0) {
+      if (players.length >= 20) return;
+      let seatName = name;
+      let suffix = 2;
+      while (players.some((p) => normalize(p.name) === normalize(seatName))) {
+        seatName = `${name} (${suffix++})`;
+      }
+      this._store.commit("players/add", seatName);
+      index = this._store.state.players.players.length - 1;
+    }
+    this._updateSeat([index, playerId]);
+  }
+
+  /**
    * Distribute player roles to all seated players in a direct message.
    * This will be split server side so that each player only receives their own (sub)message.
    */
@@ -858,6 +906,9 @@ export default (store) => {
           window.location.hash = "";
           session.disconnect();
         }
+        break;
+      case "session/setPlayerName":
+        session.sendJoin();
         break;
       case "session/claimSeat":
         session.claimSeat(payload);
