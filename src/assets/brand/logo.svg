@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<defs>
+  <radialGradient id="sky" cx="50%" cy="38%" r="70%">
+    <stop offset="0" stop-color="#2a3a6b"/><stop offset="0.55" stop-color="#141c3a"/><stop offset="1" stop-color="#070a17"/>
+  </radialGradient>
+  <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+    <stop offset="0" stop-color="#ffd27a" stop-opacity="0.55"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#f6d58a"/><stop offset="1" stop-color="#b9822a"/>
+  </linearGradient>
+  <clipPath id="disc"><circle cx="256" cy="256" r="168"/></clipPath>
+</defs>
+
+<circle cx="256" cy="256" r="214" fill="none" stroke="url(#gold)" stroke-width="6" opacity="0.9"/>
+<circle cx="256" cy="256" r="168" fill="#0b1026" stroke="url(#gold)" stroke-width="5"/>
+<g clip-path="url(#disc)">
+  <circle cx="256" cy="230" r="150" fill="#18234a"/>
+  <g fill="#f3f0e0" opacity="0.85">
+    <circle cx="170" cy="150" r="2"/><circle cx="210" cy="118" r="1.6"/><circle cx="300" cy="128" r="1.8"/><circle cx="150" cy="210" r="1.4"/><circle cx="360" cy="200" r="1.5"/><circle cx="235" cy="160" r="1.2"/>
+  </g>
+  <!-- crescent moon -->
+  <circle cx="318" cy="168" r="34" fill="#f4e7c1"/>
+  <circle cx="333" cy="157" r="30" fill="#18234a"/>
+  <!-- warm glow behind town -->
+  <ellipse cx="256" cy="340" rx="150" ry="60" fill="url(#glow)"/>
+  <g fill="#05070f">
+<path d="M120 352 L120 290 L150 262 L180 290 L180 352 Z"/>
+<path d="M172 352 L172 270 L212 232 L252 270 L252 352 Z"/>
+<rect x="228" y="236" width="12" height="26"/>
+<path d="M244 352 L244 248 L256 196 L268 248 L268 352 Z"/>
+<path d="M262 352 L262 278 L300 244 L338 278 L338 352 Z"/>
+<path d="M330 352 L330 296 L362 268 L394 296 L394 352 Z"/>
+<rect x="352" y="262" width="10" height="20"/>
+
+    <rect x="80" y="350" width="352" height="80"/>
+  </g>
+  <g fill="#ffc861">
+<rect x="140" y="304" width="12" height="16" rx="2"/>
+<rect x="196" y="282" width="12" height="18" rx="2"/>
+<rect x="218" y="282" width="12" height="18" rx="2"/>
+<rect x="251" y="262" width="10" height="16" rx="5"/>
+<rect x="290" y="292" width="12" height="18" rx="2"/>
+<rect x="356" y="310" width="12" height="16" rx="2"/>
+</g>
+  <!-- square: cobblestone arc -->
+  <path d="M100 380 Q256 352 412 380 L412 430 L100 430 Z" fill="#0d1124"/>
+  <!-- lantern flame in the square -->
+  <rect x="253" y="352" width="6" height="30" fill="#05070f"/>
+  <circle cx="256" cy="350" r="22" fill="url(#glow)"/>
+  <path d="M256 334 C264 344 263 352 256 358 C249 352 248 344 256 334 Z" fill="#ffcf5c"/>
+</g>
+<circle cx="256.0" cy="68.0" r="15" fill="#e9b44c" stroke="#1a1208" stroke-width="3"/><circle cx="350.0" cy="93.2" r="15" fill="#e9b44c" stroke="#1a1208" stroke-width="3"/><circle cx="418.8" cy="162.0" r="15" fill="#e9b44c" stroke="#1a1208" stroke-width="3"/><circle cx="444.0" cy="256.0" r="15" fill="#e9b44c" stroke="#1a1208" stroke-width="3"/><circle cx="418.8" cy="350.0" r="15" fill="#e9b44c" stroke="#1a1208" stroke-width="3"/><circle cx="350.0" cy="418.8" r="15" fill="#e9b44c" stroke="#1a1208" stroke-width="3"/><circle cx="256.0" cy="444.0" r="15" fill="#e9b44c" stroke="#1a1208" stroke-width="3"/><circle cx="162.0" cy="418.8" r="15" fill="#c8102e" stroke="#1a1208" stroke-width="3"/><circle cx="93.2" cy="350.0" r="15" fill="#e9b44c" stroke="#1a1208" stroke-width="3"/><circle cx="68.0" cy="256.0" r="15" fill="#e9b44c" stroke="#1a1208" stroke-width="3"/><circle cx="93.2" cy="162.0" r="15" fill="#e9b44c" stroke="#1a1208" stroke-width="3"/><circle cx="162.0" cy="93.2" r="15" fill="#e9b44c" stroke="#1a1208" stroke-width="3"/>
+</svg>

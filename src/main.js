@@ -2,6 +2,9 @@ import Vue from "vue";
 import App from "./App";
 import store from "./store";
 import i18n from "./i18n";
+import { registerServiceWorker } from "./pwa";
+import "@fontsource/cinzel/400.css";
+import "@fontsource/cinzel/700.css";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import {
   faAddressCard,
@@ -51,7 +54,7 @@ import {
   faWindowMaximize,
   faWindowMinimize,
 } from "@fortawesome/free-solid-svg-icons";
-import { faGithub, faDiscord } from "@fortawesome/free-brands-svg-icons";
+import { faGithub } from "@fortawesome/free-brands-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 
 library.add(
@@ -102,10 +105,10 @@ library.add(
   faWindowMaximize,
   faWindowMinimize,
   faGithub,
-  faDiscord,
 );
 Vue.component("font-awesome-icon", FontAwesomeIcon);
 Vue.use(i18n);
+registerServiceWorker();
 Vue.config.productionTip = false;
 
 new Vue({

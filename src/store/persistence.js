@@ -1,8 +1,6 @@
 module.exports = (store) => {
   const updatePagetitle = (isPublic) =>
-    (document.title = `Blood on the Clocktower ${
-      isPublic ? "Town Square" : "Grimoire"
-    }`);
+    (document.title = isPublic ? "Kasaba Meydanı" : "Kasaba Meydanı · Grimuar");
 
   // initialize data
   if (localStorage.getItem("background")) {

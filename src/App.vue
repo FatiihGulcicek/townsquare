@@ -20,7 +20,7 @@
       autoplay
       loop
     ></video>
-    <div class="backdrop"></div>
+    <Scene v-if="!grimoire.background" />
     <transition name="blur">
       <Intro v-if="!players.length"></Intro>
       <TownInfo v-if="players.length && !session.nomination"></TownInfo>
@@ -58,9 +58,12 @@ import FabledModal from "@/components/modals/FabledModal";
 import VoteHistoryModal from "@/components/modals/VoteHistoryModal";
 import GameStateModal from "@/components/modals/GameStateModal";
 import HomebrewModal from "@/components/modals/HomebrewModal";
+import Scene from "./components/Scene";
+import { takeLaunchAction } from "./pwa";
 
 export default {
   components: {
+    Scene,
     GameStateModal,
     HomebrewModal,
     VoteHistoryModal,
@@ -84,6 +87,29 @@ export default {
     return {
       version,
     };
+  },
+  mounted() {
+    const boot = document.getElementById("boot");
+    if (boot) boot.remove();
+    // home screen shortcuts open the app with ?action=...
+    const action = takeLaunchAction();
+    if (!action) return;
+    setTimeout(() => {
+      switch (action) {
+        case "host":
+          if (!this.session.sessionId) this.$refs.menu.hostSession();
+          break;
+        case "join":
+          if (!this.session.sessionId) this.$refs.menu.joinSession();
+          break;
+        case "reference":
+          this.$store.commit("toggleModal", "reference");
+          break;
+        case "night":
+          this.$store.commit("toggleModal", "nightOrder");
+          break;
+      }
+    }, 400);
   },
   methods: {
     keyup({ key, ctrlKey, metaKey }) {
@@ -157,8 +183,7 @@ html,
 body {
   font-size: 1.2em;
   line-height: 1.4;
-  background: url("assets/background.jpg") center center;
-  background-size: cover;
+  background: #04060f;
   color: white;
   height: 100%;
   font-family: "Roboto Condensed", sans-serif;
@@ -190,9 +215,9 @@ h4,
 h5 {
   margin: 0;
   text-align: center;
-  font-family: PiratesBay, sans-serif;
-  letter-spacing: 1px;
-  font-weight: normal;
+  font-family: "Cinzel", Georgia, serif;
+  letter-spacing: 0.5px;
+  font-weight: 700;
 }
 
 ul {
@@ -334,46 +359,4 @@ video#background {
   object-fit: cover;
 }
 
-/* Night phase backdrop */
-#app > .backdrop {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  top: 0;
-  pointer-events: none;
-  background: black;
-  background: linear-gradient(
-    180deg,
-    rgba(0, 0, 0, 1) 0%,
-    rgba(1, 22, 46, 1) 50%,
-    rgba(0, 39, 70, 1) 100%
-  );
-  opacity: 0;
-  transition: opacity 1s ease-in-out;
-  &:after {
-    content: " ";
-    display: block;
-    width: 100%;
-    padding-right: 2000px;
-    height: 100%;
-    background: url("assets/clouds.png") repeat;
-    background-size: 2000px auto;
-    animation: move-background 120s linear infinite;
-    opacity: 0.3;
-  }
-}
-
-@keyframes move-background {
-  from {
-    transform: translate3d(-2000px, 0px, 0px);
-  }
-  to {
-    transform: translate3d(0px, 0px, 0px);
-  }
-}
-
-#app.night > .backdrop {
-  opacity: 0.5;
-}
 </style>

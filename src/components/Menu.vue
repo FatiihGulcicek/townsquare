@@ -227,22 +227,22 @@
             {{ $t("Game State JSON") }}
             <em><font-awesome-icon icon="file-code" /></em>
           </li>
-          <li>
-            <a href="https://discord.gg/Gd7ybwWbFk" target="_blank">
-              {{ $t("Join Discord") }}
-            </a>
-            <em>
-              <a href="https://discord.gg/Gd7ybwWbFk" target="_blank">
-                <font-awesome-icon :icon="['fab', 'discord']" />
-              </a>
-            </em>
+          <li
+            v-if="!pwa.isStandalone && (pwa.canInstall || pwa.isIOS)"
+            @click="installApp"
+          >
+            {{ $t("Add to home screen") }}
+            <em><font-awesome-icon icon="file-upload" /></em>
           </li>
           <li>
-            <a href="https://github.com/bra1n/townsquare" target="_blank">
+            <a href="https://github.com/FatiihGulcicek/townsquare" target="_blank">
               {{ $t("Source code") }}
             </a>
             <em>
-              <a href="https://github.com/bra1n/townsquare" target="_blank">
+              <a
+                href="https://github.com/FatiihGulcicek/townsquare"
+                target="_blank"
+              >
                 <font-awesome-icon :icon="['fab', 'github']" />
               </a>
             </em>
@@ -256,6 +256,7 @@
 <script>
 import { mapMutations, mapState } from "vuex";
 import { languages, setLocale } from "../i18n";
+import { pwaState, install } from "../pwa";
 
 export default {
   computed: {
@@ -268,10 +269,22 @@ export default {
   },
   data() {
     return {
+      pwa: pwaState,
       tab: "grimoire",
     };
   },
   methods: {
+    async installApp() {
+      if (pwaState.canInstall) {
+        await install();
+      } else {
+        alert(
+          this.$t(
+            'In Safari, tap the Share button and choose "Add to Home Screen".'
+          )
+        );
+      }
+    },
     toggleLocale() {
       const index = languages.findIndex((l) => l.id === this.$i18n.locale);
       setLocale(languages[(index + 1) % languages.length].id);
