@@ -22,10 +22,14 @@ Bu dal (`cpanel`) derlenmiş, çalışmaya hazır sürümdür. Derleme gerekmez.
    - **Run NPM Install** → **Restart**.
 4. Kontrol: `https://darkspire.co/healthz` → `"db":{"enabled":true,"kind":"mysql","ready":true}`.
 
-## Güncelleme
-Geliştirici `./deploy-cpanel.sh` çalıştırınca bu dal güncellenir. cPanel'de
-**Git Version Control → Manage → Pull or Deploy → Update from Remote**, sonra
-**Setup Node.js App → Restart**.
+## Güncelleme (otomatik)
+Sunucu her 2 dakikada bir GitHub'daki `cpanel` dalını kontrol eder. Yeni
+sürüm varsa kendisi çeker, gerekirse paketleri kurar ve oyun oynanmıyorken
+yeniden başlar (en geç 20 dk). Oyuncular odalarına otomatik geri bağlanır.
+Durum: `https://darkspire.co/healthz` → `updater`.
+
+Ortam değişkeni ekleyip değiştirince: Setup Node.js App → **Run JS script** →
+`restart`.
 
 ## Kayıtlar (phpMyAdmin)
 - `vk_profiles`: oyuncular (ad, oyun, galibiyet, rol istatistikleri)

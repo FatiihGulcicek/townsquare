@@ -26,7 +26,9 @@ cat > /tmp/cpanel-out/.htaccess.example <<'TXT'
 TXT
 REPO=$(pwd)
 rm -rf /tmp/cpanel-wt
-git worktree add -f /tmp/cpanel-wt cpanel 2>/dev/null || git worktree add -f --orphan -b cpanel /tmp/cpanel-wt
+REMOTE=${REMOTE:-fork}
+git fetch -q "$REMOTE" cpanel
+git worktree add -f -B cpanel /tmp/cpanel-wt "$REMOTE/cpanel"
 cd /tmp/cpanel-wt
 git rm -rq --ignore-unmatch . >/dev/null 2>&1 || true
 cp -r /tmp/cpanel-out/. .
@@ -36,6 +38,6 @@ git commit -qm "cPanel build $(cd "$REPO" && git rev-parse --short HEAD)
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_0167oXY6ZwbEeBCvj8jYoKrE" || echo "no changes"
 cd "$REPO"
-git push -q fork cpanel
+git push -q "$REMOTE" cpanel
 git worktree remove --force /tmp/cpanel-wt
-echo "cpanel branch updated"
+echo "cpanel branch updated: darkspire.co picks it up within ~2 minutes (check /healthz → updater.head)"
