@@ -17,7 +17,9 @@
     <div class="offline" v-if="game.status !== 'online'">
       {{
         game.status === "connecting"
-          ? "Bağlanıyor…"
+          ? slowStart
+            ? "Sunucu uyanıyor… ilk açılış bir dakika kadar sürebilir ☕"
+            : "Bağlanıyor…"
           : "Bağlantı koptu, yeniden bağlanıyor…"
       }}
     </div>
@@ -986,6 +988,7 @@ export default {
       mod: null,
       customText: "",
       witchHeal: false,
+      openedAt: Date.now(),
       showQr: false,
       reactionList: [
         "😱",
@@ -1060,6 +1063,10 @@ export default {
     },
     inGame() {
       return !["lobby", "over"].includes(this.phase);
+    },
+    slowStart() {
+      void this.now;
+      return !this.s && Date.now() - this.openedAt > 5000;
     },
     takenCount() {
       return this.s.cards ? this.s.cards.filter((c) => c.taken).length : 0;

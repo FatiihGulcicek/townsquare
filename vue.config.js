@@ -1,5 +1,24 @@
+// a build id lets open apps notice that a new version was deployed
+const BUILD = String(Date.now());
+process.env.VUE_APP_BUILD = BUILD;
+
+class VersionFile {
+  apply(compiler) {
+    compiler.hooks.thisCompilation.tap("VersionFile", (compilation) => {
+      compilation.hooks.processAssets.tap(
+        { name: "VersionFile", stage: compilation.constructor.PROCESS_ASSETS_STAGE_ADDITIONAL },
+        () => {
+          const { RawSource } = compiler.webpack.sources;
+          compilation.emitAsset("version.json", new RawSource(JSON.stringify({ build: BUILD })));
+        },
+      );
+    });
+  }
+}
+
 module.exports = {
-  // if the app is supposed to run on Github Pages in a subfolder, use the following config:
-  // publicPath: process.env.NODE_ENV === "production" ? "/townsquare/" : "/"
-  publicPath: process.env.NODE_ENV === "production" ? "/" : "/"
+  publicPath: "/",
+  configureWebpack: {
+    plugins: [new VersionFile()],
+  },
 };

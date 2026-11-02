@@ -7,6 +7,13 @@
     <Room v-else @settings="settingsOpen = true" />
     <RoleCard />
     <LiveStory />
+    <transition name="toast">
+      <div class="update" v-if="pwa.updateReady">
+        <span>✨ Yeni sürüm hazır</span>
+        <button @click="update">Yenile</button>
+        <button class="later" @click="pwa.updateReady = false">Sonra</button>
+      </div>
+    </transition>
     <Settings v-if="settingsOpen" @close="settingsOpen = false" />
     <div class="toasts" v-show="!game.liveQueue.length">
       <transition-group name="toast">
@@ -31,12 +38,13 @@ import RoleCard from "./components/RoleCard";
 import Settings from "./components/Settings";
 import LiveStory from "./components/LiveStory";
 import { setMood } from "./music";
+import { pwaState, applyUpdate } from "./pwa";
 import { game, restore } from "./game";
 
 export default {
   components: { Home, Room, RoleCard, Settings, LiveStory },
   data() {
-    return { game, settingsOpen: false };
+    return { game, settingsOpen: false, pwa: pwaState };
   },
   computed: {
     mood() {
@@ -83,6 +91,9 @@ export default {
     });
   },
   methods: {
+    update() {
+      applyUpdate();
+    },
     dismiss(id) {
       const i = game.toasts.findIndex((t) => t.id === id);
       if (i >= 0) game.toasts.splice(i, 1);
@@ -387,6 +398,35 @@ input.field {
 .phase-enter,
 .phase-leave-to {
   opacity: 0;
+}
+
+.update {
+  position: fixed;
+  z-index: 450;
+  left: 50%;
+  bottom: calc(86px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 14px;
+  border-radius: 24px;
+  background: rgba(16, 18, 30, 0.97);
+  border: 1px solid $gold;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  button {
+    border: 0;
+    border-radius: 16px;
+    padding: 7px 12px;
+    background: $gold;
+    color: #1a1204;
+    font-weight: 700;
+    &.later {
+      background: transparent;
+      color: $muted;
+    }
+  }
 }
 
 .sheet-bg {

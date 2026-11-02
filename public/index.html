@@ -26,13 +26,13 @@
     /* splash while the app loads */
     html { background: #070a17; } body { margin: 0; }
     #boot { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; color: #e9b44c; font: 600 18px/1.2 Georgia, serif; letter-spacing: 2px; }
-    #boot img { width: 120px; height: 120px; animation: boot-pulse 1.6s ease-in-out infinite; }
+    #boot img { width: 120px; height: 120px; border-radius: 28px; animation: boot-pulse 1.6s ease-in-out infinite; position: relative; } #boot small { color: rgba(243,238,228,.6); font: 14px/1 -apple-system, sans-serif; letter-spacing: 1px; } #boot .moon { position: absolute; top: 12%; right: 16%; width: 70px; height: 70px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff8dc, #d8cfa8 60%, #9e957a); box-shadow: 0 0 40px rgba(255,240,200,.5); animation: boot-rise 2s ease-out both; } @keyframes boot-rise { from { transform: translateY(40px); opacity: 0; } } #boot { background: radial-gradient(circle at 50% 30%, #13183a, #04050c 70%); }
     @keyframes boot-pulse { 50% { transform: scale(1.06); filter: drop-shadow(0 0 18px rgba(233,180,76,.45)); } }
   </style>
 </head>
 <body>
 <noscript>Vampir Köylü için JavaScript gereklidir.</noscript>
-<div id="boot"><img src="static/apple-icon.png" alt=""><span>VAMPİR KÖYLÜ</span></div>
+<div id="boot"><div class="moon"></div><img src="static/apple-icon.png" alt=""><span>VAMPİR KÖYLÜ</span><small>Köy uyanıyor…</small></div>
 <div id="app"></div>
 </body>
 </html>

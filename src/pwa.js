@@ -86,3 +86,39 @@ export function takeLaunchAction() {
   }
   return action;
 }
+
+/*
+ * New version check: every build has an id; when the server has a newer one
+ * the app shows a "new version" banner. Updating refreshes the cached shell.
+ */
+const BUILD = process.env.VUE_APP_BUILD || "";
+async function checkVersion() {
+  if (!BUILD || process.env.NODE_ENV !== "production") return;
+  try {
+    const response = await fetch("/version.json", { cache: "no-store" });
+    if (!response.ok) return;
+    const { build } = await response.json();
+    if (build && build !== BUILD) pwaState.updateReady = true;
+  } catch (e) {
+    // offline
+  }
+}
+setTimeout(checkVersion, 8000);
+setInterval(checkVersion, 5 * 60 * 1000);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") checkVersion();
+});
+
+export async function applyUpdate() {
+  try {
+    const names = await caches.keys();
+    await Promise.all(
+      names
+        .filter((n) => n.startsWith("km-shell"))
+        .map((n) => caches.delete(n)),
+    );
+  } catch (e) {
+    // no cache api
+  }
+  window.location.reload();
+}

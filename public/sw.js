@@ -1,9 +1,11 @@
 /* Kasaba Meydanı service worker
- * - pages: network first, falls back to the cached app shell when offline
+ * - pages: the cached app shell opens instantly (even while the free server
+ *   is still waking up) and is refreshed in the background; the app shows a
+ *   "new version" banner when a newer build is online
  * - hashed build assets (js/css/img/fonts/media): cache first, they never change
  * - live game traffic (WebSocket) and server endpoints are never cached
  */
-const SHELL = "km-shell-v5";
+const SHELL = "km-shell-v6";
 const ASSETS = "km-assets-v3";
 const MAX_ASSETS = 400;
 
@@ -89,18 +91,25 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (/^\/(vk|api|healthz|push)/.test(url.pathname)) return;
+  if (/^\/(vk|api|healthz|push|version\.json)/.test(url.pathname)) return;
 
   // app pages: always try the network so updates arrive immediately
   if (request.mode === "navigate") {
+    const network = fetch(request).then((response) => {
+      if (response.ok) {
+        const copy = response.clone();
+        caches.open(SHELL).then((cache) => cache.put("/", copy));
+      }
+      return response;
+    });
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(SHELL).then((cache) => cache.put("/", copy));
-          return response;
-        })
-        .catch(() => caches.match("/")),
+      caches.match("/").then((cached) => {
+        if (cached) {
+          event.waitUntil(network.catch(() => null));
+          return cached;
+        }
+        return network.catch(() => caches.match("/"));
+      }),
     );
     return;
   }

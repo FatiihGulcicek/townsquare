@@ -101,3 +101,15 @@ Değişken yoksa oyun yine çalışır; sadece odalar bellekte tutulur ve istati
 
 Sunucu ücretsiz planda uyumasın diye 10:00–02:00 (İstanbul) arasında kendini uyanık tutar.
 `KEEP_AWAKE=false` ile kapatılabilir, `AWAKE_FROM` / `AWAKE_TO` ile saatler değiştirilebilir.
+
+## Ses/görüntü için aktarma sunucusu (TURN, isteğe bağlı)
+
+Bazı mobil operatörler telefonların birbirine doğrudan bağlanmasını engeller; o zaman sesli/kameralı
+sohbet bazı kişiler arasında kurulamaz. Ücretsiz bir TURN hesabı bunu çözer:
+
+1. https://www.metered.ca/stun-turn adresinden ücretsiz "Open Relay" hesabı aç.
+2. Panelde verilen bilgileri Render → townsquare → **Environment** bölümüne ekle:
+   - `TURN_URL` (virgülle birden fazla olabilir, ör. `turn:global.relay.metered.ca:80,turns:global.relay.metered.ca:443?transport=tcp`)
+   - `TURN_USERNAME`
+   - `TURN_CREDENTIAL`
+3. Kaydet; sunucu yeniden başlar ve uygulama bunları otomatik kullanır.
