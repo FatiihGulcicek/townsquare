@@ -175,6 +175,27 @@ export const BADGES = [
     test: (g, t) => t.games >= 50,
   },
   {
+    id: "hayalet",
+    emoji: "👻",
+    name: "Hayalet kâhin",
+    desc: "Ölüyken 2 vampiri doğru tahmin et",
+    test: (g) => (g.stats.ghostCorrect || 0) >= 2,
+  },
+  {
+    id: "yildiz",
+    emoji: "⭐",
+    name: "Oyunun yıldızı",
+    desc: "Oyunun yıldızı seçil",
+    test: () => false,
+  },
+  {
+    id: "ogrenci",
+    emoji: "🎓",
+    name: "Mezun",
+    desc: "Öğretici oyunu bitir",
+    test: (g) => g.tutorial,
+  },
+  {
     id: "ceza",
     emoji: "🎲",
     name: "Sözünün eri",
@@ -225,7 +246,8 @@ function xpFor(g) {
     8 * (s.shotVamp || 0) +
     8 * (s.poisonVamp || 0) +
     3 * (s.kill || 0) +
-    3 * (s.rightVote || 0)
+    3 * (s.rightVote || 0) +
+    5 * (s.ghostCorrect || 0)
   );
 }
 
@@ -262,6 +284,7 @@ export function recordGame(state) {
       alive: p.alive,
     })),
     stats: state.myStats || {},
+    tutorial: !!state.tutorial,
     events: (state.events || []).slice(-60),
   };
   g.xp = xpFor(g);
@@ -283,6 +306,19 @@ export function recordGame(state) {
     xp: g.xp,
     levelUp: levelFor(t.xp) > before ? levelFor(t.xp) : 0,
   };
+}
+
+/** chosen as player of the game (decided after the game ended) */
+export function awardMvp(key) {
+  if (progress.totals.mvpKeys && progress.totals.mvpKeys.includes(key))
+    return null;
+  if (!progress.totals.mvpKeys) Vue.set(progress.totals, "mvpKeys", []);
+  progress.totals.mvpKeys.push(key);
+  progress.totals.mvpKeys.splice(0, progress.totals.mvpKeys.length - 20);
+  progress.totals.xp += 15;
+  const badge = unlock("yildiz");
+  save();
+  return { badge };
 }
 
 /** the penalty badge is earned later, when the penalty is marked as done */

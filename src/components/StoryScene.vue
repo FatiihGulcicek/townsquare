@@ -174,6 +174,17 @@
         >
       </template>
 
+      <template v-else-if="e.type === 'mvp'">
+        <span class="trophy">⭐</span>
+        <span
+          v-for="i in 12"
+          :key="'m' + i"
+          class="confetti"
+          :style="confetti(i)"
+          >✨</span
+        >
+      </template>
+
       <template v-else-if="e.type === 'penalty'">
         <span class="dice">🎲</span>
         <span class="dice two">🎲</span>
@@ -278,6 +289,8 @@ export function captionFor(e) {
         "Savunma zamanı",
         (e.names || []).join(" ve ") + " kendini savunuyor",
       ];
+    case "mvp":
+      return [`⭐ Oyunun yıldızı: ${e.name}`, `${e.votes} oyla seçildi`];
     case "penalty":
       return ["Ceza zamanı! 🎲", (e.items || []).map((x) => x.name).join(", ")];
   }
@@ -319,6 +332,7 @@ export default {
           "punish",
           "revive",
           "penalty",
+          "mvp",
         ].includes(this.e.type) ||
         (this.e.type === "win" && this.e.winner !== "vampir")
       );

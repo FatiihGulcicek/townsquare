@@ -122,12 +122,22 @@ function roomIo(code, entry) {
   };
 }
 
-function createRoom(mode, creatorId, wanted) {
+function createRoom(mode, creatorId, wanted, tutorial) {
   if (rooms.size >= MAX_ROOMS) return null;
   const code = wanted || newCode();
   if (!code) return null;
   const entry = { sockets: new Set(), room: null };
   entry.room = new Room(code, mode, creatorId, roomIo(code, entry));
+  if (tutorial) {
+    // a practice game against bots with calm timings
+    entry.room.tutorial = true;
+    Object.assign(entry.room.settings, {
+      dayMinutes: 3,
+      nightSeconds: 90,
+      penalty: "off",
+      idlePenalty: false,
+    });
+  }
   rooms.set(code, entry);
   entry.room.save();
   return code;
@@ -423,7 +433,12 @@ server.on("request", async (req, res) => {
       const existing = await findRoom(wanted);
       if (existing) return json(res, 200, { code: wanted, existing: true });
     }
-    const code = createRoom(body.mode, body.playerId, wanted);
+    const code = createRoom(
+      body.tutorial ? "auto" : body.mode,
+      body.playerId,
+      body.tutorial ? null : wanted,
+      !!body.tutorial,
+    );
     if (!code) return json(res, 503, { error: "busy" });
     return json(res, 200, { code });
   }

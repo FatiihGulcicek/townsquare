@@ -4,6 +4,7 @@ import { getPushSubscription, onPushSubscription } from "./push";
 import { play } from "./sfx";
 import {
   recordGame,
+  awardMvp,
   penaltyDone,
   titleFor,
   levelFor,
@@ -233,6 +234,25 @@ function onState(next) {
       }, 9000);
     }
   }
+  // chosen as player of the game
+  if (next.mvp && next.me.pid && next.mvp.pid === next.me.pid) {
+    const award = awardMvp(next.code + ":" + next.gameId);
+    if (award) {
+      toast("⭐ Oyunun yıldızı seçildin! +15 XP", "success", 7000);
+      play("win");
+      if (award.badge) {
+        setTimeout(
+          () =>
+            toast(
+              `🏅 Yeni rozet: ${award.badge.emoji} ${award.badge.name}`,
+              "success",
+              6000,
+            ),
+          1500,
+        );
+      }
+    }
+  }
   // my penalty done: a badge
   if (next.penalties && next.me.pid) {
     const mine = next.penalties.find((x) => x.pid === next.me.pid);
@@ -402,7 +422,7 @@ export function setName(name) {
   if (game.name && game.code) send("join", { name: game.name });
 }
 
-export async function createRoom(mode, wanted) {
+export async function createRoom(mode, wanted, tutorial) {
   const response = await fetch("/api/room", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -410,13 +430,14 @@ export async function createRoom(mode, wanted) {
       mode,
       playerId: game.playerId,
       code: wanted || undefined,
+      tutorial: tutorial || undefined,
     }),
   });
   if (!response.ok) {
     throw new Error(response.status === 400 ? "code" : "busy");
   }
   const { code, existing } = await response.json();
-  if (!existing) rememberRoom(code, mode);
+  if (!existing && !tutorial) rememberRoom(code, mode);
   join(code);
   return code;
 }

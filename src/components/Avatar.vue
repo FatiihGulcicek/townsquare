@@ -85,9 +85,14 @@ export default {
       return pid ? game.photos[pid] || "" : "";
     },
     initials() {
-      const parts = this.name.trim().split(/\s+/).filter(Boolean);
+      // letters only (skip emoji such as the bot's 🤖)
+      const parts = this.name
+        .trim()
+        .split(/\s+/)
+        .map((w) => Array.from(w).filter((ch) => /\p{L}|\p{N}/u.test(ch)))
+        .filter((chars) => chars.length);
       if (!parts.length) return "?";
-      const first = parts[0][0] || "";
+      const first = parts[0][0];
       const second = parts.length > 1 ? parts[1][0] : parts[0][1] || "";
       return (first + second).toLocaleUpperCase("tr");
     },

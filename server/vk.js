@@ -15,6 +15,7 @@
 const crypto = require("crypto");
 const { CATEGORIES, MODES, pickPenalties } = require("./penalties");
 const { line } = require("./lines");
+const { BotBrain } = require("./bots");
 
 const ROLES = {
   vampir: {
@@ -243,6 +244,10 @@ class Room {
       penalties: this.penalties,
       potions: this.potions,
       stats: this.stats,
+      guesses: this.guesses,
+      mvpVotes: this.mvpVotes,
+      mvp: this.mvp,
+      tutorial: this.tutorial,
       runoff: this.runoff,
       deathOrder: this.deathOrder,
       events: this.events,
@@ -306,6 +311,9 @@ class Room {
     this.potions = { heal: true, poison: true };
     this.stats = {};
     this.rightVoters = [];
+    this.guesses = {};
+    this.mvpVotes = {};
+    this.mvp = null;
     this.shot = null;
     this.runoff = null;
     this.chat = { town: [], vampir: [], dead: [] };
@@ -459,6 +467,14 @@ class Room {
       at: now,
     });
     if (this.chat[channel].length > CHAT_KEEP) this.chat[channel].shift();
+    if (
+      channel === "town" &&
+      me &&
+      this.brain &&
+      this.brain.gameId === this.gameId
+    ) {
+      this.brain.heard(me, text);
+    }
     this.update();
   }
 
@@ -542,7 +558,10 @@ class Room {
       }, 25000);
       if (p.bot) {
         setTimeout(() => {
-          const t = pick(this.alive());
+          const t =
+            this.brain && this.brain.gameId === this.gameId
+              ? this.brain.shotTarget(p)
+              : pick(this.alive());
           if (t) this.shoot(p.id, t.pid);
         }, 2500);
       }
@@ -815,6 +834,12 @@ class Room {
         idle: me ? me.idle || 0 : 0,
       },
       penalties: this.phase === "over" ? this.penalties : null,
+      tutorial: !!this.tutorial,
+      myGuesses: me ? (this.guesses || {})[me.pid] || [] : [],
+      ghostResults: this.phase === "over" ? this.ghostResults || [] : [],
+      mvp: this.mvp,
+      myMvpVote: me && this.mvpVotes ? this.mvpVotes[me.pid] || null : null,
+      mvpCount: this.mvpVotes ? Object.keys(this.mvpVotes).length : 0,
       myStats:
         this.phase === "over" && me
           ? {
@@ -1142,6 +1167,10 @@ class Room {
         return this.pickCard(id, parseInt(params.index, 10));
       case "shoot":
         return this.shoot(id, params.target);
+      case "guess":
+        return this.guess(id, params.target);
+      case "mvp":
+        return this.voteMvp(id, params.target);
       case "witch":
         return this.witch(id, params);
       case "night":
@@ -1209,6 +1238,18 @@ class Room {
       alive: true,
     });
     if (!this.ownerId) this.ownerId = id;
+    if (this.tutorial && !this.players.some((p) => p.bot)) {
+      ["Ayşe", "Mehmet", "Zeynep", "Can", "Elif"].forEach((botName) =>
+        this.players.push({
+          id: "bot-" + newPid(),
+          pid: newPid(),
+          name: botName + " 🤖",
+          role: null,
+          alive: true,
+          bot: true,
+        }),
+      );
+    }
     this.io.profile(id, unique);
     this.update();
   }
@@ -1275,6 +1316,14 @@ class Room {
     const me = this.player(id);
     const card = this.cards && this.cards[index];
     if (!me || me.role || !card || card.by) return;
+    // in the tutorial the player always becomes the Seer (most to learn)
+    if (this.tutorial && !me.bot && card.role !== "gozcu") {
+      const seer = this.cards.find((c) => c.role === "gozcu" && !c.by);
+      if (seer) {
+        seer.role = card.role;
+        card.role = "gozcu";
+      }
+    }
     card.by = me.pid;
     me.role = card.role;
     // everyone has a card: start the night after a moment to read it
@@ -1350,47 +1399,26 @@ class Room {
   }
 
   /** practice bots make random (valid) choices after a short delay */
+  /** practice bots: a small "brain" plays their part */
   botsAct() {
-    const phase = this.phase;
-    const round = this.round;
-    this.alive()
-      .filter((p) => p.bot)
-      .forEach((bot) => {
-        const wait = 2500 + rnd(6000);
-        setTimeout(
-          () => {
-            if (this.phase !== phase || this.round !== round || !bot.alive)
-              return;
-            const others = this.alive().filter((p) => p !== bot);
-            if (phase === "night" && bot.role === "cadi") {
-              this.witch(bot.id, {});
-            } else if (phase === "night") {
-              let options = others;
-              if (isVamp(bot)) options = others.filter((p) => !isVamp(p));
-              if (bot.role === "doktor") {
-                options = this.alive().filter(
-                  (p) => p.pid !== this.lastProtected,
-                );
-              }
-              const t = pick(options);
-              if (t) this.nightAction(bot.id, t.pid);
-            } else if (phase === "day" || phase === "runoff") {
-              if (rnd(6) === 0) return this.dayVote(bot.id, "pass");
-              let options = isVamp(bot)
-                ? others.filter((p) => !isVamp(p))
-                : others;
-              if (phase === "runoff") {
-                options = others.filter((p) =>
-                  this.runoff.candidates.includes(p.pid),
-                );
-              }
-              const t = pick(options.length ? options : others);
-              if (t) this.dayVote(bot.id, t.pid);
-            }
-          },
-          phase === "day" ? wait * 3 : phase === "runoff" ? wait : wait,
-        );
-      });
+    if (!this.players.some((p) => p.bot)) return;
+    if (!this.brain || this.brain.gameId !== this.gameId) {
+      this.brain = new BotBrain(this);
+    }
+    this.brain.act(this.phase);
+  }
+
+  /** a bot writes in the village chat */
+  botSay(bot, text) {
+    this.chat.town.push({
+      n: ++this.chatSeq,
+      from: bot.pid,
+      name: bot.name,
+      text,
+      at: Date.now(),
+    });
+    if (this.chat.town.length > CHAT_KEEP) this.chat.town.shift();
+    this.update();
   }
 
   nightReady() {
@@ -1796,6 +1824,11 @@ class Room {
       })),
     });
     this.narrate(text);
+    this.scoreGuesses();
+    const gameId = this.gameId;
+    setTimeout(() => {
+      if (this.gameId === gameId) this.finishMvp();
+    }, 60000);
     this.dealPenalties(winner);
     this.pushAll({ title: "Oyun bitti 🏁", body: text, tag: "phase" });
     this.io.gameOver({
@@ -1857,6 +1890,64 @@ class Room {
       "🎲 Ceza zamanı! " +
         this.penalties.map((x) => `${x.name}: ${x.text}`).join(" · "),
     );
+  }
+
+  /** dead players guess who the vampires are (bonus XP at the end) */
+  guess(id, targetPid) {
+    const me = this.player(id);
+    if (!me || me.alive || ["lobby", "over"].includes(this.phase)) return;
+    const t = this.byPid(targetPid);
+    if (!t || t === me) return;
+    const list = this.guesses[me.pid] || (this.guesses[me.pid] = []);
+    const i = list.indexOf(t.pid);
+    if (i >= 0) list.splice(i, 1);
+    else list.push(t.pid);
+    this.update();
+  }
+
+  scoreGuesses() {
+    this.ghostResults = Object.keys(this.guesses || {})
+      .map((pid) => {
+        const p = this.byPid(pid);
+        const list = this.guesses[pid] || [];
+        if (!p || !list.length) return null;
+        const correct = list.filter((t) => isVamp(this.byPid(t))).length;
+        const wrong = list.length - correct;
+        this.credit(p, "ghostCorrect", correct);
+        return { pid, name: p.name, correct, wrong };
+      })
+      .filter(Boolean);
+  }
+
+  /** "player of the game": everyone votes at the end */
+  voteMvp(id, targetPid) {
+    if (this.phase !== "over" || this.mvp) return;
+    const me = this.player(id);
+    const t = this.byPid(targetPid);
+    if (!me || !t || t === me) return;
+    this.mvpVotes[me.pid] = t.pid;
+    const humans = this.players.filter((p) => !p.bot && !p.kicked);
+    if (humans.every((p) => this.mvpVotes[p.pid] || humans.length < 2)) {
+      this.finishMvp();
+    } else {
+      this.update();
+    }
+  }
+
+  finishMvp() {
+    if (this.mvp || this.phase !== "over") return;
+    const tally = {};
+    Object.values(this.mvpVotes).forEach(
+      (t) => (tally[t] = (tally[t] || 0) + 1),
+    );
+    const max = Math.max(0, ...Object.values(tally));
+    if (!max) return;
+    const top = Object.keys(tally).filter((t) => tally[t] === max);
+    const p = this.byPid(pick(top));
+    this.mvp = { pid: p.pid, name: p.name, votes: max };
+    this.story("mvp", { name: p.name, votes: max });
+    this.narrate(`⭐ Oyunun yıldızı: ${p.name} (${max} oy)!`);
+    this.update();
   }
 
   destroy() {

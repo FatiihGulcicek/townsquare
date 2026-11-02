@@ -11,6 +11,10 @@
       <p class="muted">Kasaba Meydanı · arkadaşlarınla telefondan oyna</p>
     </header>
 
+    <button class="btn tutorial" :disabled="busy" @click="tutorial">
+      🎓 Nasıl oynanır? Botlarla öğretici oyun
+    </button>
+
     <div class="card me-card">
       <button
         class="photo-btn"
@@ -235,6 +239,17 @@ export default {
       }
       this.busy = false;
     },
+    async tutorial() {
+      unlockVoice();
+      if (this.needName()) return;
+      this.busy = true;
+      try {
+        await createRoom("auto", undefined, true);
+      } catch (e) {
+        toast("Şu an açılamadı, biraz sonra tekrar dene.", "warning");
+      }
+      this.busy = false;
+    },
     reopen(r) {
       this.create(r.mode, r.code);
     },
@@ -302,6 +317,14 @@ h3 {
   display: block;
   margin-bottom: 6px;
   font-weight: 600;
+}
+.tutorial {
+  background: linear-gradient(
+    135deg,
+    rgba(123, 108, 255, 0.35),
+    rgba(40, 30, 90, 0.6)
+  );
+  border-color: rgba(180, 169, 255, 0.6);
 }
 .me-card {
   display: flex;

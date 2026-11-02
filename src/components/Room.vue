@@ -684,6 +684,43 @@
             🎬 Oyunun hikâyesini izle
           </button>
         </div>
+        <div class="card mvp" v-if="s.me.seated">
+          <template v-if="s.mvp">
+            <h3>⭐ Oyunun yıldızı</h3>
+            <div class="mvp-win">
+              <Avatar :name="s.mvp.name" :size="72" />
+              <b>{{ s.mvp.name }}</b>
+              <small class="muted">{{ s.mvp.votes }} oy</small>
+            </div>
+          </template>
+          <template v-else>
+            <h3>⭐ Oyunun yıldızını seç</h3>
+            <p class="muted small">
+              Bu oyunda en iyi kim oynadı? ({{ s.mvpCount }} kişi seçti)
+            </p>
+            <div class="grid pick">
+              <button
+                v-for="p in s.players.filter(
+                  (x) => x.pid !== s.me.pid && !x.kicked,
+                )"
+                :key="p.pid"
+                class="tile"
+                :class="{ selected: s.myMvpVote === p.pid }"
+                @click="act('mvp', { target: p.pid })"
+              >
+                <Avatar :name="p.name" :size="46" />
+                <span class="name">{{ p.name }}</span>
+              </button>
+            </div>
+          </template>
+        </div>
+        <div class="card" v-if="s.ghostResults && s.ghostResults.length">
+          <h3>👻 Hayalet tahminleri</h3>
+          <div v-for="g in s.ghostResults" :key="g.pid" class="seer-line">
+            <b>{{ g.name }}</b
+            >: {{ g.correct }} doğru, {{ g.wrong }} yanlış
+          </div>
+        </div>
         <div class="card penalties" v-if="s.penalties && s.penalties.length">
           <h3>🎲 Ceza zamanı!</h3>
           <div
@@ -763,6 +800,31 @@
         </div>
       </div>
 
+      <!-- ghosts guess who the vampires are -->
+      <div
+        class="card ghost"
+        v-if="s.me.seated && !s.me.alive && !['lobby', 'over'].includes(phase)"
+      >
+        <h3>👻 Hayalet tahmini</h3>
+        <p class="muted small">
+          Öldün ama oyun bitmedi! Sence kimler vampir? Doğru tahmin başına +5
+          XP. İstediğin zaman değiştirebilirsin.
+        </p>
+        <div class="grid pick">
+          <button
+            v-for="p in s.players.filter((x) => x.pid !== s.me.pid)"
+            :key="p.pid"
+            class="tile"
+            :class="{ selected: s.myGuesses.includes(p.pid), dead: !p.alive }"
+            @click="act('guess', { target: p.pid })"
+          >
+            <Avatar :name="p.name" :size="46" :dead="!p.alive" />
+            <span class="name">{{ p.name }}</span>
+            <small v-if="s.myGuesses.includes(p.pid)">🧛 sence</small>
+          </button>
+        </div>
+      </div>
+
       <!-- village (during the game) -->
       <div class="card" v-if="!['lobby', 'over'].includes(phase)">
         <h3>Köy · {{ alivePlayers.length }} kişi hayatta</h3>
@@ -791,6 +853,9 @@
             >
             <small v-if="p.role" :class="p.role">{{ roleName(p.role) }}</small>
             <small v-else-if="p.pid === s.me.pid" class="muted">sen</small>
+            <span class="note-tag" v-if="noteOf(p.pid).tag">{{
+              tags[noteOf(p.pid).tag].emoji
+            }}</span>
             <span class="flags" v-if="p.muted || p.noVote">
               {{ p.muted ? "🔇" : "" }}{{ p.noVote ? "🚫" : "" }}
             </span>
@@ -820,6 +885,29 @@
               <template v-if="mod.role"> · {{ roleName(mod.role) }}</template>
             </small>
           </div>
+        </div>
+        <div class="notebook" v-if="inGame && s.me.seated">
+          <div class="tags">
+            <button
+              v-for="(t, key) in tags"
+              :key="key"
+              :class="{ on: noteOf(mod.pid).tag === key }"
+              @click="
+                setNote(mod.pid, {
+                  tag: noteOf(mod.pid).tag === key ? '' : key,
+                })
+              "
+            >
+              {{ t.emoji }} {{ t.label }}
+            </button>
+          </div>
+          <input
+            class="field note"
+            :value="noteOf(mod.pid).text"
+            maxlength="120"
+            placeholder="📝 Gizli notun (sadece sen görürsün)"
+            @change="setNote(mod.pid, { text: $event.target.value })"
+          />
         </div>
         <div class="emoji-row" v-if="canReact">
           <button v-for="em in reactionList" :key="em" @click="sendReact(em)">
@@ -855,6 +943,7 @@
         <button class="btn ghost" @click="mod = null">Vazgeç</button>
       </div>
     </div>
+    <Coach v-if="s && s.tutorial" />
     <Chat />
     <VoiceBar />
   </div>
@@ -880,6 +969,8 @@ import VoiceBar from "./VoiceBar";
 import StoryReel from "./StoryReel";
 import VideoStrip from "./VideoStrip";
 import OnlineList from "./OnlineList";
+import Coach from "./Coach";
+import { notes, TAGS, useNotes, setNote } from "../notes";
 import { voiceChat } from "../voicechat";
 
 const PRESETS = [
@@ -980,7 +1071,15 @@ const TOGGLES = [
 ];
 
 export default {
-  components: { Avatar, Chat, VoiceBar, StoryReel, VideoStrip, OnlineList },
+  components: {
+    Avatar,
+    Chat,
+    VoiceBar,
+    StoryReel,
+    VideoStrip,
+    OnlineList,
+    Coach,
+  },
   data() {
     return {
       game,
@@ -991,6 +1090,8 @@ export default {
       mod: null,
       customText: "",
       witchHeal: false,
+      notes,
+      tags: TAGS,
       openedAt: Date.now(),
       showQr: false,
       reactionList: [
@@ -1204,6 +1305,12 @@ export default {
     },
   },
   watch: {
+    "s.gameId": {
+      immediate: true,
+      handler() {
+        if (this.s) useNotes(this.s.code, this.s.gameId);
+      },
+    },
     "s.settings.customPenalties": {
       immediate: true,
       handler(list) {
@@ -1296,6 +1403,12 @@ export default {
         .filter(Boolean);
       this.act("settings", { customPenalties: list });
       toast(`${list.length} özel ceza kaydedildi.`, "success");
+    },
+    noteOf(pid) {
+      return this.notes.map[pid] || { tag: "", text: "" };
+    },
+    setNote(pid, patch) {
+      setNote(pid, patch);
     },
     talk(pid) {
       return !!this.vc.speaking[pid];
@@ -2006,6 +2119,51 @@ h3 {
   padding: 10px;
   border-radius: 14px;
   image-rendering: pixelated;
+}
+.ghost {
+  border-color: rgba(180, 200, 255, 0.4);
+  background: rgba(40, 50, 90, 0.5);
+}
+.mvp-win {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  b {
+    font-size: 20px;
+    color: $gold;
+  }
+}
+.notebook {
+  margin: 6px 0 10px;
+  .tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+    button {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.05);
+      color: $text;
+      border-radius: 16px;
+      padding: 6px 10px;
+      font-size: 14px;
+      &.on {
+        border-color: $gold;
+        background: rgba(233, 180, 76, 0.2);
+      }
+    }
+  }
+  .note {
+    min-height: 42px;
+    font-size: 15px;
+  }
+}
+.note-tag {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 13px;
 }
 .need {
   color: #ffb3b6;
