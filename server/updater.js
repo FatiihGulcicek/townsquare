@@ -20,6 +20,7 @@ const GITS = ["git", "/usr/bin/git", "/usr/local/cpanel/3rdparty/bin/git"];
 
 const status = {
   enabled: false,
+  running: null, // the version this process started with
   git: null,
   head: null,
   remote: null,
@@ -126,6 +127,9 @@ async function start(opts) {
     return;
   }
   status.enabled = true;
+  status.running = await run(status.git, ["rev-parse", "HEAD"]).catch(
+    () => null,
+  );
   setTimeout(() => check(opts), 15000).unref();
   setInterval(() => check(opts), EVERY).unref();
 }
