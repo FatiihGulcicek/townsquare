@@ -1,18 +1,17 @@
 {
   "id": "/",
-  "name": "Kasaba Meydanı",
-  "short_name": "Kasaba Meydanı",
-  "description": "Arkadaşlarınızla çevrimiçi oynamak için ücretsiz sanal kasaba meydanı ve grimuar. Topluluk yapımıdır.",
+  "name": "Vampir Köylü · Kasaba Meydanı",
+  "short_name": "Vampir Köylü",
+  "description": "Arkadaşlarınla telefondan Vampir Köylü oyna. Otomatik anlatıcı, bildirimler ve sesli anlatım. Ücretsiz.",
   "lang": "tr",
   "dir": "ltr",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "display_override": [
-    "window-controls-overlay",
     "standalone"
   ],
-  "orientation": "any",
+  "orientation": "portrait",
   "background_color": "#000000",
   "theme_color": "#000000",
   "categories": [
@@ -37,58 +36,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Oyun aç (Anlatıcı)",
-      "short_name": "Oyun aç",
-      "description": "Yeni bir canlı oturum başlat",
-      "url": "/?action=host",
-      "icons": [
-        {
-          "src": "static/android-icon-96x96.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Oyuna katıl (Oyuncu)",
-      "short_name": "Katıl",
-      "description": "Bir oturuma kanal adıyla katıl",
-      "url": "/?action=join",
-      "icons": [
-        {
-          "src": "static/android-icon-96x96.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Karakter Listesi",
-      "short_name": "Karakterler",
-      "url": "/?action=reference",
-      "icons": [
-        {
-          "src": "static/android-icon-96x96.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Gece Sırası",
-      "short_name": "Gece",
-      "url": "/?action=night",
-      "icons": [
-        {
-          "src": "static/android-icon-96x96.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
     }
   ]
 }

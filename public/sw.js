@@ -3,8 +3,8 @@
  * - hashed build assets (js/css/img/fonts/media): cache first, they never change
  * - live game traffic (WebSocket) and server endpoints are never cached
  */
-const SHELL = "km-shell-v4";
-const ASSETS = "km-assets-v2";
+const SHELL = "km-shell-v5";
+const ASSETS = "km-assets-v3";
 const MAX_ASSETS = 400;
 
 self.addEventListener("install", (event) => {
@@ -89,7 +89,7 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (/^\/(live|healthz|metrics|push)/.test(url.pathname)) return;
+  if (/^\/(vk|api|healthz|push)/.test(url.pathname)) return;
 
   // app pages: always try the network so updates arrive immediately
   if (request.mode === "navigate") {

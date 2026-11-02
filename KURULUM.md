@@ -79,9 +79,15 @@ Betik eksik ikonları listeler. Bu ikonlar `/tmp/botc-release/resources/characte
 
 `scripts/update-roles.js` ile yeni karakterler eklendiğinde, onlar için `roles.tr.json` dosyasına da çeviri eklenmelidir; eklenmezse karakter İngilizce görünür.
 
-## Nasıl oynanır
+## Nasıl oynanır (Vampir Köylü)
 
-1. **Anlatıcı:** Menü → 📡 → *Oyun aç (Anlatıcı)*, sonra *Oyuncu bağlantısını kopyala* ile bağlantıyı paylaşın.
-2. **Oyuncular:** Bağlantıyı açıp adlarını yazar. Masada onlar için otomatik koltuk açılır ve oturtulurlar. Anlatıcı önceden aynı isimde koltuk açtıysa oyuncu o koltuğa yerleşir. Sayfayı yenileyen oyuncu aynı koltuğa geri döner.
-3. **Anlatıcı:** Menü → 🎭 → *Seç ve dağıt* → *Karakterleri karıştır* → *Dağıt ve oyunculara gönder*. Her oyuncu yalnızca kendi karakterini görür.
-4. Oyun sırasında karakter değiştirirseniz Menü → 📡 → *Karakterleri gönder* ile yeniden gönderin.
+1. Ana sayfada adını yaz ve **Oda kur**'a dokun:
+   - **🤖 Uygulama anlatsın:** gece, oylama ve sonuç otomatik ilerler. Sen de oynarsın.
+   - **🎙️ Ben anlatıcıyım:** sen oynamazsın; bütün rolleri ve gece seçimlerini görürsün, oyunu *Geceyi başlat / Sabahı getir / Oylamayı bitir* düğmeleriyle ilerletirsin, gerekirse oyuncuyu öldürüp diriltirsin.
+2. 4 harfli oda kodunu ya da davet linkini arkadaşlarına gönder. Onlar adını yazıp **Katıl**'a dokunur.
+3. Oda sahibi **Oyunu başlat**'a dokunur. Herkes kendi rolünü telefonunda görür: 🧛 Vampir, 🩺 Doktor, 👁️ Gözcü, 🧑‍🌾 Köylü.
+4. 🌙 Gece: vampirler birlikte kurban seçer, Doktor birini korur, Gözcü birinin vampir olup olmadığını öğrenir. Köylüler de iz bırakmamak için birini seçer (etkisi yok).
+5. ☀️ Gündüz: gece ölen açıklanır, herkes oy verir. En çok oyu alan asılır, eşitlikte kimse asılmaz. Ölenlerin rolü açıklanır.
+6. Bütün vampirler ölürse köylüler, vampirler köylü sayısına ulaşırsa vampirler kazanır.
+
+Bildirim için: iPhone'da Safari → Paylaş → *Ana Ekrana Ekle*, uygulamayı oradan aç, ⚙️ → Bildirimler. Sesli anlatım da ⚙️ menüsünde.
