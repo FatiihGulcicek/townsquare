@@ -60,6 +60,12 @@ const TABLES = [
     ended_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     KEY ended (ended_at)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+  `CREATE TABLE IF NOT EXISTS vk_push (
+    push_key CHAR(64) NOT NULL PRIMARY KEY,
+    data TEXT NOT NULL,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      ON UPDATE CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   `CREATE TABLE IF NOT EXISTS vk_game_players (
     game_id BIGINT NOT NULL,
     profile_key CHAR(64) NOT NULL,
@@ -271,6 +277,36 @@ module.exports = {
           winner: g.winner,
         })),
       };
+    }),
+
+  // push subscriptions (key is a hash, see server/push.js)
+  savePush: (key, entry) =>
+    run("savePush", (db) =>
+      db.query(
+        "INSERT INTO vk_push (push_key, data) VALUES (?, ?) " +
+          "ON DUPLICATE KEY UPDATE data = VALUES(data)",
+        [key, JSON.stringify(entry)],
+      ),
+    ),
+  deletePush: (key) =>
+    run("deletePush", (db) =>
+      db.query("DELETE FROM vk_push WHERE push_key = ?", [key]),
+    ),
+  loadPushes: (maxAgeMs) =>
+    run("loadPushes", async (db) => {
+      await db.query("DELETE FROM vk_push WHERE updated_at < ?", [
+        new Date(Date.now() - maxAgeMs),
+      ]);
+      const [rows] = await db.query("SELECT push_key, data FROM vk_push");
+      return rows
+        .map((r) => {
+          try {
+            return { key: r.push_key, entry: JSON.parse(r.data) };
+          } catch (e) {
+            return null;
+          }
+        })
+        .filter(Boolean);
     }),
 
   /** "delete my data": profile, game rows and the name inside old games */

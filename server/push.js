@@ -63,8 +63,22 @@ const PUSH_HOSTS = [
   /(^|\.)push\.apple\.com$/,
 ];
 
-const MAX_SUBSCRIPTIONS = 3000;
-const MAX_AGE = 1000 * 60 * 60 * 18; // 18 hours
+const MAX_SUBSCRIPTIONS = 5000;
+const DAY = 1000 * 60 * 60 * 24;
+// room subscriptions matter for a day; the town square one for a month
+const maxAge = (key) => (key.startsWith("lobby/") ? 30 * DAY : DAY);
+
+/*
+ * Subscriptions are kept in MySQL too, so phones keep getting "your turn"
+ * notifications after the server restarts (updates) while their app is
+ * closed. Keys are stored hashed: the private player id never hits the disk.
+ */
+let store = null;
+const hashKey = (key) =>
+  crypto
+    .createHash("sha256")
+    .update("vk-push:" + key)
+    .digest("hex");
 // channel/playerId -> { subscription, at }
 const subscriptions = new Map();
 const stats = { registered: 0, sent: 0, failed: 0 };
@@ -100,26 +114,33 @@ function register(channel, playerId, sub) {
   }
   const key = channel + "/" + playerId;
   subscriptions.delete(key);
-  subscriptions.set(key, {
+  const entry = {
     subscription: {
       endpoint: sub.endpoint,
       keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth },
     },
     at: Date.now(),
-  });
+  };
+  subscriptions.set(key, entry);
+  if (store) store.savePush(hashKey(key), entry);
   stats.registered++;
   return true;
 }
 
+function forget(key) {
+  subscriptions.delete(key);
+  if (store) store.deletePush(hashKey(key));
+}
+
 function unregister(channel, playerId) {
-  subscriptions.delete(channel + "/" + playerId);
+  forget(channel + "/" + playerId);
 }
 
 /** forget every subscription of a player (all rooms and the lobby) */
 function unregisterEverywhere(playerId) {
   [...subscriptions.keys()]
     .filter((k) => k.endsWith("/" + playerId))
-    .forEach((k) => subscriptions.delete(k));
+    .forEach(forget);
 }
 
 /**
@@ -129,10 +150,15 @@ function unregisterEverywhere(playerId) {
 function send(channel, playerId, payload) {
   if (!webpush) return Promise.resolve(false);
   const key = channel + "/" + playerId;
-  const entry = subscriptions.get(key);
+  let entry = subscriptions.get(key);
+  if (!entry) {
+    // loaded from the database after a restart
+    entry = diskEntries.get(hashKey(key));
+    if (entry) subscriptions.set(key, entry);
+  }
   if (!entry) return Promise.resolve(false);
-  if (Date.now() - entry.at > MAX_AGE) {
-    subscriptions.delete(key);
+  if (Date.now() - entry.at > maxAge(key)) {
+    forget(key);
     return Promise.resolve(false);
   }
   return webpush
@@ -150,7 +176,7 @@ function send(channel, playerId, payload) {
     .catch((err) => {
       stats.failed++;
       if (err && (err.statusCode === 404 || err.statusCode === 410)) {
-        subscriptions.delete(key);
+        forget(key);
       } else {
         console.log("push failed", err && (err.statusCode || err.message));
       }
@@ -173,13 +199,25 @@ setInterval(
   () => {
     const now = Date.now();
     for (const [key, entry] of subscriptions) {
-      if (now - entry.at > MAX_AGE) subscriptions.delete(key);
+      if (now - entry.at > maxAge(key)) forget(key);
     }
   },
   1000 * 60 * 30,
 ).unref();
 
+/** subscriptions saved before a restart (hashed key -> entry) */
+const diskEntries = new Map();
+
+/** connect the database: load saved subscriptions, save new ones */
+async function attach(db) {
+  if (!db || !db.loadPushes) return;
+  store = db;
+  const rows = (await db.loadPushes(30 * DAY)) || [];
+  rows.forEach((r) => diskEntries.set(r.key, r.entry));
+}
+
 module.exports = {
+  attach,
   enabled: () => !!webpush,
   publicKey: () => publicKey,
   register,
