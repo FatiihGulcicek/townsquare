@@ -13,6 +13,7 @@ const WebSocket = require("ws");
 const push = require("./push");
 const { Room } = require("./vk");
 const db = require("./db");
+if (db.init) db.init(); // create the MySQL tables right away
 const { Lobby } = require("./lobby");
 
 const PORT = parseInt(process.env.PORT || "8080", 10);
