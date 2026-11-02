@@ -46,6 +46,17 @@
 
     <div class="card">
       <h3>Oda kur</h3>
+      <input
+        class="field code-in"
+        v-model="wanted"
+        maxlength="4"
+        placeholder="Kendi kodun (isteğe bağlı, ör. CUMA)"
+        autocapitalize="characters"
+        autocomplete="off"
+      />
+      <p class="hint muted">
+        Kendi kodunu seçersen her hafta aynı linkle toplanabilirsiniz.
+      </p>
       <button class="btn primary" :disabled="busy" @click="create('auto')">
         🤖 Uygulama anlatsın
       </button>
@@ -58,6 +69,18 @@
       <p class="hint muted">
         Sen oynamazsın; her şeyi görürsün ve oyunu sen ilerletirsin.
       </p>
+    </div>
+
+    <div class="card" v-if="rooms.length">
+      <h3>Odalarım</h3>
+      <div class="room-row" v-for="r in rooms" :key="r.code">
+        <b class="rc">{{ r.code }}</b>
+        <small class="muted">
+          {{ r.mode === "human" ? "🎙️ anlatıcılı" : "🤖 otomatik" }}
+        </small>
+        <button class="btn small primary" @click="reopen(r)">Aç</button>
+        <button class="x" @click="forget(r)">✕</button>
+      </div>
     </div>
 
     <div class="card">
@@ -116,7 +139,16 @@
 </template>
 
 <script>
-import { game, setName, createRoom, join, toast, setMyPhoto } from "../game";
+import {
+  game,
+  setName,
+  createRoom,
+  join,
+  toast,
+  setMyPhoto,
+  savedRooms,
+  forgetRoom,
+} from "../game";
 import { pwaState, install } from "../pwa";
 import { unlockVoice } from "../voice";
 import Profile from "./Profile";
@@ -129,6 +161,8 @@ export default {
     return {
       profileTab: null,
       game,
+      wanted: "",
+      rooms: savedRooms(),
       name: game.name,
       code: "",
       busy: false,
@@ -140,6 +174,10 @@ export default {
     code(value) {
       const clean = value.toUpperCase().replace(/[^A-Z]/g, "");
       if (clean !== value) this.code = clean;
+    },
+    wanted(value) {
+      const clean = value.toUpperCase().replace(/[^A-Z]/g, "");
+      if (clean !== value) this.wanted = clean;
     },
   },
   methods: {
@@ -170,17 +208,34 @@ export default {
       }
       return false;
     },
-    async create(mode) {
+    async create(mode, code) {
       unlockVoice();
       if (mode === "auto" && this.needName()) return;
       if (mode === "human") this.saveName();
+      const wanted = (code || this.wanted || "").toUpperCase();
+      if (wanted && !/^[A-Z]{4}$/.test(wanted)) {
+        toast("Oda kodu 4 harf olmalı (Türkçe karakter olmadan).", "warning");
+        return;
+      }
       this.busy = true;
       try {
-        await createRoom(mode);
+        await createRoom(mode, wanted || undefined);
       } catch (e) {
-        toast("Şu an oda kurulamadı, biraz sonra tekrar dene.", "warning");
+        toast(
+          e.message === "code"
+            ? "Bu kod kullanılamıyor."
+            : "Şu an oda kurulamadı, biraz sonra tekrar dene.",
+          "warning",
+        );
       }
       this.busy = false;
+    },
+    reopen(r) {
+      this.create(r.mode, r.code);
+    },
+    forget(r) {
+      forgetRoom(r.code);
+      this.rooms = savedRooms();
     },
     joinRoom() {
       unlockVoice();
@@ -259,6 +314,36 @@ h3 {
     background: #1b1f30;
     border-radius: 50%;
     padding: 3px;
+  }
+}
+.code-in {
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 4px;
+  font-size: 16px;
+}
+.room-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid $line;
+  .rc {
+    font-size: 20px;
+    letter-spacing: 0.15em;
+    color: $gold;
+  }
+  small {
+    flex: 1;
+  }
+  .btn {
+    margin: 0;
+  }
+  .x {
+    border: 0;
+    background: none;
+    color: $muted;
+    font-size: 16px;
   }
 }
 .profile-row {

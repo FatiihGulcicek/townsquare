@@ -51,7 +51,62 @@ export const game = Vue.observable({
   photos: {}, // pid -> profile photo of the people in the room
   myPhoto: store("vkPhoto") || "",
   liveQueue: [], // story events to play full screen as they happen
+  reactions: [], // flying emoji {id, to, emoji}
 });
+
+const readJSON = (key, fallback) => {
+  try {
+    return JSON.parse(store(key) || "") || fallback;
+  } catch (e) {
+    return fallback;
+  }
+};
+
+/** rooms this phone created (to open them again with the same code) */
+export function savedRooms() {
+  return readJSON("vkRooms", []);
+}
+function rememberRoom(code, mode) {
+  const list = savedRooms().filter((r) => r.code !== code);
+  list.unshift({ code, mode, at: Date.now() });
+  store("vkRooms", JSON.stringify(list.slice(0, 8)));
+}
+export function forgetRoom(code) {
+  store("vkRooms", JSON.stringify(savedRooms().filter((r) => r.code !== code)));
+}
+
+/** people you played with on this phone */
+export function friends() {
+  return Object.values(readJSON("vkFriends", {})).sort(
+    (a, b) => b.last - a.last,
+  );
+}
+function rememberFriends(state) {
+  const all = readJSON("vkFriends", {});
+  state.players
+    .filter((p) => !p.bot && p.pid !== state.me.pid)
+    .forEach((p) => {
+      const key = p.name.toLocaleLowerCase("tr");
+      const old = all[key] || { name: p.name, games: 0 };
+      all[key] = { name: p.name, games: old.games + 1, last: Date.now() };
+    });
+  const trimmed = Object.values(all)
+    .sort((a, b) => b.last - a.last)
+    .slice(0, 40);
+  store(
+    "vkFriends",
+    JSON.stringify(
+      Object.fromEntries(
+        trimmed.map((f) => [f.name.toLocaleLowerCase("tr"), f]),
+      ),
+    ),
+  );
+}
+
+let reactionId = 0;
+export function react(to, emoji) {
+  send("react", { to, emoji });
+}
 
 // ---------- toasts ----------
 
@@ -138,6 +193,14 @@ function onState(next) {
   game.receivedAt = Date.now();
   if (!next.me) return;
   queueStory(prev, next);
+  if (
+    prev &&
+    prev.phase !== "over" &&
+    next.phase === "over" &&
+    next.me.seated
+  ) {
+    rememberFriends(next);
+  }
   if (prev && prev.phase === "day" && next.phase === "day") {
     const before = Object.keys(prev.votes).length;
     const after = Object.keys(next.votes).length;
@@ -208,7 +271,15 @@ function open(code) {
       return;
     }
     if (command === "state") onState(params);
-    else if (command === "photo") {
+    else if (command === "react") {
+      const id = ++reactionId;
+      game.reactions.push({ id, to: params.to, emoji: params.emoji });
+      if (game.reactions.length > 30) game.reactions.shift();
+      setTimeout(() => {
+        const i = game.reactions.findIndex((r) => r.id === id);
+        if (i >= 0) game.reactions.splice(i, 1);
+      }, 2600);
+    } else if (command === "photo") {
       if (params.data) Vue.set(game.photos, params.pid, params.data);
       else Vue.delete(game.photos, params.pid);
     } else if (command === "photos") {
@@ -288,14 +359,21 @@ export function setName(name) {
   if (game.name && game.code) send("join", { name: game.name });
 }
 
-export async function createRoom(mode) {
+export async function createRoom(mode, wanted) {
   const response = await fetch("/api/room", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ mode, playerId: game.playerId }),
+    body: JSON.stringify({
+      mode,
+      playerId: game.playerId,
+      code: wanted || undefined,
+    }),
   });
-  if (!response.ok) throw new Error("busy");
-  const { code } = await response.json();
+  if (!response.ok) {
+    throw new Error(response.status === 400 ? "code" : "busy");
+  }
+  const { code, existing } = await response.json();
+  if (!existing) rememberRoom(code, mode);
   join(code);
   return code;
 }

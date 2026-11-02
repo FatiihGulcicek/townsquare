@@ -205,6 +205,7 @@ class Room {
     this.lastActivity = Date.now();
     this.chatSeq = 0;
     this.lastChat = {};
+    this.lastReact = {};
     this.voice = new Set(); // private ids in the voice chat
     this.cams = new Set(); // private ids with the camera on
     this.photos = {}; // pid -> small jpeg data url
@@ -680,6 +681,39 @@ class Room {
     if (a || b) this.update();
   }
 
+  // ---------- emoji reactions ----------
+
+  react(id, params) {
+    const REACTIONS = [
+      "😱",
+      "🤔",
+      "😂",
+      "👀",
+      "😡",
+      "❤️",
+      "👏",
+      "🙄",
+      "🤥",
+      "🧛",
+    ];
+    if (!params || !REACTIONS.includes(params.emoji)) return;
+    const me = this.player(id);
+    const from = me ? me.pid : id === this.stId ? "st" : null;
+    if (!from) return;
+    // only when you could also talk to the village
+    if (id !== this.stId && !this.canWrite(id).includes("town")) return;
+    const target = this.byPid(params.to);
+    if (!target) return;
+    const now = Date.now();
+    if (now - (this.lastReact[id] || 0) < 600) return;
+    this.lastReact[id] = now;
+    const message = JSON.stringify([
+      "react",
+      { from, to: target.pid, emoji: params.emoji, at: now },
+    ]);
+    this.io.connectedIds().forEach((other) => this.io.sendTo(other, message));
+  }
+
   // ---------- profile photos (sent separately: they are big) ----------
 
   setPhoto(id, data) {
@@ -888,6 +922,7 @@ class Room {
       return this.update();
     }
     if (command === "photo") return this.setPhoto(id, params);
+    if (command === "react") return this.react(id, params);
     if (command === "photos") return this.sendPhotos(id);
     if (command === "rtc") return this.signal(id, params);
     if (command === "chat") {

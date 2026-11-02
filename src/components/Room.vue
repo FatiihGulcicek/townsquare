@@ -74,6 +74,11 @@
           >
             <Avatar :name="p.name" :size="50" />
             <span class="name">{{ p.name }}</span>
+            <span class="reacts"
+              ><span v-for="r in reactsFor(p.pid)" :key="r.id" class="fly">{{
+                r.emoji
+              }}</span></span
+            >
           </button>
         </div>
       </div>
@@ -101,7 +106,33 @@
         <div class="card center">
           <div class="muted">Oda kodu</div>
           <div class="big-code">{{ game.code }}</div>
-          <button class="btn" @click="share">📨 Davet linkini paylaş</button>
+          <div class="inline-btns">
+            <button class="btn" @click="share">📨 Linki paylaş</button>
+            <button class="btn" @click="showQr = true">📱 QR kod</button>
+          </div>
+          <details class="friends" v-if="friendList.length">
+            <summary>
+              👥 Birlikte oynadıkların ({{ friendList.length }})
+            </summary>
+            <div class="friend" v-for="f in friendList" :key="f.name">
+              <Avatar :name="f.name" :size="34" />
+              <span class="fn"
+                >{{ f.name
+                }}<small class="muted"> · {{ f.games }} oyun</small></span
+              >
+              <button class="btn small" @click="inviteFriend(f)">
+                Davet et
+              </button>
+            </div>
+          </details>
+        </div>
+        <div class="sheet-bg" v-if="showQr" @click.self="showQr = false">
+          <div class="sheet center">
+            <h3>Okut ve katıl</h3>
+            <img class="qr" :src="qrData" alt="QR kod" />
+            <div class="big-code">{{ game.code }}</div>
+            <button class="btn ghost" @click="showQr = false">Kapat</button>
+          </div>
         </div>
 
         <div class="card">
@@ -122,6 +153,11 @@
                 :online="p.online"
               />
               <span class="name">{{ p.name }}</span>
+              <span class="reacts"
+                ><span v-for="r in reactsFor(p.pid)" :key="r.id" class="fly">{{
+                  r.emoji
+                }}</span></span
+              >
               <small v-if="p.pid === s.me.pid" class="muted">sen</small>
               <button
                 v-if="s.me.isOwner && p.pid !== s.me.pid"
@@ -383,6 +419,14 @@
               >
                 <Avatar :name="p.name" :size="46" />
                 <span class="name">{{ p.name }}</span>
+                <span class="reacts"
+                  ><span
+                    v-for="r in reactsFor(p.pid)"
+                    :key="r.id"
+                    class="fly"
+                    >{{ r.emoji }}</span
+                  ></span
+                >
               </button>
             </div>
           </template>
@@ -425,6 +469,11 @@
               :badge="p.badge"
             />
             <span class="name">{{ p.name }}</span>
+            <span class="reacts"
+              ><span v-for="r in reactsFor(p.pid)" :key="r.id" class="fly">{{
+                r.emoji
+              }}</span></span
+            >
             <small v-if="p.note" class="muted">{{ p.note }}</small>
           </button>
         </div>
@@ -537,6 +586,11 @@
                 countOf(p.pid)
               }}</span>
               <span class="name">{{ p.name }}</span>
+              <span class="reacts"
+                ><span v-for="r in reactsFor(p.pid)" :key="r.id" class="fly">{{
+                  r.emoji
+                }}</span></span
+              >
               <small v-if="p.pid === s.me.pid" class="muted">sen</small>
             </button>
           </div>
@@ -677,6 +731,11 @@
                 :badge="roleEmoji(p.role)"
               />
               <span class="name">{{ p.name }}</span>
+              <span class="reacts"
+                ><span v-for="r in reactsFor(p.pid)" :key="r.id" class="fly">{{
+                  r.emoji
+                }}</span></span
+              >
               <small :class="p.role">{{ roleName(p.role) }}</small>
             </div>
           </div>
@@ -709,6 +768,7 @@
             v-for="p in s.players"
             :key="p.pid"
             :class="{ dead: !p.alive }"
+            @click="openMod(p)"
           >
             <Avatar
               :speaking="talk(p.pid)"
@@ -720,6 +780,11 @@
               :badge="roleEmoji(p.role)"
             />
             <span class="name">{{ p.name }}</span>
+            <span class="reacts"
+              ><span v-for="r in reactsFor(p.pid)" :key="r.id" class="fly">{{
+                r.emoji
+              }}</span></span
+            >
             <small v-if="p.role" :class="p.role">{{ roleName(p.role) }}</small>
             <small v-else-if="p.pid === s.me.pid" class="muted">sen</small>
             <span class="flags" v-if="p.muted || p.noVote">
@@ -728,7 +793,7 @@
             <button
               v-if="isBoss && p.pid !== s.me.pid && !p.kicked"
               class="mini"
-              @click="openMod(p)"
+              @click.stop="openMod(p)"
             >
               ⚙️ Yönet
             </button>
@@ -752,27 +817,37 @@
             </small>
           </div>
         </div>
-        <button class="btn" @click="modAct('mute')">
-          {{ mod.muted ? "🔊 Susturmayı kaldır" : "🔇 Sustur (sohbet + ses)" }}
-        </button>
-        <button
-          class="btn"
-          v-if="inGame && mod.alive"
-          @click="modAct('punish')"
-        >
-          ⚖️ Kural ihlali: köyden kov (ölür)
-        </button>
-        <template v-if="isSt && inGame">
-          <button class="btn" v-if="mod.alive" @click="modAct('kill')">
-            💀 Öldür
+        <div class="emoji-row" v-if="canReact">
+          <button v-for="em in reactionList" :key="em" @click="sendReact(em)">
+            {{ em }}
           </button>
-          <button class="btn" v-else @click="modAct('revive')">
-            ✨ Dirilt
+        </div>
+        <p class="muted small" v-else>Şu an tepki gönderemezsin.</p>
+        <template v-if="isBoss && !mod.kicked">
+          <button class="btn" @click="modAct('mute')">
+            {{
+              mod.muted ? "🔊 Susturmayı kaldır" : "🔇 Sustur (sohbet + ses)"
+            }}
+          </button>
+          <button
+            class="btn"
+            v-if="inGame && mod.alive"
+            @click="modAct('punish')"
+          >
+            ⚖️ Kural ihlali: köyden kov (ölür)
+          </button>
+          <template v-if="isSt && inGame">
+            <button class="btn" v-if="mod.alive" @click="modAct('kill')">
+              💀 Öldür
+            </button>
+            <button class="btn" v-else @click="modAct('revive')">
+              ✨ Dirilt
+            </button>
+          </template>
+          <button class="btn danger" @click="modAct('kick')">
+            🚪 Odadan at{{ inGame ? " (oyundan çıkar)" : "" }}
           </button>
         </template>
-        <button class="btn danger" @click="modAct('kick')">
-          🚪 Odadan at{{ inGame ? " (oyundan çıkar)" : "" }}
-        </button>
         <button class="btn ghost" @click="mod = null">Vazgeç</button>
       </div>
     </div>
@@ -782,7 +857,17 @@
 </template>
 
 <script>
-import { game, act, setName, toast, shareLink, setMyPhoto } from "../game";
+import {
+  game,
+  act,
+  setName,
+  toast,
+  shareLink,
+  setMyPhoto,
+  react,
+  friends,
+} from "../game";
+import qrcode from "qrcode-generator";
 import { pickPhoto } from "../photo";
 import { unlockVoice } from "../voice";
 import Avatar from "./Avatar";
@@ -901,6 +986,19 @@ export default {
       mod: null,
       customText: "",
       witchHeal: false,
+      showQr: false,
+      reactionList: [
+        "😱",
+        "🤔",
+        "😂",
+        "👀",
+        "😡",
+        "❤️",
+        "👏",
+        "🙄",
+        "🤥",
+        "🧛",
+      ],
       witchPoison: null,
       specialRoles: ["avci", "cadi", "muhtar", "deli", "kurtadam"],
       presets: PRESETS,
@@ -965,6 +1063,19 @@ export default {
     },
     takenCount() {
       return this.s.cards ? this.s.cards.filter((c) => c.taken).length : 0;
+    },
+    canReact() {
+      return this.isSt || (this.s.canWrite || []).includes("town");
+    },
+    friendList() {
+      void this.s.phase;
+      return friends().slice(0, 20);
+    },
+    qrData() {
+      const qr = qrcode(0, "M");
+      qr.addData(shareLink());
+      qr.make();
+      return qr.createDataURL(8, 2);
     },
     voteTargets() {
       if (this.phase === "runoff" && this.s.runoff) {
@@ -1097,6 +1208,31 @@ export default {
     clearInterval(this.timer);
   },
   methods: {
+    reactsFor(pid) {
+      return this.game.reactions.filter((r) => r.to === pid);
+    },
+    sendReact(emoji) {
+      react(this.mod.pid, emoji);
+      this.mod = null;
+    },
+    async inviteFriend(f) {
+      const url = shareLink();
+      const text = `${f.name}, Vampir Köylü'ye gel! Oda kodu: ${game.code}`;
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: "Vampir Köylü", text, url });
+          return;
+        }
+      } catch (e) {
+        if (e && e.name === "AbortError") return;
+      }
+      try {
+        await navigator.clipboard.writeText(text + " " + url);
+        toast("Davet mesajı kopyalandı, " + f.name + "'a gönder.", "success");
+      } catch (e) {
+        prompt("Bu mesajı gönder:", text + " " + url);
+      }
+    },
     applyPreset(p) {
       this.act("settings", p.s);
       toast(`${p.name} ayarı seçildi.`, "success");
@@ -1118,7 +1254,6 @@ export default {
         }
         return;
       }
-      if (!this.isBoss || p.kicked) return;
       this.mod = p;
     },
     modAct(kind) {
@@ -1783,6 +1918,84 @@ h3 {
     align-items: center;
     gap: 6px;
   }
+}
+.reacts {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 0;
+  pointer-events: none;
+}
+.fly {
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  font-size: 30px;
+  animation: fly-up 2.5s ease-out forwards;
+}
+@keyframes fly-up {
+  0% {
+    transform: translate(-50%, 20px) scale(0.4);
+    opacity: 0;
+  }
+  15% {
+    transform: translate(-50%, 0) scale(1.3);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -70px) scale(1);
+    opacity: 0;
+  }
+}
+.emoji-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin: 8px 0 12px;
+  button {
+    font-size: 28px;
+    padding: 8px 0;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+.inline-btns {
+  display: flex;
+  gap: 8px;
+  .btn {
+    flex: 1;
+  }
+}
+.friends {
+  text-align: left;
+  margin-top: 8px;
+  summary {
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .friend {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid $line;
+    .fn {
+      flex: 1;
+    }
+    .btn {
+      margin: 0;
+    }
+  }
+}
+.qr {
+  width: min(70vw, 300px);
+  height: auto;
+  background: white;
+  padding: 10px;
+  border-radius: 14px;
+  image-rendering: pixelated;
 }
 .need {
   color: #ffb3b6;

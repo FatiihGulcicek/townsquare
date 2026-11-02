@@ -121,9 +121,9 @@ function roomIo(code, entry) {
   };
 }
 
-function createRoom(mode, creatorId) {
+function createRoom(mode, creatorId, wanted) {
   if (rooms.size >= MAX_ROOMS) return null;
-  const code = newCode();
+  const code = wanted || newCode();
   if (!code) return null;
   const entry = { sockets: new Set(), room: null };
   entry.room = new Room(code, mode, creatorId, roomIo(code, entry));
@@ -385,7 +385,15 @@ server.on("request", async (req, res) => {
     if (!VALID_ID.test(body.playerId || "")) {
       return json(res, 400, { error: "playerId" });
     }
-    const code = createRoom(body.mode, body.playerId);
+    // a chosen, permanent code ("CUMA"): reuse the room if it still exists
+    let wanted = null;
+    if (body.code) {
+      wanted = String(body.code).toUpperCase();
+      if (!ROOM_CODE.test(wanted)) return json(res, 400, { error: "code" });
+      const existing = await findRoom(wanted);
+      if (existing) return json(res, 200, { code: wanted, existing: true });
+    }
+    const code = createRoom(body.mode, body.playerId, wanted);
     if (!code) return json(res, 503, { error: "busy" });
     return json(res, 200, { code });
   }
