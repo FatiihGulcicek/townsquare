@@ -5,6 +5,12 @@
  */
 const crypto = require("crypto");
 
+// on cPanel hosting the MySQL database is used instead
+if (process.env.DB_NAME && process.env.DB_USER) {
+  module.exports = require("./db-mysql");
+  return;
+}
+
 const URL_BASE =
   process.env.SUPABASE_URL || "https://bwkoitiyryfbgdgtolqk.supabase.co";
 // publishable key: safe to ship, all access is checked by the secret

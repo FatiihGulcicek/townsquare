@@ -644,7 +644,7 @@ process.on("SIGINT", shutdown);
 
 // Render's free plan sleeps after 15 idle minutes, which makes the first
 // visit slow. Stay awake during typical playing hours (Istanbul time).
-const SELF_URL = process.env.RENDER_EXTERNAL_URL;
+const SELF_URL = process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL;
 const AWAKE_FROM = parseInt(process.env.AWAKE_FROM || "10", 10);
 const AWAKE_TO = parseInt(process.env.AWAKE_TO || "2", 10);
 if (SELF_URL && process.env.KEEP_AWAKE !== "false") {
