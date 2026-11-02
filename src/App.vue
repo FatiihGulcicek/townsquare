@@ -127,6 +127,11 @@ export default {
         setMood(value);
       },
     },
+    // a new version while on the home screen: install it straight away
+    // (inside a room the banner waits until the player chooses)
+    "pwa.updateReady"(ready) {
+      if (ready && !game.code) applyUpdate();
+    },
     theme: {
       immediate: true,
       handler(value) {
@@ -142,8 +147,12 @@ export default {
     },
   },
   mounted() {
-    const boot = document.getElementById("boot");
-    if (boot) boot.remove();
+    // the loading screen fades out (unless it is installing an update)
+    if (window.__hideBoot) window.__hideBoot();
+    else {
+      const boot = document.getElementById("boot");
+      if (boot) boot.remove();
+    }
     // first visit: profile and permissions first, then the room from the link
     if (!this.onboarding) restore();
     startLobby();

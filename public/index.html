@@ -23,16 +23,87 @@
   <meta property="og:description" content="Arkadaşlarınla telefondan Vampir Köylü oyna. Ücretsiz.">
   <meta property="og:image" content="static/og-image.jpg">
   <style>
-    /* splash while the app loads */
-    html { background: #070a17; } body { margin: 0; }
-    #boot { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; color: #e9b44c; font: 600 18px/1.2 Georgia, serif; letter-spacing: 2px; }
-    #boot img { width: 220px; height: auto; animation: boot-pulse 1.6s ease-in-out infinite; position: relative; } #boot small { color: rgba(243,238,228,.6); font: 14px/1 -apple-system, sans-serif; letter-spacing: 1px; }  @keyframes boot-rise { from { transform: translateY(40px); opacity: 0; } } #boot { background: radial-gradient(circle at 50% 30%, #13183a, #04050c 70%); }
-    @keyframes boot-pulse { 50% { transform: scale(1.06); filter: drop-shadow(0 0 18px rgba(233,180,76,.45)); } }
+    /* loading screen while the app starts (and updates itself) */
+    html { background: #05060d; } body { margin: 0; }
+    #boot { position: fixed; inset: 0; z-index: 9999; overflow: hidden; background: #05060d; transition: opacity .5s ease; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    #boot.out { opacity: 0; pointer-events: none; }
+    #boot .bg { position: absolute; inset: 0; background: url("static/splash.webp") center 30% / cover no-repeat; animation: boot-zoom 14s ease-out both; }
+    #boot .bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,6,13,0) 55%, rgba(5,6,13,.92) 88%); }
+    #boot .bottom { position: absolute; left: 0; right: 0; bottom: calc(34px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    #boot .logo { width: 150px; height: auto; filter: drop-shadow(0 8px 20px rgba(0,0,0,.7)); }
+    #boot .bar { width: min(70vw, 320px); height: 6px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; box-shadow: 0 0 0 1px rgba(255,60,60,.25); }
+    #boot .bar i { display: block; height: 100%; width: 0; border-radius: 3px; background: linear-gradient(90deg, #8b0d1a, #ff3b4d, #e9b44c); box-shadow: 0 0 12px rgba(255,60,80,.8); transition: width .4s ease; }
+    #boot small { color: rgba(243,238,228,.75); font-size: 13px; letter-spacing: .08em; text-shadow: 0 1px 4px #000; }
+    @keyframes boot-zoom { from { transform: scale(1.08); } to { transform: scale(1); } }
   </style>
 </head>
 <body>
 <noscript>Vampir Köylü için JavaScript gereklidir.</noscript>
-<div id="boot"><img src="static/logo.webp" alt="Vampir Köylü"><small>Köy uyanıyor…</small></div>
+<div id="boot">
+  <div class="bg"></div>
+  <div class="bottom">
+    <img class="logo" src="static/logo.webp" alt="Vampir Köylü">
+    <div class="bar"><i id="boot-bar"></i></div>
+    <small id="boot-text">Köy uyanıyor…</small>
+  </div>
+</div>
+<script>
+/*
+ * Loading screen: fills the bar while the game loads, checks the server for a
+ * newer version and, if there is one, installs it right here before the game
+ * opens (clears the cached app and reloads once).
+ */
+(function () {
+  var BUILD = "<%= VUE_APP_BUILD %>";
+  var en = (localStorage.getItem("vkLang") || (navigator.language || "tr").slice(0, 2)) === "en";
+  var bar = document.getElementById("boot-bar");
+  var text = document.getElementById("boot-text");
+  var start = Date.now(), pct = 8, timer;
+  if (en) text.textContent = "The village is waking up…";
+  function set(p) { pct = Math.max(pct, p); bar.style.width = pct + "%"; }
+  timer = setInterval(function () { set(pct + (90 - pct) * 0.12); }, 250);
+  set(12);
+  window.__bootUpdating = false;
+  window.__hideBoot = function () {
+    if (window.__bootUpdating) return;
+    var wait = Math.max(0, 1300 - (Date.now() - start));
+    setTimeout(function () {
+      if (window.__bootUpdating) return;
+      clearInterval(timer); set(100);
+      var boot = document.getElementById("boot");
+      if (!boot) return;
+      boot.classList.add("out");
+      setTimeout(function () { boot.remove(); }, 550);
+    }, wait);
+  };
+  if (!window.fetch || !BUILD) return;
+  fetch("/version.json?t=" + Date.now(), { cache: "no-store" })
+    .then(function (r) { return r.json(); })
+    .then(function (v) {
+      var key = "vkUpdated:" + v.build;
+      if (!v.build || v.build === BUILD || sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1"); // never loop
+      window.__bootUpdating = true;
+      text.textContent = en ? "Installing the new version…" : "Yeni sürüm yükleniyor…";
+      set(60);
+      var jobs = [];
+      if (window.caches) {
+        jobs.push(caches.keys().then(function (names) {
+          return Promise.all(names.filter(function (n) { return n.indexOf("km-shell") === 0; })
+            .map(function (n) { return caches.delete(n); }));
+        }));
+      }
+      if (navigator.serviceWorker) {
+        jobs.push(navigator.serviceWorker.getRegistration().then(function (r) { return r && r.update(); }));
+      }
+      Promise.all(jobs).catch(function () {}).then(function () {
+        set(100);
+        setTimeout(function () { location.reload(); }, 300);
+      });
+    })
+    .catch(function () {});
+})();
+</script>
 <div id="app"></div>
 </body>
 </html>
