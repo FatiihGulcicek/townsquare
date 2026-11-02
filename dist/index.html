@@ -1,21 +1,24 @@
 <!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Vampir Köylü · Kasaba Meydanı</title><meta name="description" content="Arkadaşlarınla telefondan Vampir Köylü oyna: otomatik anlatıcı, bildirimler ve sesli anlatım. Ücretsiz."><meta name="application-name" content="Kasaba Meydanı"><meta name="theme-color" content="#000000"><meta name="color-scheme" content="dark"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><meta name="apple-mobile-web-app-title" content="Vampir Köylü"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" sizes="32x32" href="static/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="static/favicon-16x16.png"><link rel="icon" type="image/png" sizes="192x192" href="static/android-icon-192x192.png"><link rel="apple-touch-icon" sizes="180x180" href="static/apple-icon-180x180.png"><meta property="og:type" content="website"><meta property="og:site_name" content="Kasaba Meydanı"><meta property="og:title" content="Vampir Köylü · Kasaba Meydanı"><meta property="og:description" content="Arkadaşlarınla telefondan Vampir Köylü oyna. Ücretsiz."><meta property="og:image" content="static/og-image.jpg"><style>/* loading screen while the app starts (and updates itself) */
     html { background: #05060d; } body { margin: 0; }
-    #boot { position: fixed; inset: 0; z-index: 9999; overflow: hidden; background: #05060d; transition: opacity .5s ease; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    #boot { position: fixed; inset: 0; z-index: 9999; overflow: hidden; background: linear-gradient(#1d2233, #10131f 60%, #05060d); transition: opacity .5s ease; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     #boot.out { opacity: 0; pointer-events: none; }
-    #boot .bg { position: absolute; inset: 0; background: url("static/splash.webp") center 30% / cover no-repeat; animation: boot-zoom 14s ease-out both; }
-    #boot .bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,6,13,0) 55%, rgba(5,6,13,.92) 88%); }
-    #boot .bottom { position: absolute; left: 0; right: 0; bottom: calc(34px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 12px; }
-    #boot .logo { width: 150px; height: auto; filter: drop-shadow(0 8px 20px rgba(0,0,0,.7)); }
-    #boot .bar { width: min(70vw, 320px); height: 6px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; box-shadow: 0 0 0 1px rgba(255,60,60,.25); }
-    #boot .bar i { display: block; height: 100%; width: 0; border-radius: 3px; background: linear-gradient(90deg, #8b0d1a, #ff3b4d, #e9b44c); box-shadow: 0 0 12px rgba(255,60,80,.8); transition: width .4s ease; }
-    #boot small { color: rgba(243,238,228,.75); font-size: 13px; letter-spacing: .08em; text-shadow: 0 1px 4px #000; }
-    @keyframes boot-zoom { from { transform: scale(1.08); } to { transform: scale(1); } }</style><script defer="defer" src="/js/chunk-vendors.75457112.js"></script><script defer="defer" src="/js/app.c196b82b.js"></script><link href="/css/app.5b6828aa.css" rel="stylesheet"></head><body><noscript>Vampir Köylü için JavaScript gereklidir.</noscript><div id="boot"><div class="bg"></div><div class="bottom"><img class="logo" src="static/logo.webp" alt="Vampir Köylü"><div class="bar"><i id="boot-bar"></i></div><small id="boot-text">Köy uyanıyor…</small></div></div><script>/*
+    /* wide screens: a blurred copy of the artwork fills the sides */
+    #boot::before { content: ""; position: absolute; inset: -40px; background: url("static/loading-bg.webp") center 70% / cover no-repeat; filter: blur(24px) brightness(.55); }
+    /* the artwork keeps its shape and sits on the bottom edge, so the frame
+       of the loading bar is always visible; the bar sits inside the frame */
+    #boot .stage { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: min(100vw, 75vh); aspect-ratio: 941 / 1672; background: url("static/loading-bg.webp") center / 100% 100% no-repeat; }
+    #boot .stage { -webkit-mask-image: linear-gradient(transparent, #000 10%); mask-image: linear-gradient(transparent, #000 10%); }
+    #boot .bar { position: absolute; left: 9.6%; width: 80.8%; top: 77.6%; height: 3.1%; border-radius: 999px; overflow: hidden; }
+    #boot .bar i { display: block; height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #6b0a14, #d01c33 55%, #e9b44c); box-shadow: 0 0 14px rgba(255, 70, 90, .85), inset 0 2px 3px rgba(255,255,255,.35); transition: width .4s ease; }
+    #boot .bar small { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #f6ecd8; font-size: clamp(10px, 2.6vw, 14px); font-weight: 700; letter-spacing: .06em; text-shadow: 0 1px 3px #000, 0 0 6px #000; white-space: nowrap; }
+    #boot .logo { position: absolute; left: 50%; top: calc(env(safe-area-inset-top) + 3.5vh); transform: translateX(-50%); width: min(94vw, 560px); height: auto; filter: drop-shadow(0 10px 24px rgba(0,0,0,.75)); animation: boot-logo 1s cubic-bezier(.2,1.3,.4,1) both; }
+    @keyframes boot-logo { from { opacity: 0; transform: translateX(-50%) scale(.85); } }</style><script defer="defer" src="/js/chunk-vendors.75457112.js"></script><script defer="defer" src="/js/app.7540957a.js"></script><link href="/css/app.5b6828aa.css" rel="stylesheet"></head><body><noscript>Vampir Köylü için JavaScript gereklidir.</noscript><div id="boot"><div class="stage"><div class="bar"><i id="boot-bar"></i><small id="boot-text">Köy uyanıyor…</small></div></div><img class="logo" src="static/darkspire-logo.webp" alt="Darkspire · Vampir Köylü"></div><script>/*
  * Loading screen: fills the bar while the game loads, checks the server for a
  * newer version and, if there is one, installs it right here before the game
  * opens (clears the cached app and reloads once).
  */
 (function () {
-  var BUILD = "1793653161600";
+  var BUILD = "1793653803526";
   var en = (localStorage.getItem("vkLang") || (navigator.language || "tr").slice(0, 2)) === "en";
   var bar = document.getElementById("boot-bar");
   var text = document.getElementById("boot-text");
