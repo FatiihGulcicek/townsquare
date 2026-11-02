@@ -1432,8 +1432,11 @@ class Room {
         setTimeout(
           () => {
             if (this.phase !== "roles" || bot.role) return;
+            // tutorial: the Seer card is kept for the human player
             const free = this.cards
-              .map((c, i) => (c.by ? -1 : i))
+              .map((c, i) =>
+                c.by || (this.tutorial && c.role === "gozcu") ? -1 : i,
+              )
               .filter((i) => i >= 0);
             if (free.length) this.pickCard(bot.id, pick(free));
           },
@@ -1473,8 +1476,14 @@ class Room {
   dealRest() {
     if (!this.cards) return;
     const free = shuffle(this.cards.filter((c) => !c.by));
+    if (this.tutorial) {
+      // the player who did not pick still gets the Seer in the tutorial
+      free.sort((a, b) => (a.role === "gozcu") - (b.role === "gozcu"));
+    }
     this.players
       .filter((p) => !p.role)
+      // tutorial: the human is dealt first and gets the Seer
+      .sort((a, b) => (this.tutorial ? Number(!!a.bot) - Number(!!b.bot) : 0))
       .forEach((p) => {
         const card = free.pop();
         if (!card) return;
