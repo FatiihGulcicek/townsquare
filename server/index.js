@@ -243,6 +243,10 @@ wss.on("connection", (ws, req) => {
     entry.sockets.add(ws);
     ws.on("close", () => {
       entry.sockets.delete(ws);
+      const still = [...entry.sockets].some(
+        (other) => other.playerId === playerId && isOpen(other),
+      );
+      if (!still) entry.room.left(playerId);
       entry.room.update();
     });
     entry.room.sendState(playerId);
@@ -384,6 +388,27 @@ server.on("request", async (req, res) => {
     const code = createRoom(body.mode, body.playerId);
     if (!code) return json(res, 503, { error: "busy" });
     return json(res, 200, { code });
+  }
+  if (url.pathname === "/api/ice") {
+    // STUN finds a direct route between phones; a TURN relay (optional)
+    // helps when mobile networks block direct connections
+    const iceServers = [
+      {
+        urls: [
+          "stun:stun.l.google.com:19302",
+          "stun:stun1.l.google.com:19302",
+          "stun:stun.cloudflare.com:3478",
+        ],
+      },
+    ];
+    if (process.env.TURN_URL) {
+      iceServers.push({
+        urls: process.env.TURN_URL.split(","),
+        username: process.env.TURN_USERNAME || "",
+        credential: process.env.TURN_CREDENTIAL || "",
+      });
+    }
+    return json(res, 200, { iceServers });
   }
   if (url.pathname === "/api/me") {
     const id = req.headers["x-player-id"] || "";

@@ -2,6 +2,14 @@ import Vue from "vue";
 import { speak } from "./voice";
 import { getPushSubscription, onPushSubscription } from "./push";
 import { play } from "./sfx";
+import {
+  bindVoice,
+  voiceState,
+  voiceSignal,
+  voiceReconnected,
+  leaveVoice,
+  voiceChat,
+} from "./voicechat";
 
 /*
  * Connection to a Vampir Köylü room. The server is the source of truth: it
@@ -171,12 +179,15 @@ function onState(next) {
     if (!m.sys && m.from !== next.me.pid) play("pop");
   }
   // a new character: show the card once per game
+  voiceState(next.voice);
   const role = next.me.role;
   if (role) {
     const key = next.code + ":" + next.gameId + ":" + role;
     if (store("vkSeenRole") !== key) {
       store("vkSeenRole", key);
-      game.roleCardOpen = true;
+      // a freshly drawn card flips first, then the big card opens
+      const drawn = next.phase === "roles";
+      setTimeout(() => (game.roleCardOpen = true), drawn ? 1100 : 0);
       vibrate();
     }
   }
@@ -211,6 +222,7 @@ function open(code) {
     if (game.name) send("join", { name: game.name });
     else send("hello");
     presence();
+    voiceReconnected();
   };
   ws.onmessage = (event) => {
     lastMessage = Date.now();
@@ -221,6 +233,7 @@ function open(code) {
       return;
     }
     if (command === "state") onState(params);
+    else if (command === "rtc") voiceSignal(params);
     else if (command === "narrate") {
       toast(params, "story", 7000);
       speak(params);
@@ -270,6 +283,7 @@ export function join(code) {
 
 export function leave(silent = false) {
   if (!silent && game.state && game.state.phase === "lobby") act("leave");
+  if (voiceChat.on) leaveVoice();
   wanted = false;
   clearTimeout(retry);
   if (socket) {
@@ -312,6 +326,7 @@ window.addEventListener("pageshow", resume);
 window.addEventListener("online", resume);
 window.addEventListener("pagehide", () => send("visible", false));
 onPushSubscription(() => presence());
+bindVoice(send);
 
 /** room from the link (#ABCD) or the last one we were in */
 export function restore() {

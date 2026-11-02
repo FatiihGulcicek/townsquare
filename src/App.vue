@@ -1,6 +1,8 @@
 <template>
   <div id="app">
     <div class="backdrop"></div>
+    <div class="night-sky"><div class="clouds"></div></div>
+    <div class="readable"></div>
     <Home v-if="!game.code" @settings="settingsOpen = true" />
     <Room v-else @settings="settingsOpen = true" />
     <RoleCard />
@@ -50,7 +52,7 @@ export default {
   computed: {
     tint() {
       const s = game.state;
-      if (!game.code || !s) return "";
+      if (!game.code || !s) return "tint-home";
       if (["night", "roles"].includes(s.phase)) return "tint-night";
       if (["day", "lastwords"].includes(s.phase)) return "tint-day";
       if (s.phase === "dusk") return "tint-dusk";
@@ -94,12 +96,14 @@ export default {
   -webkit-tap-highlight-color: transparent;
 }
 
+html {
+  background: #05060c;
+}
 html,
 body {
   margin: 0;
   padding: 0;
   min-height: 100%;
-  background: #05060c;
   color: $text;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
@@ -113,18 +117,75 @@ body {
   position: relative;
 }
 
+/* the town from the original game; at night a dark sky with drifting clouds */
 .backdrop {
   position: fixed;
   inset: 0;
+  z-index: -3;
+  background: #05060c url("assets/background.jpg") center top / cover no-repeat;
+}
+.night-sky {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(1, 22, 46, 1) 50%,
+    rgba(0, 39, 70, 1) 100%
+  );
+  opacity: 0;
+  transition: opacity 1.5s ease-in-out;
+  .clouds {
+    width: 100%;
+    padding-right: 2000px;
+    height: 100%;
+    background: url("assets/clouds.png") repeat;
+    background-size: 2000px auto;
+    animation: move-clouds 120s linear infinite;
+    opacity: 0.3;
+  }
+}
+@keyframes move-clouds {
+  from {
+    transform: translate3d(-2000px, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+body.tint-night .night-sky {
+  opacity: 0.82;
+}
+body.tint-dusk .night-sky {
+  opacity: 0.45;
+}
+body.tint-home .night-sky {
+  opacity: 0.35;
+}
+/* keeps text readable over the picture without hiding the town */
+.readable {
+  position: fixed;
+  inset: 0;
   z-index: -1;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(5, 6, 12, 0.55) 0%,
-      rgba(5, 6, 12, 0.88) 55%,
-      #05060c 100%
-    ),
-    url("assets/background.jpg") center top / cover no-repeat;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(5, 6, 12, 0.15) 0%,
+    rgba(5, 6, 12, 0.45) 45%,
+    rgba(5, 6, 12, 0.8) 100%
+  );
+  transition: background 1.5s;
+}
+body.tint-night .readable {
+  background: linear-gradient(
+    180deg,
+    rgba(5, 6, 12, 0.1) 0%,
+    rgba(5, 6, 12, 0.35) 50%,
+    rgba(5, 6, 12, 0.75) 100%
+  );
 }
 
 h1,
@@ -259,40 +320,6 @@ input.field {
 .toast-leave-to {
   opacity: 0;
   transform: translateY(-10px);
-}
-
-.backdrop::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition:
-    opacity 1.2s ease,
-    background 1.2s ease;
-}
-body.tint-night .backdrop::after {
-  opacity: 1;
-  background: radial-gradient(
-    circle at 50% 0%,
-    rgba(60, 50, 160, 0.35),
-    rgba(3, 4, 15, 0.75) 70%
-  );
-}
-body.tint-day .backdrop::after {
-  opacity: 1;
-  background: radial-gradient(
-    circle at 50% 0%,
-    rgba(255, 180, 80, 0.22),
-    rgba(5, 6, 12, 0.2) 70%
-  );
-}
-body.tint-dusk .backdrop::after {
-  opacity: 1;
-  background: radial-gradient(
-    circle at 50% 0%,
-    rgba(200, 70, 60, 0.25),
-    rgba(5, 6, 12, 0.4) 70%
-  );
 }
 
 .phase-overlay {

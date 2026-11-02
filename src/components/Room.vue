@@ -73,7 +73,13 @@
           <h3>Oyuncular ({{ s.players.length }}/{{ s.max }})</h3>
           <div class="grid">
             <div class="tile" v-for="p in s.players" :key="p.pid">
-              <Avatar :name="p.name" :size="56" :online="p.online" />
+              <Avatar
+                :speaking="talk(p.pid)"
+                :mic="inVoice(p.pid)"
+                :name="p.name"
+                :size="56"
+                :online="p.online"
+              />
               <span class="name">{{ p.name }}</span>
               <small v-if="p.pid === s.me.pid" class="muted">sen</small>
               <button
@@ -188,10 +194,39 @@
         Oyun başlamış, şu an izleyicisin. Bir sonraki oyunda katılabilirsin.
       </div>
 
-      <!-- ========== ROLES ========== -->
+      <!-- ========== ROLES: draw a card ========== -->
       <div class="card center" v-if="phase === 'roles'">
-        <p>Herkes rolüne baksın ve kimseye göstermesin.</p>
-        <p class="muted" v-if="s.mode === 'auto'">Gece birazdan çöküyor…</p>
+        <h3 v-if="s.me.seated && !s.me.role">🃏 Bir kart seç</h3>
+        <h3 v-else-if="s.me.seated">Kartın elinde, kimseye gösterme!</h3>
+        <h3 v-else>Oyuncular kartlarını çekiyor</h3>
+        <p class="muted small">
+          {{ takenCount }}/{{ s.cards ? s.cards.length : 0 }} kart çekildi.
+          <template v-if="s.mode === 'auto'">
+            Süre dolunca kalan kartlar rastgele dağıtılır.</template
+          >
+        </p>
+        <div class="deck" v-if="s.cards">
+          <button
+            v-for="c in s.cards"
+            :key="c.i"
+            class="play-card"
+            :class="{ taken: c.taken, mine: c.mine, flipped: !!c.role }"
+            :disabled="c.taken || !!s.me.role || !s.me.seated"
+            @click="drawCard(c)"
+          >
+            <span class="inner">
+              <span class="back">
+                <span class="moon">🌙</span>
+                <span class="who" v-if="c.taken && !c.role">{{ c.by }}</span>
+              </span>
+              <span class="front" v-if="c.role">
+                <span class="em">{{ s.roles[c.role].emoji }}</span>
+                <span class="rn">{{ s.roles[c.role].name }}</span>
+                <span class="who" v-if="isSt && c.by">{{ c.by }}</span>
+              </span>
+            </span>
+          </button>
+        </div>
         <button class="btn primary" v-if="isSt" @click="act('next')">
           🌙 Geceyi başlat
         </button>
@@ -224,7 +259,13 @@
             :class="{ selected: s.night.target === p.pid }"
             @click="nightPick(p)"
           >
-            <Avatar :name="p.name" :size="54" :badge="p.badge" />
+            <Avatar
+              :speaking="talk(p.pid)"
+              :mic="inVoice(p.pid)"
+              :name="p.name"
+              :size="54"
+              :badge="p.badge"
+            />
             <span class="name">{{ p.name }}</span>
             <small v-if="p.note" class="muted">{{ p.note }}</small>
           </button>
@@ -306,7 +347,12 @@
               :disabled="!canVote || p.pid === s.me.pid"
               @click="vote(p.pid)"
             >
-              <Avatar :name="p.name" :size="54" />
+              <Avatar
+                :speaking="talk(p.pid)"
+                :mic="inVoice(p.pid)"
+                :name="p.name"
+                :size="54"
+              />
               <span class="votes-badge" v-if="countOf(p.pid)">{{
                 countOf(p.pid)
               }}</span>
@@ -343,7 +389,12 @@
 
       <!-- ========== LAST WORDS ========== -->
       <div class="card center lastwords" v-if="phase === 'lastwords'">
-        <Avatar v-if="condemned" :name="condemned.name" :size="84" />
+        <Avatar
+          v-if="condemned"
+          :speaking="talk(condemned.pid)"
+          :name="condemned.name"
+          :size="84"
+        />
         <h3>{{ condemned ? condemned.name : "" }} son sözlerini söylüyor</h3>
         <p v-if="condemned && condemned.pid === s.me.pid">
           Köy seni asmaya karar verdi. Sohbetten son sözlerini yazabilirsin.
@@ -389,6 +440,8 @@
               :class="{ won: teamOf(p.role) === s.winner }"
             >
               <Avatar
+                :speaking="talk(p.pid)"
+                :mic="inVoice(p.pid)"
                 :name="p.name"
                 :size="54"
                 :dead="!p.alive"
@@ -429,6 +482,8 @@
             :class="{ dead: !p.alive }"
           >
             <Avatar
+              :speaking="talk(p.pid)"
+              :mic="inVoice(p.pid)"
               :name="p.name"
               :size="50"
               :dead="!p.alive"
@@ -453,6 +508,7 @@
       <div class="spacer"></div>
     </template>
     <Chat />
+    <VoiceBar />
   </div>
 </template>
 
@@ -461,6 +517,8 @@ import { game, act, setName, toast, shareLink } from "../game";
 import { unlockVoice } from "../voice";
 import Avatar from "./Avatar";
 import Chat from "./Chat";
+import VoiceBar from "./VoiceBar";
+import { voiceChat } from "../voicechat";
 
 const TOGGLES = [
   { key: "doktor", label: "🩺 Doktor", hint: "5+ oyuncuda" },
@@ -470,9 +528,15 @@ const TOGGLES = [
 ];
 
 export default {
-  components: { Avatar, Chat },
+  components: { Avatar, Chat, VoiceBar },
   data() {
-    return { game, now: Date.now(), nameInput: game.name, toggles: TOGGLES };
+    return {
+      game,
+      vc: voiceChat,
+      now: Date.now(),
+      nameInput: game.name,
+      toggles: TOGGLES,
+    };
   },
   computed: {
     s() {
@@ -522,6 +586,9 @@ export default {
           over: "🏁 Oyun bitti",
         }[this.phase] || ""
       );
+    },
+    takenCount() {
+      return this.s.cards ? this.s.cards.filter((c) => c.taken).length : 0;
     },
     hasBots() {
       return this.s.players.some((p) => p.bot);
@@ -627,6 +694,16 @@ export default {
     clearInterval(this.timer);
   },
   methods: {
+    talk(pid) {
+      return !!this.vc.speaking[pid];
+    },
+    inVoice(pid) {
+      return !!this.s && !!this.s.voice && this.s.voice.members.includes(pid);
+    },
+    drawCard(card) {
+      if (card.taken || this.s.me.role || !this.s.me.seated) return;
+      this.act("card", { index: card.i });
+    },
     act(type, params) {
       unlockVoice();
       act(type, params);
@@ -955,6 +1032,92 @@ h3 {
   b {
     color: $text;
     font-weight: 600;
+  }
+}
+.deck {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+  perspective: 900px;
+}
+.play-card {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  color: $text;
+  &:disabled {
+    cursor: default;
+  }
+  .inner {
+    position: absolute;
+    inset: 0;
+    transition: transform 0.8s cubic-bezier(0.3, 1.3, 0.5, 1);
+    transform-style: preserve-3d;
+  }
+  &.flipped .inner {
+    transform: rotateY(180deg);
+  }
+  .back,
+  .front {
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.55);
+  }
+  .back {
+    border: 2px solid rgba(233, 180, 76, 0.7);
+    background: repeating-linear-gradient(
+        45deg,
+        rgba(233, 180, 76, 0.12) 0 6px,
+        transparent 6px 12px
+      ),
+      radial-gradient(circle at 50% 40%, #3b1b5a, #12081f 80%);
+    .moon {
+      font-size: 28px;
+    }
+  }
+  .front {
+    transform: rotateY(180deg);
+    border: 2px solid $gold;
+    background: radial-gradient(circle at 50% 35%, #2a2f5c, #0b0d1c 80%);
+    .em {
+      font-size: 32px;
+    }
+    .rn {
+      font-weight: 800;
+      font-size: 13px;
+    }
+  }
+  .who {
+    font-size: 11px;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: rgba(0, 0, 0, 0.55);
+    border-radius: 6px;
+    padding: 1px 5px;
+  }
+  &.taken:not(.mine) .back {
+    filter: grayscale(0.7) brightness(0.6);
+  }
+  &:not(:disabled):hover .back,
+  &:not(:disabled):active .back {
+    transform: translateY(-4px);
+  }
+  &.mine .front {
+    box-shadow: 0 0 22px rgba(233, 180, 76, 0.6);
   }
 }
 .need {

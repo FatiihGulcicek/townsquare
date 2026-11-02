@@ -1,7 +1,7 @@
 <template>
   <span
     class="avatar"
-    :class="{ dead, offline: online === false }"
+    :class="{ dead, offline: online === false, speaking }"
     :style="{
       width: size + 'px',
       height: size + 'px',
@@ -12,6 +12,7 @@
     <span class="initials">{{ initials }}</span>
     <span class="badge" v-if="badge">{{ badge }}</span>
     <span class="skull" v-if="dead">💀</span>
+    <span class="mic" v-if="mic">🎙️</span>
   </span>
 </template>
 
@@ -42,6 +43,8 @@ export default {
     dead: Boolean,
     online: { type: Boolean, default: undefined },
     badge: { type: String, default: "" },
+    speaking: Boolean,
+    mic: Boolean,
   },
   computed: {
     initials() {
@@ -87,6 +90,17 @@ export default {
   border-radius: 50%;
   background: #666;
   box-shadow: 0 0 0 2px #0b0d18;
+}
+.avatar.speaking {
+  box-shadow:
+    0 0 0 3px #3ddc84,
+    0 0 18px rgba(61, 220, 132, 0.8);
+}
+.mic {
+  position: absolute;
+  left: -8%;
+  top: -8%;
+  font-size: 0.6em;
 }
 .badge {
   position: absolute;

@@ -65,7 +65,8 @@ const DEFAULT_SETTINGS = {
   reveal: true,
   lastWords: true,
 };
-const ROLES_MS = 10000;
+const ROLES_MS = 45000; // time to draw a card
+const READ_CARD_MS = 6000;
 const MIN_NIGHT_MS = 8000;
 const VOTE_SETTLE_MS = 8000;
 const LAST_WORDS_MS = 20000;
@@ -129,6 +130,7 @@ class Room {
     this.lastActivity = Date.now();
     this.chatSeq = 0;
     this.lastChat = {};
+    this.voice = new Set(); // private ids in the voice chat
     this.reset();
   }
 
@@ -158,6 +160,7 @@ class Room {
       condemned: this.condemned,
       winner: this.winner,
       seerLog: this.seerLog,
+      cards: this.cards,
       gameId: this.gameId,
       startedAt: this.startedAt,
       chat: this.chat,
@@ -168,7 +171,11 @@ class Room {
 
   static fromJSON(data, io) {
     const room = new Room(data.code, data.mode, data.stId, io);
-    Object.assign(room, data, { kicked: new Set(data.kicked || []), io });
+    Object.assign(room, data, {
+      kicked: new Set(data.kicked || []),
+      voice: new Set(),
+      io,
+    });
     room.settings = { ...DEFAULT_SETTINGS, ...(data.settings || {}) };
     room.lastActivity = Date.now();
     room.schedule();
@@ -204,6 +211,7 @@ class Room {
     this.winner = null;
     this.seerLog = {};
     this.startedAt = 0;
+    this.cards = null;
     this.chat = { town: [], vampir: [], dead: [] };
     this.players.forEach((p) => {
       p.role = null;
@@ -350,6 +358,87 @@ class Room {
     this.update();
   }
 
+  // ---------- voice chat ----------
+
+  /** public id of a participant ("st" for the storyteller) */
+  voicePid(id) {
+    if (id === this.stId) return "st";
+    const p = this.player(id);
+    return p ? p.pid : null;
+  }
+
+  voiceIdOf(pid) {
+    if (pid === "st") return this.stId;
+    const p = this.byPid(pid);
+    return p ? p.id : null;
+  }
+
+  /** may a's voice reach b right now? (enforced by a's own phone) */
+  canHear(aId, bId) {
+    if (aId === bId) return false;
+    if (aId === this.stId || bId === this.stId) return true;
+    const a = this.player(aId);
+    const b = this.player(bId);
+    if (!a) return false; // spectators only listen
+    if (this.phase === "lobby" || this.phase === "over") return true;
+    if (!a.alive) return !!b && !b.alive; // the dead talk among themselves
+    if (this.phase === "night") {
+      return a.role === "vampir" && !!b && b.alive && b.role === "vampir";
+    }
+    if (this.phase === "lastwords") return a.pid === this.condemned;
+    return true; // roles, day, dusk: the whole village
+  }
+
+  voiceView(id) {
+    const on = this.voice.has(id);
+    const members = [...this.voice].filter((v) => v !== id);
+    return {
+      on,
+      members: [...this.voice].map((v) => this.voicePid(v)).filter(Boolean),
+      peers: on ? members.map((v) => this.voicePid(v)).filter(Boolean) : [],
+      sendTo: on
+        ? members
+            .filter((v) => this.canHear(id, v))
+            .map((v) => this.voicePid(v))
+        : [],
+      hearFrom: on
+        ? members
+            .filter((v) => this.canHear(v, id))
+            .map((v) => this.voicePid(v))
+        : [],
+      me: this.voicePid(id),
+    };
+  }
+
+  setVoice(id, on) {
+    if (!this.voicePid(id) && id !== this.stId) {
+      // spectators may listen too
+      if (!on) this.voice.delete(id);
+      return;
+    }
+    if (on) this.voice.add(id);
+    else this.voice.delete(id);
+    this.update();
+  }
+
+  /** relay WebRTC signalling between two members of the voice chat */
+  signal(id, params) {
+    if (!params || typeof params !== "object" || !this.voice.has(id)) return;
+    const to = this.voiceIdOf(params.to);
+    if (!to || !this.voice.has(to)) return;
+    const data = params.data;
+    if (!data || JSON.stringify(data).length > 12000) return;
+    this.io.sendTo(
+      to,
+      JSON.stringify(["rtc", { from: this.voicePid(id), data }]),
+    );
+  }
+
+  /** the last connection of a person closed */
+  left(id) {
+    if (this.voice.delete(id)) this.update();
+  }
+
   // ---------- what each person sees ----------
 
   visibleRole(viewer, p) {
@@ -393,16 +482,14 @@ class Room {
         isOwner: this.owner() === id,
         isStoryteller: isSt,
       },
-      players: this.players
-        .filter((p) => !p.bot)
-        .map((p) => ({
-          pid: p.pid,
-          name: p.name,
-          alive: p.alive,
-          online: !!p.bot || online.includes(p.id),
-          bot: !!p.bot,
-          role: this.visibleRole(viewer, p),
-        })),
+      players: this.players.map((p) => ({
+        pid: p.pid,
+        name: p.name,
+        alive: p.alive,
+        online: !!p.bot || online.includes(p.id),
+        bot: !!p.bot,
+        role: this.visibleRole(viewer, p),
+      })),
       votes: ["day", "lastwords", "dusk"].includes(this.phase)
         ? this.votes
         : {},
@@ -415,6 +502,20 @@ class Room {
       seerLog: me && me.role === "gozcu" ? this.seerLog[id] || [] : [],
       chat,
       canWrite: this.canWrite(id),
+      cards:
+        this.phase === "roles" && this.cards
+          ? this.cards.map((c, i) => {
+              const by = c.by ? this.byPid(c.by) : null;
+              return {
+                i,
+                taken: !!c.by,
+                by: by ? by.name : "",
+                mine: !!me && c.by === me.pid,
+                role: (me && c.by === me.pid) || isSt ? c.role : null,
+              };
+            })
+          : null,
+      voice: this.voiceView(id),
       storyteller: null,
     };
     if (this.phase === "night" && me && me.alive) {
@@ -466,6 +567,8 @@ class Room {
     this.lastActivity = Date.now();
     if (command === "join") return this.join(id, params && params.name);
     if (command === "hello") return this.sendState(id);
+    if (command === "voice") return this.setVoice(id, !!params);
+    if (command === "rtc") return this.signal(id, params);
     if (command === "chat") {
       return params && this.say(id, params.channel || "town", params.text);
     }
@@ -544,6 +647,8 @@ class Room {
           this.update();
         }
         return;
+      case "card":
+        return this.pickCard(id, parseInt(params.index, 10));
       case "night":
         return this.nightAction(id, params.target);
       case "vote":
@@ -628,21 +733,70 @@ class Room {
       ...Array(s.gozcu).fill("gozcu"),
       ...Array(s.koylu).fill("koylu"),
     ]);
-    this.players.forEach((p, i) => {
-      p.role = bag[i];
+    // roles are dealt as face-down cards; everyone draws one
+    this.cards = bag.map((role) => ({ role, by: null }));
+    this.players.forEach((p) => {
+      p.role = null;
       p.alive = true;
     });
     this.phase = "roles";
     this.narrate(
-      `Oyun başlıyor! ${s.vampir} vampir aramızda. Herkes rolüne baksın ve kimseye göstermesin.`,
+      `Oyun başlıyor! ${s.vampir} vampir aramızda. Herkes masadan bir kart çeksin ve kimseye göstermesin.`,
     );
     this.pushAll({
-      title: "Oyun başladı 🧛",
-      body: "Rolünü görmek için dokun.",
+      title: "Oyun başladı 🃏",
+      body: "Kartını çekmek için dokun.",
       tag: "phase",
     });
     this.setDeadline(ROLES_MS);
+    // bots draw quickly
+    this.players
+      .filter((p) => p.bot)
+      .forEach((bot) =>
+        setTimeout(
+          () => {
+            if (this.phase !== "roles" || bot.role) return;
+            const free = this.cards
+              .map((c, i) => (c.by ? -1 : i))
+              .filter((i) => i >= 0);
+            if (free.length) this.pickCard(bot.id, pick(free));
+          },
+          1500 + rnd(4000),
+        ),
+      );
     this.update();
+  }
+
+  pickCard(id, index) {
+    if (this.phase !== "roles") return;
+    const me = this.player(id);
+    const card = this.cards && this.cards[index];
+    if (!me || me.role || !card || card.by) return;
+    card.by = me.pid;
+    me.role = card.role;
+    // everyone has a card: start the night after a moment to read it
+    if (this.isAuto() && this.players.every((p) => p.role)) {
+      const soon = Date.now() + READ_CARD_MS;
+      if (soon < this.deadline) {
+        this.deadline = soon;
+        this.schedule();
+      }
+    }
+    this.update();
+  }
+
+  /** cards nobody drew go to the players without one */
+  dealRest() {
+    if (!this.cards) return;
+    const free = shuffle(this.cards.filter((c) => !c.by));
+    this.players
+      .filter((p) => !p.role)
+      .forEach((p) => {
+        const card = free.pop();
+        if (!card) return;
+        card.by = p.pid;
+        p.role = card.role;
+      });
   }
 
   /** move to the next phase (storyteller button / auto deadline) */
@@ -662,6 +816,7 @@ class Room {
 
   startNight() {
     if (!["roles", "dusk"].includes(this.phase)) return;
+    if (this.phase === "roles") this.dealRest();
     this.phase = "night";
     this.round++;
     this.night = { vamp: {}, doktor: null, gozcu: null, suspects: {} };
