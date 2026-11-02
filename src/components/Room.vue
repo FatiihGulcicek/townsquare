@@ -487,6 +487,13 @@
             }}
           </h2>
           <p v-if="myResult" class="result">{{ myResult }}</p>
+          <button
+            class="btn primary"
+            v-if="s.events && s.events.length"
+            @click="$refs.reel.openPlayer(0)"
+          >
+            🎬 Oyunun hikâyesini izle
+          </button>
         </div>
         <div class="card penalties" v-if="s.penalties && s.penalties.length">
           <h3>🎲 Ceza zamanı!</h3>
@@ -599,10 +606,7 @@
       </div>
 
       <!-- story so far -->
-      <div class="card log" v-if="s.log.length">
-        <h3>Olanlar</h3>
-        <p v-for="(line, i) in reversedLog" :key="i">{{ line }}</p>
-      </div>
+      <StoryReel ref="reel" />
       <div class="spacer"></div>
     </template>
     <div class="sheet-bg" v-if="mod" @click.self="mod = null">
@@ -652,6 +656,7 @@ import { unlockVoice } from "../voice";
 import Avatar from "./Avatar";
 import Chat from "./Chat";
 import VoiceBar from "./VoiceBar";
+import StoryReel from "./StoryReel";
 import { voiceChat } from "../voicechat";
 
 const TOGGLES = [
@@ -667,7 +672,7 @@ const TOGGLES = [
 ];
 
 export default {
-  components: { Avatar, Chat, VoiceBar },
+  components: { Avatar, Chat, VoiceBar, StoryReel },
   data() {
     return {
       game,

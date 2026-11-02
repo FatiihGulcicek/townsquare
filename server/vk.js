@@ -170,6 +170,7 @@ class Room {
       cards: this.cards,
       penalties: this.penalties,
       deathOrder: this.deathOrder,
+      events: this.events,
       gameId: this.gameId,
       startedAt: this.startedAt,
       chat: this.chat,
@@ -223,6 +224,7 @@ class Room {
     this.cards = null;
     this.penalties = null;
     this.deathOrder = [];
+    this.events = [];
     this.chat = { town: [], vampir: [], dead: [] };
     this.players.forEach((p) => {
       p.role = null;
@@ -371,10 +373,31 @@ class Room {
     this.update();
   }
 
+  // ---------- story (animated recap) ----------
+
+  /** record an event for the animated story of the game */
+  story(type, data = {}) {
+    if (!this.events) this.events = [];
+    this.events.push({
+      n: this.events.length + 1,
+      type,
+      round: this.round,
+      ...data,
+    });
+    if (this.events.length > 120) this.events.shift();
+  }
+
   // ---------- discipline ----------
 
   kill(p) {
     p.alive = false;
+    // votes for or by a dead player no longer count
+    if (this.votes) {
+      delete this.votes[p.pid];
+      Object.keys(this.votes).forEach((k) => {
+        if (this.votes[k] === p.pid) delete this.votes[k];
+      });
+    }
     if (!this.deathOrder) this.deathOrder = [];
     this.deathOrder.push(p.pid);
   }
@@ -543,6 +566,7 @@ class Room {
         idle: me ? me.idle || 0 : 0,
       },
       penalties: this.phase === "over" ? this.penalties : null,
+      events: this.events || [],
       penaltyCategories: CATEGORIES,
       players: this.players.map((p) => ({
         pid: p.pid,
@@ -685,6 +709,11 @@ class Room {
         p.kicked = true;
         if (p.alive) {
           this.kill(p);
+          this.story("punish", {
+            name: p.name,
+            role: this.settings.reveal ? p.role : null,
+            how: "kick",
+          });
           this.narrate(this.deathText(p, "oyunu bozduğu için köyden kovuldu"));
         } else {
           this.narrate(`${p.name} odadan çıkarıldı.`);
@@ -714,6 +743,11 @@ class Room {
         const p = this.byPid(params.target);
         if (!p || !p.alive || p.id === id) return;
         this.kill(p);
+        this.story("punish", {
+          name: p.name,
+          role: this.settings.reveal ? p.role : null,
+          how: "rule",
+        });
         this.narrate(
           this.deathText(p, "kuralları çiğnediği için köyden kovuldu ⚖️"),
         );
@@ -810,9 +844,15 @@ class Room {
         if (!p) return;
         if (params.type === "kill" && p.alive) {
           this.kill(p);
+          this.story("punish", {
+            name: p.name,
+            role: this.settings.reveal ? p.role : null,
+            how: "st",
+          });
           this.narrate(this.deathText(p, "öldü"));
         } else if (params.type === "revive" && !p.alive) {
           p.alive = true;
+          this.story("revive", { name: p.name });
           this.narrate(`${p.name} hayata döndü!`);
         } else return;
         if (!this.checkWin()) this.update();
@@ -887,6 +927,7 @@ class Room {
       p.alive = true;
     });
     this.phase = "roles";
+    this.story("start", { vampires: s.vampir, players: n });
     this.narrate(
       `Oyun başlıyor! ${s.vampir} vampir aramızda. Herkes masadan bir kart çeksin ve kimseye göstermesin.`,
     );
@@ -972,6 +1013,7 @@ class Room {
     this.executed = null;
     this.condemned = null;
     this.nightStarted = Date.now();
+    this.story("night", {});
     this.narrate(
       `${this.round}. gece. Köy uyusun, herkes gözlerini kapatsın ve telefonuna baksın.`,
     );
@@ -1124,6 +1166,13 @@ class Room {
     } else {
       text += "Bu gece kimse ölmedi.";
     }
+    if (this.lastNight.died.length) {
+      const d = this.lastNight.died[0];
+      this.story("kill", { name: d.name, role: d.role, text });
+    } else {
+      this.story(saved ? "saved" : "quiet", { text });
+    }
+    this.story("day", {});
     this.narrate(text);
     this.pushAll({ title: "Gün doğdu ☀️", body: text, tag: "phase" });
     if (this.checkWin()) return;
@@ -1188,11 +1237,20 @@ class Room {
     if (tally.pass) lines.push(`Pas: ${tally.pass}`);
     const summary = lines.length ? "Oylar: " + lines.join(", ") + ". " : "";
     this.settleAt = 0;
+    this.story("votes", {
+      tally: Object.keys(tally)
+        .filter((t) => t !== "pass")
+        .sort((a, b) => tally[b] - tally[a])
+        .map((t) => ({ name: this.byPid(t).name, count: tally[t] })),
+      pass: tally.pass || 0,
+      text: summary.trim() || "Kimse oy vermedi.",
+    });
     if (max > 0 && top.length === 1 && top[0] !== "pass") {
       const p = this.byPid(top[0]);
       this.condemned = p.pid;
       if (this.settings.lastWords) {
         this.phase = "lastwords";
+        this.story("lastwords", { name: p.name });
         this.narrate(
           `${summary}Köy kararını verdi: ${p.name} asılacak. Son sözlerini söylesin.`,
         );
@@ -1203,6 +1261,7 @@ class Room {
       this.narrate(summary.trim());
       return this.hang();
     }
+    this.story(max > 0 && top.length > 1 ? "tie" : "nohang", {});
     this.narrate(
       summary +
         (max > 0 && top.length > 1
@@ -1221,6 +1280,7 @@ class Room {
         name: p.name,
         role: this.settings.reveal ? p.role : null,
       };
+      this.story("hang", { name: p.name, role: this.executed.role });
       this.narrate(this.deathText(p, "asıldı"));
     }
     this.condemned = null;
@@ -1254,6 +1314,14 @@ class Room {
     this.winner = winner;
     this.deadline = 0;
     this.condemned = null;
+    this.story("win", {
+      winner,
+      roles: this.players.map((p) => ({
+        name: p.name,
+        role: p.role,
+        alive: p.alive,
+      })),
+    });
     this.narrate(text);
     this.dealPenalties(winner);
     this.pushAll({ title: "Oyun bitti 🏁", body: text, tag: "phase" });
@@ -1309,6 +1377,9 @@ class Room {
       done: false,
       rerolled: false,
     }));
+    this.story("penalty", {
+      items: this.penalties.map((x) => ({ name: x.name, text: x.text })),
+    });
     this.narrate(
       "🎲 Ceza zamanı! " +
         this.penalties.map((x) => `${x.name}: ${x.text}`).join(" · "),
