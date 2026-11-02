@@ -184,11 +184,34 @@
           <p v-else class="muted">En az {{ s.min }} oyuncu gerekiyor.</p>
         </div>
 
+        <div class="card tour" v-if="s.tour && !s.tour.done && s.tour.played">
+          <h3>🏆 Turnuva sürüyor: {{ s.tour.played }}/{{ s.tour.total }}</h3>
+          <div class="standings">
+            <div v-for="(r, i) in tourRows" :key="r.pid" class="srow">
+              <span class="rk">{{ ["🥇", "🥈", "🥉"][i] || i + 1 + "." }}</span>
+              <span class="nm">{{ r.name }}</span>
+              <b>{{ r.pts }}</b>
+            </div>
+          </div>
+        </div>
+
         <OnlineList />
 
         <div class="card" v-if="s.me.isOwner">
           <h3>Oda ayarları</h3>
           <div class="settings">
+            <label>
+              🏆 Turnuva
+              <select
+                :value="s.settings.tournament"
+                @change="setting('tournament', $event.target.value, true)"
+              >
+                <option :value="0">Yok</option>
+                <option v-for="m in [3, 5, 7]" :key="m" :value="m">
+                  {{ m }} oyun
+                </option>
+              </select>
+            </label>
             <label>
               Vampir sayısı
               <select
@@ -683,6 +706,31 @@
           >
             🎬 Oyunun hikâyesini izle
           </button>
+        </div>
+        <div class="card tour" v-if="s.tour">
+          <h3>
+            🏆 Turnuva
+            <small class="muted"
+              >{{ s.tour.played }}/{{ s.tour.total }} oyun</small
+            >
+          </h3>
+          <p class="champ" v-if="s.tour.champion">
+            👑 Şampiyon: <b>{{ s.tour.champion.name }}</b> ({{
+              s.tour.champion.pts
+            }}
+            puan)
+          </p>
+          <div class="standings">
+            <div v-for="(r, i) in tourRows" :key="r.pid" class="srow">
+              <span class="rk">{{ ["🥇", "🥈", "🥉"][i] || i + 1 + "." }}</span>
+              <span class="nm">{{ r.name }}</span>
+              <span class="muted small">{{ r.wins }} galibiyet</span>
+              <b>{{ r.pts }}</b>
+            </div>
+          </div>
+          <p class="muted small">
+            Galibiyet 3 · hayatta kalmak 1 · oyunun yıldızı 2 puan
+          </p>
         </div>
         <div class="card mvp" v-if="s.me.seated">
           <template v-if="s.mvp">
@@ -1187,6 +1235,12 @@ export default {
       qr.addData(shareLink());
       qr.make();
       return qr.createDataURL(8, 2);
+    },
+    tourRows() {
+      if (!this.s.tour) return [];
+      return Object.entries(this.s.tour.scores)
+        .map(([pid, r]) => ({ pid, ...r }))
+        .sort((a, b) => b.pts - a.pts);
     },
     voteTargets() {
       if (this.phase === "runoff" && this.s.runoff) {
@@ -2119,6 +2173,34 @@ h3 {
   padding: 10px;
   border-radius: 14px;
   image-rendering: pixelated;
+}
+.tour {
+  border-color: rgba(233, 180, 76, 0.6);
+  h3 small {
+    font-size: 13px;
+    margin-left: 6px;
+  }
+  .champ {
+    font-size: 18px;
+  }
+  .srow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid $line;
+    .rk {
+      width: 28px;
+    }
+    .nm {
+      flex: 1;
+      font-weight: 600;
+    }
+    b {
+      color: $gold;
+      font-size: 18px;
+    }
+  }
 }
 .ghost {
   border-color: rgba(180, 200, 255, 0.4);

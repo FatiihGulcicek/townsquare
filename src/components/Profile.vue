@@ -203,10 +203,23 @@
       </template>
 
       <template v-else-if="tab === 'top'">
-        <p class="muted small">
-          En az 3 oyun oynamış oyuncular, galibiyete göre.
+        <div class="periods">
+          <button
+            v-for="(label, key) in periods"
+            :key="key"
+            :class="{ active: period === key }"
+            @click="loadTop(key)"
+          >
+            {{ label }}
+          </button>
+        </div>
+        <p class="champ" v-if="champion">
+          👑 Geçen {{ period === "month" ? "ayın" : "haftanın" }} şampiyonu:
+          <b>{{ champion.name }}</b> ({{ champion.wins }} galibiyet)
         </p>
-        <p v-if="!top.length" class="muted">Henüz sıralama yok.</p>
+        <p v-if="!top.length" class="muted">
+          Bu dönemde henüz bitmiş oyun yok. İlk sen ol!
+        </p>
         <div class="top">
           <div v-for="(p, i) in top" :key="i" class="top-row">
             <span class="rank">{{ medal(i) }}</span>
@@ -258,6 +271,9 @@ export default {
       prog: progress,
       badges: BADGES,
       replaying: null,
+      period: "week",
+      champion: null,
+      periods: { week: "Bu hafta", month: "Bu ay", all: "Tüm zamanlar" },
       replayIndex: 0,
     };
   },
@@ -336,8 +352,13 @@ export default {
     },
     async openTop() {
       this.tab = "top";
-      const result = await fetchLeaderboard();
+      await this.loadTop(this.period);
+    },
+    async loadTop(period) {
+      this.period = period;
+      const result = await fetchLeaderboard(period);
       this.top = result.list || [];
+      this.champion = result.champion || null;
     },
     async copy() {
       try {
@@ -598,6 +619,30 @@ h4 {
 }
 .small {
   font-size: 14px;
+}
+.periods {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  button {
+    flex: 1;
+    min-height: 38px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.05);
+    color: $text;
+    font-size: 13px;
+    &.active {
+      border-color: $gold;
+      background: rgba(233, 180, 76, 0.18);
+    }
+  }
+}
+.champ {
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(233, 180, 76, 0.12);
+  border: 1px solid rgba(233, 180, 76, 0.4);
 }
 .top-row {
   display: flex;

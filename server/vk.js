@@ -101,11 +101,13 @@ const SETTINGS = {
   dayMinutes: [2, 3, 5, 8, 12],
   nightSeconds: [30, 45, 60, 90, 120],
   vampires: [0, 1, 2, 3, 4], // 0 = automatic
+  tournament: [0, 3, 5, 7], // games in a series (0 = off)
 };
 const DEFAULT_SETTINGS = {
   dayMinutes: 5,
   nightSeconds: 60,
   vampires: 0,
+  tournament: 0,
   doktor: true,
   gozcu: true,
   reveal: true,
@@ -248,6 +250,7 @@ class Room {
       mvpVotes: this.mvpVotes,
       mvp: this.mvp,
       tutorial: this.tutorial,
+      tour: this.tour,
       runoff: this.runoff,
       deathOrder: this.deathOrder,
       events: this.events,
@@ -835,6 +838,7 @@ class Room {
       },
       penalties: this.phase === "over" ? this.penalties : null,
       tutorial: !!this.tutorial,
+      tour: this.tour || null,
       myGuesses: me ? (this.guesses || {})[me.pid] || [] : [],
       ghostResults: this.phase === "over" ? this.ghostResults || [] : [],
       mvp: this.mvp,
@@ -1267,6 +1271,11 @@ class Room {
     if (n < MIN_PLAYERS) return;
     this.reset();
     this.gameId++;
+    const total = this.settings.tournament || 0;
+    if (!total) this.tour = null;
+    else if (!this.tour || this.tour.done || this.tour.total !== total) {
+      this.tour = { total, played: 0, scores: {}, done: false, champion: null };
+    }
     this.startedAt = Date.now();
     const s = setupFor(n, this.settings);
     const bag = shuffle(
@@ -1825,6 +1834,7 @@ class Room {
     });
     this.narrate(text);
     this.scoreGuesses();
+    this.tourPoints(winner);
     const gameId = this.gameId;
     setTimeout(() => {
       if (this.gameId === gameId) this.finishMvp();
@@ -1892,6 +1902,51 @@ class Room {
     );
   }
 
+  /** tournament: win 3 points, survive +1, player of the game +2 */
+  tourPoints(winner) {
+    const t = this.tour;
+    if (!t || t.done) return;
+    this.players
+      .filter((p) => !p.kicked)
+      .forEach((p) => {
+        const row =
+          t.scores[p.pid] ||
+          (t.scores[p.pid] = { name: p.name, pts: 0, wins: 0 });
+        row.name = p.name;
+        if (ROLES[p.role] && ROLES[p.role].team === winner) {
+          row.pts += 3;
+          row.wins += 1;
+        }
+        if (p.alive) row.pts += 1;
+      });
+    t.played += 1;
+    if (t.played >= t.total) {
+      t.done = true;
+      // the player of the game vote may still add points: crown after it
+      const gameId = this.gameId;
+      setTimeout(() => this.crown(gameId), 62000);
+    } else {
+      this.narrate(`🏆 Turnuva: ${t.played}/${t.total} oyun oynandı.`);
+    }
+  }
+
+  crown(gameId) {
+    const t = this.tour;
+    if (!t || !t.done || t.champion || this.gameId !== gameId) return;
+    const rows = Object.entries(t.scores).sort((a, b) => b[1].pts - a[1].pts);
+    if (!rows.length) return;
+    t.champion = {
+      pid: rows[0][0],
+      name: rows[0][1].name,
+      pts: rows[0][1].pts,
+    };
+    this.story("champion", { name: t.champion.name, pts: t.champion.pts });
+    this.narrate(
+      `👑 Turnuva bitti! Şampiyon: ${t.champion.name} (${t.champion.pts} puan)!`,
+    );
+    this.update();
+  }
+
   /** dead players guess who the vampires are (bonus XP at the end) */
   guess(id, targetPid) {
     const me = this.player(id);
@@ -1945,8 +2000,13 @@ class Room {
     const top = Object.keys(tally).filter((t) => tally[t] === max);
     const p = this.byPid(pick(top));
     this.mvp = { pid: p.pid, name: p.name, votes: max };
+    if (this.tour && this.tour.scores[p.pid]) {
+      this.tour.scores[p.pid].pts += 2;
+      this.tour.scores[p.pid].mvp = (this.tour.scores[p.pid].mvp || 0) + 1;
+    }
     this.story("mvp", { name: p.name, votes: max });
     this.narrate(`⭐ Oyunun yıldızı: ${p.name} (${max} oy)!`);
+    if (this.tour && this.tour.done) this.crown(this.gameId);
     this.update();
   }
 

@@ -486,9 +486,11 @@ export async function fetchProfile() {
   }
 }
 
-export async function fetchLeaderboard() {
+export async function fetchLeaderboard(period = "week") {
   try {
-    const response = await fetch("/api/leaderboard", { cache: "no-store" });
+    const response = await fetch("/api/leaderboard?period=" + period, {
+      cache: "no-store",
+    });
     return await response.json();
   } catch (e) {
     return { enabled: false, list: [] };

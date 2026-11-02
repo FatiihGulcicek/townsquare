@@ -74,4 +74,9 @@ module.exports = {
   getProfile: (playerId) =>
     rpc("vampir_get_profile", { profile_key: profileKey(playerId) }),
   leaderboard: () => rpc("vampir_leaderboard", {}),
+  leaderboardSince: (since, until) =>
+    rpc("vampir_leaderboard_range", {
+      since: new Date(since).toISOString(),
+      until: new Date(until || Date.now() + 86400000).toISOString(),
+    }),
 };

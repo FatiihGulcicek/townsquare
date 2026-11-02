@@ -38,6 +38,13 @@
       </div>
     </div>
 
+    <p class="champion" v-if="champion" @click="profileTab = 'top'">
+      👑 Geçen haftanın şampiyonu: <b>{{ champion.name }}</b> ({{
+        champion.wins
+      }}
+      galibiyet)
+    </p>
+
     <OnlineList />
     <LobbyChat />
 
@@ -155,6 +162,7 @@ import {
   setMyPhoto,
   savedRooms,
   forgetRoom,
+  fetchLeaderboard,
 } from "../game";
 import { pwaState, install } from "../pwa";
 import { unlockVoice } from "../voice";
@@ -171,6 +179,7 @@ export default {
       profileTab: null,
       game,
       wanted: "",
+      champion: null,
       rooms: savedRooms(),
       name: game.name,
       code: "",
@@ -178,6 +187,10 @@ export default {
       pwa: pwaState,
       showIOS: false,
     };
+  },
+  async mounted() {
+    const result = await fetchLeaderboard("week");
+    this.champion = result.champion || null;
   },
   watch: {
     code(value) {
@@ -317,6 +330,14 @@ h3 {
   display: block;
   margin-bottom: 6px;
   font-weight: 600;
+}
+.champion {
+  text-align: center;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(233, 180, 76, 0.12);
+  border: 1px solid rgba(233, 180, 76, 0.4);
+  cursor: pointer;
 }
 .tutorial {
   background: linear-gradient(

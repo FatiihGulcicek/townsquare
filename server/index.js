@@ -110,6 +110,16 @@ function roomIo(code, entry) {
     profile: (playerId, name) =>
       db.enabled() && db.touchProfile(playerId, name),
     gameOver: (record) => {
+      // results are also kept in memory for the weekly board
+      record.players.forEach((p) =>
+        recentResults.push({
+          key: db.profileKey(p.id),
+          name: p.name,
+          won: p.won,
+          at: Date.now(),
+        }),
+      );
+      if (recentResults.length > 5000) recentResults.splice(0, 1000);
       if (!db.enabled()) return;
       db.recordGame({
         ...record,
@@ -373,7 +383,71 @@ function sendFile(res, file, req) {
   fs.createReadStream(file).pipe(res);
 }
 
-let leaderboardCache = null;
+let leaderboardCache = {};
+const recentResults = [];
+
+/** start of this week (Monday 00:00, Istanbul) / this month */
+function periodStart(period, offset = 0) {
+  const now = new Date(Date.now() + 3 * 3600 * 1000); // Istanbul clock
+  let start;
+  if (period === "month") {
+    start = Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - offset, 1);
+  } else {
+    const day = (now.getUTCDay() + 6) % 7; // Monday = 0
+    start =
+      Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate() - day,
+      ) -
+      offset * 7 * 86400000;
+  }
+  return start - 3 * 3600 * 1000;
+}
+
+function memoryBoard(since, until = Infinity) {
+  const rows = {};
+  recentResults
+    .filter((r) => r.at >= since && r.at < until)
+    .forEach((r) => {
+      const row =
+        rows[r.key] || (rows[r.key] = { name: r.name, games: 0, wins: 0 });
+      row.name = r.name;
+      row.games++;
+      if (r.won) row.wins++;
+    });
+  return Object.values(rows)
+    .map((r) => ({ ...r, rate: Math.round((100 * r.wins) / r.games) }))
+    .sort((a, b) => b.wins - a.wins || a.games - b.games)
+    .slice(0, 20);
+}
+
+async function board(period) {
+  const now = Date.now();
+  const cached = leaderboardCache[period];
+  if (cached && now - cached.at < 60000) return cached.data;
+  let data;
+  if (period === "all") {
+    data = db.enabled() ? (await db.leaderboard()) || [] : memoryBoard(0);
+  } else {
+    const since = periodStart(period);
+    data = db.enabled()
+      ? (await db.leaderboardSince(since)) || []
+      : memoryBoard(since);
+  }
+  // last period's champion
+  let champion = null;
+  if (period !== "all") {
+    const prevStart = periodStart(period, 1);
+    const prev = db.enabled()
+      ? (await db.leaderboardSince(prevStart, periodStart(period))) || []
+      : memoryBoard(prevStart, periodStart(period));
+    champion = prev[0] || null;
+  }
+  const result = { list: data, champion };
+  leaderboardCache[period] = { at: now, data: result };
+  return result;
+}
 
 function json(res, status, data) {
   res.statusCode = status;
@@ -471,12 +545,13 @@ server.on("request", async (req, res) => {
     return json(res, 200, { enabled: true, profile });
   }
   if (url.pathname === "/api/leaderboard") {
-    if (!db.enabled()) return json(res, 200, { enabled: false, list: [] });
-    const now = Date.now();
-    if (!leaderboardCache || now - leaderboardCache.at > 60000) {
-      leaderboardCache = { at: now, list: (await db.leaderboard()) || [] };
-    }
-    return json(res, 200, { enabled: true, list: leaderboardCache.list });
+    const period = ["week", "month", "all"].includes(
+      url.searchParams.get("period"),
+    )
+      ? url.searchParams.get("period")
+      : "all";
+    const result = await board(period);
+    return json(res, 200, { enabled: db.enabled(), period, ...result });
   }
   if (url.pathname.startsWith("/api/room/")) {
     const code = url.pathname.split("/").pop().toUpperCase();
