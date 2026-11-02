@@ -6,8 +6,8 @@
 
     <!-- 1. profile -->
     <div class="step" v-if="step === 1">
-      <img src="static/logo.svg" alt="" class="logo" />
-      <h1>Vampir Köylü</h1>
+      <img src="static/logo.webp" alt="Vampir Köylü" class="logo" />
+      <h1 class="sr-only">Vampir Köylü</h1>
       <p class="muted">Hoş geldin! Önce profilini oluşturalım.</p>
       <button
         class="photo-btn"
@@ -284,9 +284,9 @@ export default {
   }
 }
 .logo {
-  width: 96px;
-  height: 96px;
-  border-radius: 24px;
+  width: min(62vw, 240px);
+  height: auto;
+  filter: drop-shadow(0 12px 30px rgba(200, 30, 80, 0.35));
 }
 h1 {
   margin: 0;

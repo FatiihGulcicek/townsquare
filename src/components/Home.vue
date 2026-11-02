@@ -6,8 +6,8 @@
       </button>
     </div>
     <header>
-      <img src="static/logo.svg" alt="Vampir Köylü" class="logo" />
-      <h1>Vampir Köylü</h1>
+      <img src="static/logo.webp" alt="Vampir Köylü" class="logo" />
+      <h1 class="sr-only">Vampir Köylü</h1>
       <p class="muted">Kasaba Meydanı · arkadaşlarınla telefondan oyna</p>
     </header>
 
@@ -201,6 +201,10 @@ export default {
     this.champion = result.champion || null;
   },
   watch: {
+    "game.name"(value) {
+      // the name typed on the welcome screen
+      if (value && !this.name) this.name = value;
+    },
     code(value) {
       const clean = value.toUpperCase().replace(/[^A-Z]/g, "");
       if (clean !== value) this.code = clean;
@@ -314,9 +318,10 @@ header {
   text-align: center;
   margin: 0 0 6px;
   .logo {
-    width: 108px;
-    height: 108px;
-    filter: drop-shadow(0 10px 30px rgba(233, 180, 76, 0.35));
+    width: min(64vw, 260px);
+    height: auto;
+    margin-bottom: -6px;
+    filter: drop-shadow(0 12px 30px rgba(200, 30, 80, 0.35));
     animation: logo-in 0.8s cubic-bezier(0.2, 1.3, 0.4, 1) both;
   }
   @keyframes logo-in {
