@@ -1,6 +1,7 @@
 import Vue from "vue";
 import { speak } from "./voice";
 import { getPushSubscription, onPushSubscription } from "./push";
+import { play } from "./sfx";
 
 /*
  * Connection to a Vampir Köylü room. The server is the source of truth: it
@@ -38,7 +39,15 @@ export const game = Vue.observable({
   receivedAt: 0,
   toasts: [],
   roleCardOpen: false,
+  transition: null, // {kind, title, sub} full screen phase change
 });
+
+let transitionTimer = null;
+function showTransition(kind, title, sub) {
+  game.transition = { kind, title, sub, at: Date.now() };
+  clearTimeout(transitionTimer);
+  transitionTimer = setTimeout(() => (game.transition = null), 2600);
+}
 
 // ---------- toasts ----------
 
@@ -68,6 +77,17 @@ function vibrate(pattern = [120, 60, 120]) {
 let socket = null;
 let retry = null;
 let wanted = false;
+let lastMessage = 0;
+
+// phones drop sockets silently: ping regularly, reconnect if nothing comes back
+setInterval(() => {
+  if (!socket || socket.readyState !== 1) return;
+  if (Date.now() - lastMessage > 50000) {
+    socket.close();
+    return;
+  }
+  send("ping");
+}, 20000);
 
 function url(code) {
   const proto = location.protocol === "https:" ? "wss://" : "ws://";
@@ -91,11 +111,65 @@ function presence() {
   if (sub) send("push", sub);
 }
 
+function phaseChanged(prev, next) {
+  if (!prev) return;
+  if (prev.phase === next.phase && prev.gameId === next.gameId) return;
+  const r = next.round;
+  if (next.phase === "night") {
+    play("night");
+    showTransition("night", `${r}. Gece`, "Köy uyuyor… telefonuna bak");
+  } else if (next.phase === "day") {
+    const died = next.lastNight && next.lastNight.died[0];
+    play(died ? "death" : "day");
+    showTransition(
+      "day",
+      `${r}. Gün`,
+      died
+        ? `${died.name} bu gece öldü`
+        : next.lastNight && next.lastNight.saved
+        ? "Doktor birini kurtardı!"
+        : "Bu gece kimse ölmedi",
+    );
+  } else if (next.phase === "lastwords") {
+    play("death");
+  } else if (next.phase === "dusk" && next.executed) {
+    play("death");
+  } else if (next.phase === "over") {
+    const mine = next.me.role && next.roles[next.me.role].team;
+    play(mine ? (mine === next.winner ? "win" : "lose") : "win");
+    showTransition(
+      "over",
+      next.winner === "vampir" ? "Vampirler kazandı" : "Köylüler kazandı",
+      mine
+        ? mine === next.winner
+          ? "Tebrikler, kazandın! 🎉"
+          : "Bu sefer kaybettin"
+        : "",
+    );
+  } else if (next.phase === "roles") {
+    play("turn");
+  }
+}
+
 function onState(next) {
   const prev = game.state;
   game.state = next;
   game.receivedAt = Date.now();
   if (!next.me) return;
+  phaseChanged(prev, next);
+  if (prev && prev.phase === "day" && next.phase === "day") {
+    const before = Object.keys(prev.votes).length;
+    const after = Object.keys(next.votes).length;
+    if (before !== after) play("vote");
+  }
+  const lastChat = (s) => {
+    const town = (s && s.chat && s.chat.town) || [];
+    return town.length ? town[town.length - 1].n : 0;
+  };
+  if (prev && lastChat(next) > lastChat(prev)) {
+    const m = next.chat.town[next.chat.town.length - 1];
+    if (!m.sys && m.from !== next.me.pid) play("pop");
+  }
   // a new character: show the card once per game
   const role = next.me.role;
   if (role) {
@@ -114,6 +188,7 @@ function onState(next) {
     (!prev || prev.phase !== "night")
   ) {
     vibrate([200, 80, 200]);
+    if (next.night.action !== "koylu") setTimeout(() => play("turn"), 1500);
   }
   if (prev && prev.me.alive && !next.me.alive && next.me.seated) {
     toast("Öldün. Artık sadece izleyebilirsin.", "death", 6000);
@@ -132,11 +207,13 @@ function open(code) {
   socket = ws;
   ws.onopen = () => {
     game.status = "online";
+    lastMessage = Date.now();
     if (game.name) send("join", { name: game.name });
     else send("hello");
     presence();
   };
   ws.onmessage = (event) => {
+    lastMessage = Date.now();
     let command, params;
     try {
       [command, params] = JSON.parse(event.data);
@@ -165,8 +242,12 @@ function open(code) {
       return;
     }
     if (!wanted) return;
-    game.status = "offline";
-    retry = setTimeout(() => wanted && open(game.code), 2000);
+    game.status = event.code === 1012 ? "connecting" : "offline";
+    // server restart: come back quickly, the room is restored from the database
+    retry = setTimeout(
+      () => wanted && open(game.code),
+      event.code === 1012 ? 1500 : 2000,
+    );
   };
 }
 
@@ -239,6 +320,41 @@ export function restore() {
   const last = store("vkRoom");
   if (last) return join(last);
   return false;
+}
+
+export function chat(channel, text) {
+  send("chat", { channel, text });
+}
+
+export async function fetchProfile() {
+  try {
+    const response = await fetch("/api/me", {
+      headers: { "X-Player-Id": game.playerId },
+      cache: "no-store",
+    });
+    return await response.json();
+  } catch (e) {
+    return { enabled: false };
+  }
+}
+
+export async function fetchLeaderboard() {
+  try {
+    const response = await fetch("/api/leaderboard", { cache: "no-store" });
+    return await response.json();
+  } catch (e) {
+    return { enabled: false, list: [] };
+  }
+}
+
+/** move a profile to this device with its code */
+export function useProfileCode(code) {
+  code = (code || "").trim().toLowerCase();
+  if (!/^[a-z0-9]{8,40}$/.test(code)) return false;
+  playerId = code;
+  game.playerId = code;
+  store("vkPlayerId", code);
+  return true;
 }
 
 export function shareLink() {

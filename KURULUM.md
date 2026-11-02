@@ -91,3 +91,13 @@ Betik eksik ikonları listeler. Bu ikonlar `/tmp/botc-release/resources/characte
 6. Bütün vampirler ölürse köylüler, vampirler köylü sayısına ulaşırsa vampirler kazanır.
 
 Bildirim için: iPhone'da Safari → Paylaş → *Ana Ekrana Ekle*, uygulamayı oradan aç, ⚙️ → Bildirimler. Sesli anlatım da ⚙️ menüsünde.
+
+## Kalıcılık ve istatistikler
+
+Odaların güncelleme/yeniden başlatmalarda kaybolmaması, profiller ve sıralama için sunucu
+Supabase'deki `vampir` şemasını kullanır. Render → townsquare → **Environment** bölümüne
+`VK_DB_SECRET` değişkeni eklenmelidir (değeri geliştiriciden alınır, kimseyle paylaşılmaz).
+Değişken yoksa oyun yine çalışır; sadece odalar bellekte tutulur ve istatistik kaydedilmez.
+
+Sunucu ücretsiz planda uyumasın diye 10:00–02:00 (İstanbul) arasında kendini uyanık tutar.
+`KEEP_AWAKE=false` ile kapatılabilir, `AWAKE_FROM` / `AWAKE_TO` ile saatler değiştirilebilir.

@@ -8,6 +8,16 @@
           voice.enabled ? "Açık" : "Kapalı"
         }}</b>
       </div>
+      <div class="row" @click="toggleSfx">
+        <span>🎵 Ses efektleri</span>
+        <b :class="{ on: sfx.enabled }">{{
+          sfx.enabled ? "Açık" : "Kapalı"
+        }}</b>
+      </div>
+      <div class="row" @click="profile = true">
+        <span>👤 Profil ve istatistikler</span>
+        <b>›</b>
+      </div>
       <div class="row" @click="notifications">
         <span>🔔 Bildirimler</span>
         <b :class="{ on: notif.permission === 'granted' }">{{ notifLabel }}</b>
@@ -25,6 +35,7 @@
       </button>
       <button class="btn ghost" @click="$emit('close')">Kapat</button>
     </div>
+    <Profile v-if="profile" @close="profile = false" />
   </div>
 </template>
 
@@ -33,10 +44,20 @@ import { game, leave, toast } from "../game";
 import { voiceState, setVoice } from "../voice";
 import { pwaState, install } from "../pwa";
 import { enableNotifications, notificationState } from "../notifications";
+import { sfxState, setSfx } from "../sfx";
+import Profile from "./Profile";
 
 export default {
+  components: { Profile },
   data() {
-    return { game, voice: voiceState, pwa: pwaState, notif: notificationState };
+    return {
+      game,
+      voice: voiceState,
+      pwa: pwaState,
+      notif: notificationState,
+      sfx: sfxState,
+      profile: false,
+    };
   },
   computed: {
     notifLabel() {
@@ -49,6 +70,9 @@ export default {
     },
   },
   methods: {
+    toggleSfx() {
+      setSfx(!this.sfx.enabled);
+    },
     toggleVoice() {
       setVoice(!this.voice.enabled);
     },

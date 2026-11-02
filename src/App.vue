@@ -4,6 +4,20 @@
     <Home v-if="!game.code" @settings="settingsOpen = true" />
     <Room v-else @settings="settingsOpen = true" />
     <RoleCard />
+    <transition name="phase">
+      <div
+        class="phase-overlay"
+        v-if="game.transition"
+        :class="game.transition.kind"
+        @click="game.transition = null"
+      >
+        <div class="phase-icon">
+          {{ { night: "🌙", day: "☀️", over: "🏁" }[game.transition.kind] }}
+        </div>
+        <h2>{{ game.transition.title }}</h2>
+        <p>{{ game.transition.sub }}</p>
+      </div>
+    </transition>
     <Settings v-if="settingsOpen" @close="settingsOpen = false" />
     <div class="toasts">
       <transition-group name="toast">
@@ -32,6 +46,25 @@ export default {
   components: { Home, Room, RoleCard, Settings },
   data() {
     return { game, settingsOpen: false };
+  },
+  computed: {
+    tint() {
+      const s = game.state;
+      if (!game.code || !s) return "";
+      if (["night", "roles"].includes(s.phase)) return "tint-night";
+      if (["day", "lastwords"].includes(s.phase)) return "tint-day";
+      if (s.phase === "dusk") return "tint-dusk";
+      return "";
+    },
+  },
+  watch: {
+    tint: {
+      immediate: true,
+      handler(value, old) {
+        if (old) document.body.classList.remove(old);
+        if (value) document.body.classList.add(value);
+      },
+    },
   },
   mounted() {
     const boot = document.getElementById("boot");
@@ -226,6 +259,91 @@ input.field {
 .toast-leave-to {
   opacity: 0;
   transform: translateY(-10px);
+}
+
+.backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition:
+    opacity 1.2s ease,
+    background 1.2s ease;
+}
+body.tint-night .backdrop::after {
+  opacity: 1;
+  background: radial-gradient(
+    circle at 50% 0%,
+    rgba(60, 50, 160, 0.35),
+    rgba(3, 4, 15, 0.75) 70%
+  );
+}
+body.tint-day .backdrop::after {
+  opacity: 1;
+  background: radial-gradient(
+    circle at 50% 0%,
+    rgba(255, 180, 80, 0.22),
+    rgba(5, 6, 12, 0.2) 70%
+  );
+}
+body.tint-dusk .backdrop::after {
+  opacity: 1;
+  background: radial-gradient(
+    circle at 50% 0%,
+    rgba(200, 70, 60, 0.25),
+    rgba(5, 6, 12, 0.4) 70%
+  );
+}
+
+.phase-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 350;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  background: radial-gradient(circle at 50% 40%, #1d1a4d, #03030a 75%);
+  .phase-icon {
+    font-size: 96px;
+    animation: rise 1.4s ease-out;
+  }
+  h2 {
+    margin: 10px 0 6px;
+    font-size: 38px;
+    color: $gold;
+  }
+  p {
+    font-size: 19px;
+    color: $text;
+    max-width: 420px;
+  }
+  &.day {
+    background: radial-gradient(circle at 50% 35%, #6b3d10, #120a03 75%);
+  }
+  &.over {
+    background: radial-gradient(circle at 50% 35%, #4d3a10, #050403 75%);
+  }
+}
+@keyframes rise {
+  from {
+    transform: translateY(40px) scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.phase-enter-active,
+.phase-leave-active {
+  transition: opacity 0.5s;
+}
+.phase-enter,
+.phase-leave-to {
+  opacity: 0;
 }
 
 .sheet-bg {

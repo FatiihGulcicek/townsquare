@@ -53,7 +53,7 @@ export default {
       const s = this.state;
       if (!s || s.me.role !== "vampir") return [];
       return s.players
-        .filter((p) => p.role === "vampir" && p.id !== s.me.id)
+        .filter((p) => p.role === "vampir" && p.pid !== s.me.pid)
         .map((p) => p.name);
     },
     canAskNotifications() {

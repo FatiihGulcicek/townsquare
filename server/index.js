@@ -12,6 +12,7 @@ const crypto = require("crypto");
 const WebSocket = require("ws");
 const push = require("./push");
 const { Room } = require("./vk");
+const db = require("./db");
 
 const PORT = parseInt(process.env.PORT || "8080", 10);
 const STATIC_DIR = path.resolve(
@@ -82,12 +83,8 @@ function isAway(entry, playerId) {
   );
 }
 
-function createRoom(mode, creatorId) {
-  if (rooms.size >= MAX_ROOMS) return null;
-  const code = newCode();
-  if (!code) return null;
-  const entry = { sockets: new Set(), room: null };
-  entry.room = new Room(code, mode, creatorId, {
+function roomIo(code, entry) {
+  return {
     sendTo: (id, data) =>
       entry.sockets.forEach((ws) => {
         if (ws.playerId === id && isOpen(ws)) ws.send(data);
@@ -104,12 +101,61 @@ function createRoom(mode, creatorId) {
       });
     },
     destroy: () => {
-      entry.sockets.forEach((ws) => ws.close(1000, "room closed"));
+      entry.sockets.forEach((ws) => ws.close(4004, "Oda kapandı"));
       rooms.delete(code);
+      db.closeRoom(code);
     },
-  });
+    save: (snapshot) => db.enabled() && db.saveRoom(code, snapshot),
+    profile: (playerId, name) =>
+      db.enabled() && db.touchProfile(playerId, name),
+    gameOver: (record) => {
+      if (!db.enabled()) return;
+      db.recordGame({
+        ...record,
+        players: record.players.map(({ id, ...p }) => ({
+          key: db.profileKey(id),
+          ...p,
+        })),
+      });
+    },
+  };
+}
+
+function createRoom(mode, creatorId) {
+  if (rooms.size >= MAX_ROOMS) return null;
+  const code = newCode();
+  if (!code) return null;
+  const entry = { sockets: new Set(), room: null };
+  entry.room = new Room(code, mode, creatorId, roomIo(code, entry));
   rooms.set(code, entry);
+  entry.room.save();
   return code;
+}
+
+// rooms survive restarts: a room that is not in memory is loaded from the database
+const loading = new Map();
+function findRoom(code) {
+  if (rooms.has(code)) return Promise.resolve(rooms.get(code));
+  if (!db.enabled()) return Promise.resolve(null);
+  if (!loading.has(code)) {
+    loading.set(
+      code,
+      db
+        .loadRoom(code)
+        .then((data) => {
+          if (rooms.has(code)) return rooms.get(code);
+          if (!data || data.closed || !data.code) return null;
+          const entry = { sockets: new Set(), room: null };
+          entry.room = Room.fromJSON(data, roomIo(code, entry));
+          rooms.set(code, entry);
+          console.log("restored room", code, entry.room.phase);
+          return entry;
+        })
+        .catch(() => null)
+        .finally(() => loading.delete(code)),
+    );
+  }
+  return loading.get(code);
 }
 
 // close rooms nobody uses any more
@@ -153,24 +199,18 @@ wss.on("connection", (ws, req) => {
   if (!ROOM_CODE.test(code) || !VALID_ID.test(playerId)) {
     return ws.close(1000, "Geçersiz oda");
   }
-  const entry = rooms.get(code);
-  if (!entry) return ws.close(4004, "Oda bulunamadı");
-  if (entry.sockets.size >= MAX_PER_ROOM) return ws.close(1000, "Oda dolu");
   ws.playerId = playerId;
   ws.isAlive = true;
   ws.counter = 0;
-  entry.sockets.add(ws);
   ws.on("pong", () => {
     ws.isAlive = true;
     ws.counter = 0;
   });
-  ws.on("close", () => {
-    entry.sockets.delete(ws);
-    entry.room.update();
-  });
   ws.on("error", () => {});
-  ws.on("message", (raw, isBinary) => {
-    if (isBinary) return;
+  // messages that arrive while the room is being loaded wait here
+  const queue = [];
+  let entry = null;
+  const handle = (raw) => {
     if (++ws.counter > 150) return ws.close(1000, "Çok fazla mesaj");
     let command, params;
     try {
@@ -178,6 +218,7 @@ wss.on("connection", (ws, req) => {
     } catch (e) {
       return;
     }
+    if (command === "ping") return ws.send('["pong"]');
     if (command === "visible") {
       ws.visible = params !== false;
       return;
@@ -188,9 +229,26 @@ wss.on("connection", (ws, req) => {
       return;
     }
     entry.room.receive(playerId, command, params);
+  };
+  ws.on("message", (raw, isBinary) => {
+    if (isBinary) return;
+    if (entry) handle(raw);
+    else if (queue.length < 20) queue.push(raw);
   });
-  entry.room.sendState(playerId);
-  entry.room.update();
+  findRoom(code).then((found) => {
+    if (ws.readyState !== WebSocket.OPEN) return;
+    if (!found) return ws.close(4004, "Oda bulunamadı");
+    if (found.sockets.size >= MAX_PER_ROOM) return ws.close(1000, "Oda dolu");
+    entry = found;
+    entry.sockets.add(ws);
+    ws.on("close", () => {
+      entry.sockets.delete(ws);
+      entry.room.update();
+    });
+    entry.room.sendState(playerId);
+    queue.splice(0).forEach(handle);
+    entry.room.update();
+  });
 });
 
 const heartbeat = setInterval(() => {
@@ -272,6 +330,8 @@ function sendFile(res, file, req) {
   fs.createReadStream(file).pipe(res);
 }
 
+let leaderboardCache = null;
+
 function json(res, status, data) {
   res.statusCode = status;
   res.setHeader("Content-Type", "application/json");
@@ -306,6 +366,7 @@ server.on("request", async (req, res) => {
       players: wss.clients.size,
       connections: diagnostics,
       push: push.stats(),
+      db: db.stats(),
     });
   }
   if (url.pathname === "/push/key") {
@@ -324,9 +385,25 @@ server.on("request", async (req, res) => {
     if (!code) return json(res, 503, { error: "busy" });
     return json(res, 200, { code });
   }
+  if (url.pathname === "/api/me") {
+    const id = req.headers["x-player-id"] || "";
+    if (!VALID_ID.test(id)) return json(res, 400, { error: "id" });
+    if (!db.enabled()) return json(res, 200, { enabled: false });
+    const profile = await db.getProfile(id);
+    return json(res, 200, { enabled: true, profile });
+  }
+  if (url.pathname === "/api/leaderboard") {
+    if (!db.enabled()) return json(res, 200, { enabled: false, list: [] });
+    const now = Date.now();
+    if (!leaderboardCache || now - leaderboardCache.at > 60000) {
+      leaderboardCache = { at: now, list: (await db.leaderboard()) || [] };
+    }
+    return json(res, 200, { enabled: true, list: leaderboardCache.list });
+  }
   if (url.pathname.startsWith("/api/room/")) {
     const code = url.pathname.split("/").pop().toUpperCase();
-    return json(res, rooms.has(code) ? 200 : 404, { exists: rooms.has(code) });
+    const found = await findRoom(code);
+    return json(res, found ? 200 : 404, { exists: !!found });
   }
   if (req.method !== "GET" && req.method !== "HEAD") {
     res.statusCode = 405;
@@ -355,10 +432,36 @@ server.listen(PORT, () => {
   console.log(`Vampir Köylü server on http://0.0.0.0:${PORT}`);
 });
 
-function shutdown() {
-  wss.clients.forEach((ws) => ws.close(1001, "Sunucu yeniden başlıyor"));
+async function shutdown() {
+  // save every room before going away, then ask clients to reconnect
+  await Promise.race([
+    Promise.all([...rooms.values()].map((entry) => entry.room.flush())),
+    new Promise((resolve) => setTimeout(resolve, 4000)),
+  ]);
+  wss.clients.forEach((ws) => ws.close(1012, "Sunucu yeniden başlıyor"));
   server.close(() => process.exit(0));
-  setTimeout(() => process.exit(0), 3000).unref();
+  setTimeout(() => process.exit(0), 2000).unref();
 }
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
+
+// Render's free plan sleeps after 15 idle minutes, which makes the first
+// visit slow. Stay awake during typical playing hours (Istanbul time).
+const SELF_URL = process.env.RENDER_EXTERNAL_URL;
+const AWAKE_FROM = parseInt(process.env.AWAKE_FROM || "10", 10);
+const AWAKE_TO = parseInt(process.env.AWAKE_TO || "2", 10);
+if (SELF_URL && process.env.KEEP_AWAKE !== "false") {
+  setInterval(
+    () => {
+      const hour = (new Date().getUTCHours() + 3) % 24;
+      const awake =
+        AWAKE_FROM <= AWAKE_TO
+          ? hour >= AWAKE_FROM && hour < AWAKE_TO
+          : hour >= AWAKE_FROM || hour < AWAKE_TO;
+      if (awake || rooms.size) {
+        fetch(SELF_URL + "/healthz").catch(() => {});
+      }
+    },
+    10 * 60 * 1000,
+  ).unref();
+}

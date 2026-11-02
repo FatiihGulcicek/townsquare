@@ -6,7 +6,9 @@
         {{ game.code }} <span>🔗</span>
       </button>
       <div class="phase-title">{{ phaseTitle }}</div>
-      <div class="timer" v-if="clock">{{ clock }}</div>
+      <div class="timer" :class="{ low: lowTime }" v-if="clock">
+        {{ clock }}
+      </div>
       <button class="icon" @click="$emit('settings')" aria-label="Ayarlar">
         ⚙️
       </button>
@@ -39,10 +41,10 @@
       </button>
       <div class="my-role st" v-if="isSt">
         <span class="em">🎙️</span>
-        <span
-          ><b>Anlatıcı sensin</b
-          ><small>Her şeyi sen görüyorsun, oyunu sen ilerletirsin</small></span
-        >
+        <span>
+          <b>Anlatıcı sensin</b>
+          <small>Her şeyi görüyorsun, oyunu sen ilerletirsin</small>
+        </span>
       </div>
 
       <!-- ========== LOBBY ========== -->
@@ -68,44 +70,56 @@
         </div>
 
         <div class="card">
-          <h3>Oyuncular ({{ s.players.length }})</h3>
-          <ul class="names">
-            <li v-for="p in s.players" :key="p.id">
-              <span class="dot" :class="{ on: p.online }"></span>
-              {{ p.name }}
-              <small v-if="p.id === s.me.id" class="muted">(sen)</small>
+          <h3>Oyuncular ({{ s.players.length }}/{{ s.max }})</h3>
+          <div class="grid">
+            <div class="tile" v-for="p in s.players" :key="p.pid">
+              <Avatar :name="p.name" :size="56" :online="p.online" />
+              <span class="name">{{ p.name }}</span>
+              <small v-if="p.pid === s.me.pid" class="muted">sen</small>
               <button
-                v-if="s.me.isOwner && p.id !== s.me.id"
+                v-if="s.me.isOwner && p.pid !== s.me.pid"
                 class="x"
                 @click="kick(p)"
+                aria-label="Çıkar"
               >
                 ✕
               </button>
-            </li>
-          </ul>
+            </div>
+          </div>
           <p v-if="!s.players.length" class="muted">Henüz kimse yok.</p>
           <div class="chips" v-if="s.setup">
             <span class="chip">🧛 {{ s.setup.vampir }} Vampir</span>
-            <span class="chip" v-if="s.setup.doktor"
-              >🩺 {{ s.setup.doktor }} Doktor</span
-            >
-            <span class="chip">👁️ {{ s.setup.gozcu }} Gözcü</span>
+            <span class="chip" v-if="s.setup.doktor">🩺 Doktor</span>
+            <span class="chip" v-if="s.setup.gozcu">👁️ Gözcü</span>
             <span class="chip">🧑‍🌾 {{ s.setup.koylu }} Köylü</span>
           </div>
           <p v-else class="muted">En az {{ s.min }} oyuncu gerekiyor.</p>
         </div>
 
         <div class="card" v-if="s.me.isOwner">
-          <template v-if="s.mode === 'auto'">
-            <div class="settings">
+          <h3>Oda ayarları</h3>
+          <div class="settings">
+            <label>
+              Vampir sayısı
+              <select
+                :value="s.settings.vampires"
+                @change="setting('vampires', $event.target.value, true)"
+              >
+                <option :value="0">Otomatik</option>
+                <option v-for="m in [1, 2, 3, 4]" :key="m" :value="m">
+                  {{ m }}
+                </option>
+              </select>
+            </label>
+            <template v-if="s.mode === 'auto'">
               <label>
                 Gündüz süresi
                 <select
                   :value="s.settings.dayMinutes"
-                  @change="setting('dayMinutes', $event)"
+                  @change="setting('dayMinutes', $event.target.value, true)"
                 >
                   <option v-for="m in [2, 3, 5, 8, 12]" :key="m" :value="m">
-                    {{ m }} dakika
+                    {{ m }} dk
                   </option>
                 </select>
               </label>
@@ -113,19 +127,32 @@
                 Gece süresi
                 <select
                   :value="s.settings.nightSeconds"
-                  @change="setting('nightSeconds', $event)"
+                  @change="setting('nightSeconds', $event.target.value, true)"
                 >
                   <option
                     v-for="m in [30, 45, 60, 90, 120]"
                     :key="m"
                     :value="m"
                   >
-                    {{ m }} saniye
+                    {{ m }} sn
                   </option>
                 </select>
               </label>
-            </div>
-          </template>
+            </template>
+          </div>
+          <div class="toggles">
+            <label class="toggle" v-for="t in toggles" :key="t.key">
+              <span>
+                {{ t.label }}
+                <small class="muted">{{ t.hint }}</small>
+              </span>
+              <input
+                type="checkbox"
+                :checked="s.settings[t.key]"
+                @change="setting(t.key, $event.target.checked)"
+              />
+            </label>
+          </div>
           <button
             class="btn primary"
             :class="{ disabled: s.players.length < s.min }"
@@ -172,24 +199,27 @@
           }}
         </div>
         <div
-          class="targets"
+          class="grid pick"
           v-if="!(s.night.action === 'gozcu' && s.night.done)"
         >
           <button
             v-for="p in nightTargets"
-            :key="p.id"
+            :key="p.pid"
+            class="tile"
             :disabled="!p.allowed"
-            :class="{ selected: s.night.target === p.id }"
+            :class="{ selected: s.night.target === p.pid }"
             @click="nightPick(p)"
           >
-            {{ p.name }}
-            <small v-if="p.note">{{ p.note }}</small>
+            <Avatar :name="p.name" :size="54" :badge="p.badge" />
+            <span class="name">{{ p.name }}</span>
+            <small v-if="p.note" class="muted">{{ p.note }}</small>
           </button>
         </div>
         <div v-if="s.night.team && s.night.team.length > 1" class="team">
           <b>Vampir ekibin:</b>
-          <div v-for="v in s.night.team" :key="v.id">
-            {{ v.name }} → {{ v.target ? nameOf(v.target) : "henüz seçmedi" }}
+          <div v-for="v in s.night.team" :key="v.pid">
+            {{ v.name }} →
+            {{ v.target ? nameOf(v.target) : "henüz seçmedi" }}
           </div>
         </div>
         <p class="done" v-if="s.night.done && s.night.action !== 'gozcu'">
@@ -201,7 +231,7 @@
         class="card center muted"
         v-else-if="phase === 'night' && s.me.seated && !s.me.alive"
       >
-        Öldün. Gece boyunca bekle.
+        Öldün. Gece boyunca bekle. Ölüler kanalında sohbet edebilirsin.
       </div>
 
       <!-- ========== NIGHT (storyteller) ========== -->
@@ -236,55 +266,53 @@
       <template v-if="phase === 'day'">
         <div class="card banner" v-if="s.lastNight">
           <template v-if="s.lastNight.died.length">
-            🩸 Bu gece <b>{{ s.lastNight.died[0].name }}</b> öldü ({{
-              roleName(s.lastNight.died[0].role)
-            }}).
+            🩸 Bu gece <b>{{ s.lastNight.died[0].name }}</b> öldü<template
+              v-if="s.lastNight.died[0].role"
+            >
+              ({{ roleName(s.lastNight.died[0].role) }})</template
+            >.
           </template>
-          <template v-else-if="s.lastNight.saved"
-            >🩺 Doktor bu gece birini kurtardı! Kimse ölmedi.</template
-          >
+          <template v-else-if="s.lastNight.saved">
+            🩺 Doktor bu gece birini kurtardı! Kimse ölmedi.
+          </template>
           <template v-else>🌅 Bu gece kimse ölmedi.</template>
         </div>
         <div class="card">
           <h3>Oylama</h3>
-          <p class="muted" v-if="s.me.alive && s.me.seated">
-            Şüphelendiğin kişiye dokun. Oyunu istediğin zaman değiştirebilirsin.
+          <p class="muted small" v-if="canVote">
+            Şüphelendiğin kişiye dokun. Fikrini değiştirebilirsin; aynı kişiye
+            tekrar dokunursan oyun geri alınır.
           </p>
-          <div class="votes">
+          <div class="grid pick">
             <button
               v-for="p in alivePlayers"
-              :key="p.id"
-              class="vote-row"
-              :class="{ mine: myVote === p.id, me: p.id === s.me.id }"
-              :disabled="!canVote || p.id === s.me.id"
-              @click="vote(p.id)"
+              :key="p.pid"
+              class="tile"
+              :class="{ selected: myVote === p.pid }"
+              :disabled="!canVote || p.pid === s.me.pid"
+              @click="vote(p.pid)"
             >
-              <span class="who">
-                {{ p.name }} <small v-if="p.id === s.me.id">(sen)</small>
-                <em v-if="votersOf(p.id).length">{{
-                  votersOf(p.id).join(", ")
-                }}</em>
-              </span>
-              <span class="count" v-if="countOf(p.id)">{{
-                countOf(p.id)
+              <Avatar :name="p.name" :size="54" />
+              <span class="votes-badge" v-if="countOf(p.pid)">{{
+                countOf(p.pid)
               }}</span>
+              <span class="name">{{ p.name }}</span>
+              <small v-if="p.pid === s.me.pid" class="muted">sen</small>
             </button>
-            <button
-              class="vote-row pass"
-              :class="{ mine: myVote === 'pass' }"
-              :disabled="!canVote"
-              @click="vote('pass')"
-            >
-              <span class="who">
-                🤷 Pas geç
-                <em v-if="votersOf('pass').length">{{
-                  votersOf("pass").join(", ")
-                }}</em>
-              </span>
-              <span class="count" v-if="countOf('pass')">{{
-                countOf("pass")
-              }}</span>
-            </button>
+          </div>
+          <button
+            class="btn small pass"
+            :class="{ chosen: myVote === 'pass' }"
+            :disabled="!canVote"
+            @click="vote('pass')"
+          >
+            🤷 Pas geç
+            <span v-if="countOf('pass')">({{ countOf("pass") }})</span>
+          </button>
+          <div class="who-voted" v-if="voteLines.length">
+            <div v-for="line in voteLines" :key="line.voter">
+              <b>{{ line.voter }}</b> → {{ line.target }}
+            </div>
           </div>
           <p class="settle" v-if="settle">
             Herkes oy verdi. Oylar {{ settle }} sn sonra sayılacak…
@@ -299,11 +327,24 @@
         </div>
       </template>
 
+      <!-- ========== LAST WORDS ========== -->
+      <div class="card center lastwords" v-if="phase === 'lastwords'">
+        <Avatar v-if="condemned" :name="condemned.name" :size="84" />
+        <h3>{{ condemned ? condemned.name : "" }} son sözlerini söylüyor</h3>
+        <p v-if="condemned && condemned.pid === s.me.pid">
+          Köy seni asmaya karar verdi. Sohbetten son sözlerini yazabilirsin.
+        </p>
+        <p class="muted" v-else>Dinleyin… sonra ip çekilecek.</p>
+        <button class="btn danger" v-if="isSt" @click="act('next')">
+          ⚰️ Asılsın
+        </button>
+      </div>
+
       <!-- ========== DUSK ========== -->
       <div class="card center" v-if="phase === 'dusk'">
         <p v-if="s.executed">
-          ⚰️ <b>{{ s.executed.name }}</b> asıldı. O bir
-          <b>{{ s.roles[s.executed.role].was }}</b
+          ⚰️ <b>{{ s.executed.name }}</b> asıldı<template v-if="s.executed.role"
+            >. O bir <b>{{ s.roles[s.executed.role].was }}</b></template
           >.
         </p>
         <p v-else>Bugün kimse asılmadı.</p>
@@ -322,17 +363,27 @@
               s.winner === "vampir" ? "Vampirler kazandı!" : "Köylüler kazandı!"
             }}
           </h2>
+          <p v-if="myResult" class="result">{{ myResult }}</p>
         </div>
         <div class="card">
           <h3>Roller</h3>
-          <ul class="roles">
-            <li v-for="p in s.players" :key="p.id" :class="{ dead: !p.alive }">
-              <span>{{ p.name }}</span>
-              <b :class="p.role"
-                >{{ roleEmoji(p.role) }} {{ roleName(p.role) }}</b
-              >
-            </li>
-          </ul>
+          <div class="grid">
+            <div
+              class="tile"
+              v-for="p in s.players"
+              :key="p.pid"
+              :class="{ won: teamOf(p.role) === s.winner }"
+            >
+              <Avatar
+                :name="p.name"
+                :size="54"
+                :dead="!p.alive"
+                :badge="roleEmoji(p.role)"
+              />
+              <span class="name">{{ p.name }}</span>
+              <small :class="p.role">{{ roleName(p.role) }}</small>
+            </div>
+          </div>
           <button
             class="btn primary"
             v-if="s.me.isOwner"
@@ -347,32 +398,37 @@
       <!-- seer notes -->
       <div class="card" v-if="s.seerLog.length && phase !== 'over'">
         <h3>👁️ Gözcü notların</h3>
-        <div v-for="(r, i) in s.seerLog" :key="i">
+        <div v-for="(r, i) in s.seerLog" :key="i" class="seer-line">
           {{ r.round }}. gece: <b>{{ r.name }}</b> —
           {{ r.vampir ? "VAMPİR 🧛" : "vampir değil" }}
         </div>
       </div>
 
-      <!-- players (during the game) -->
+      <!-- village (during the game) -->
       <div class="card" v-if="!['lobby', 'over'].includes(phase)">
-        <h3>Köy</h3>
-        <ul class="roles">
-          <li v-for="p in s.players" :key="p.id" :class="{ dead: !p.alive }">
-            <span>
-              <span class="dot" :class="{ on: p.online }"></span>
-              {{ p.alive ? "" : "💀 " }}{{ p.name }}
-              <small v-if="p.id === s.me.id" class="muted">(sen)</small>
-            </span>
-            <span class="right">
-              <b v-if="p.role" :class="p.role"
-                >{{ roleEmoji(p.role) }} {{ roleName(p.role) }}</b
-              >
-              <button v-if="isSt" class="mini" @click="stToggle(p)">
-                {{ p.alive ? "Öldür" : "Dirilt" }}
-              </button>
-            </span>
-          </li>
-        </ul>
+        <h3>Köy · {{ alivePlayers.length }} kişi hayatta</h3>
+        <div class="grid">
+          <div
+            class="tile"
+            v-for="p in s.players"
+            :key="p.pid"
+            :class="{ dead: !p.alive }"
+          >
+            <Avatar
+              :name="p.name"
+              :size="50"
+              :dead="!p.alive"
+              :online="p.online"
+              :badge="roleEmoji(p.role)"
+            />
+            <span class="name">{{ p.name }}</span>
+            <small v-if="p.role" :class="p.role">{{ roleName(p.role) }}</small>
+            <small v-else-if="p.pid === s.me.pid" class="muted">sen</small>
+            <button v-if="isSt" class="mini" @click="stToggle(p)">
+              {{ p.alive ? "Öldür" : "Dirilt" }}
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- story so far -->
@@ -380,17 +436,29 @@
         <h3>Olanlar</h3>
         <p v-for="(line, i) in reversedLog" :key="i">{{ line }}</p>
       </div>
+      <div class="spacer"></div>
     </template>
+    <Chat />
   </div>
 </template>
 
 <script>
 import { game, act, setName, toast, shareLink } from "../game";
 import { unlockVoice } from "../voice";
+import Avatar from "./Avatar";
+import Chat from "./Chat";
+
+const TOGGLES = [
+  { key: "doktor", label: "🩺 Doktor", hint: "5+ oyuncuda" },
+  { key: "gozcu", label: "👁️ Gözcü", hint: "" },
+  { key: "reveal", label: "Ölenin rolü açıklansın", hint: "" },
+  { key: "lastWords", label: "Son söz hakkı", hint: "asılmadan önce 20 sn" },
+];
 
 export default {
+  components: { Avatar, Chat },
   data() {
-    return { game, now: Date.now(), nameInput: game.name };
+    return { game, now: Date.now(), nameInput: game.name, toggles: TOGGLES };
   },
   computed: {
     s() {
@@ -411,13 +479,17 @@ export default {
     elapsed() {
       return Math.max(0, this.now - game.receivedAt);
     },
+    secondsLeft() {
+      if (!this.s || !this.s.remaining) return 0;
+      return Math.max(0, Math.round((this.s.remaining - this.elapsed) / 1000));
+    },
     clock() {
       if (!this.s || !this.s.remaining) return "";
-      const sec = Math.max(
-        0,
-        Math.round((this.s.remaining - this.elapsed) / 1000),
-      );
+      const sec = this.secondsLeft;
       return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0");
+    },
+    lowTime() {
+      return this.clock && this.secondsLeft <= 10;
     },
     settle() {
       if (!this.s || !this.s.settle) return 0;
@@ -431,6 +503,7 @@ export default {
           roles: "Roller dağıtıldı",
           night: `🌙 ${r}. Gece`,
           day: `☀️ ${r}. Gün`,
+          lastwords: "⚖️ Son sözler",
           dusk: "🌆 Akşam",
           over: "🏁 Oyun bitti",
         }[this.phase] || ""
@@ -440,7 +513,7 @@ export default {
       return this.s ? this.s.players.filter((p) => p.alive) : [];
     },
     myVote() {
-      return this.s ? this.s.votes[this.s.me.id] : null;
+      return this.s ? this.s.votes[this.s.me.pid] : null;
     },
     canVote() {
       return (
@@ -448,7 +521,19 @@ export default {
       );
     },
     votedCount() {
-      return this.alivePlayers.filter((p) => this.s.votes[p.id]).length;
+      return this.alivePlayers.filter((p) => this.s.votes[p.pid]).length;
+    },
+    voteLines() {
+      return Object.keys(this.s.votes).map((voter) => ({
+        voter: this.nameOf(voter),
+        target:
+          this.s.votes[voter] === "pass"
+            ? "pas"
+            : this.nameOf(this.s.votes[voter]),
+      }));
+    },
+    condemned() {
+      return this.s.players.find((p) => p.pid === this.s.condemned) || null;
     },
     nightTitle() {
       return {
@@ -461,7 +546,7 @@ export default {
     nightHelp() {
       return {
         vampir:
-          "Diğer vampirlerle aynı kişiyi seçin. Sabah en çok seçilen kişiye saldırılır.",
+          "Diğer vampirlerle aynı kişiyi seçin. Sabah en çok seçilen kişiye saldırılır. Vampir sohbetinden anlaşabilirsiniz.",
         doktor:
           "Seçtiğin kişi bu gece vampirlerden korunur. Kendini de seçebilirsin, ama aynı kişiyi iki gece üst üste koruyamazsın.",
         gozcu:
@@ -480,14 +565,21 @@ export default {
           allowed = false;
           note = "vampir";
         }
-        if (action === "doktor" && p.id === s.night.forbidden) {
+        if (action === "doktor" && p.pid === s.night.forbidden) {
           allowed = false;
           note = "dün korundu";
         }
-        if ((action === "gozcu" || action === "koylu") && p.id === s.me.id)
+        if ((action === "gozcu" || action === "koylu") && p.pid === s.me.pid) {
           allowed = false;
-        if (p.id === s.me.id && allowed) note = "sen";
-        return { ...p, allowed, note };
+        }
+        if (p.pid === s.me.pid && allowed) note = "sen";
+        const badge =
+          action === "vampir" && s.night.team
+            ? s.night.team.filter((v) => v.target === p.pid).length
+              ? "🩸"
+              : ""
+            : "";
+        return { ...p, allowed, note, badge };
       });
     },
     seerResult() {
@@ -500,6 +592,12 @@ export default {
       return Object.keys(vamp)
         .map((v) => this.nameOf(v) + " → " + this.nameOf(vamp[v]))
         .join(", ");
+    },
+    myResult() {
+      if (!this.s.me.role) return "";
+      return this.teamOf(this.s.me.role) === this.s.winner
+        ? "Tebrikler, kazandın! 🏆"
+        : "Bu sefer kaybettin.";
     },
     reversedLog() {
       return this.s.log.slice().reverse();
@@ -516,26 +614,24 @@ export default {
       unlockVoice();
       act(type, params);
     },
-    nameOf(id) {
-      const p = this.s && this.s.players.find((x) => x.id === id);
+    nameOf(pid) {
+      const p = this.s && this.s.players.find((x) => x.pid === pid);
       return p ? p.name : "";
     },
     roleName(id) {
-      return id && this.s.roles[id] ? this.s.roles[id].name : "?";
+      return id && this.s.roles[id] ? this.s.roles[id].name : "";
     },
     roleEmoji(id) {
       return id && this.s.roles[id] ? this.s.roles[id].emoji : "";
     },
+    teamOf(id) {
+      return id && this.s.roles[id] ? this.s.roles[id].team : "";
+    },
     hasAlive(role) {
       return this.s.players.some((p) => p.alive && p.role === role);
     },
-    votersOf(target) {
-      return Object.keys(this.s.votes)
-        .filter((v) => this.s.votes[v] === target)
-        .map((v) => this.nameOf(v));
-    },
     countOf(target) {
-      return this.votersOf(target).length;
+      return Object.values(this.s.votes).filter((t) => t === target).length;
     },
     sit() {
       setName(this.nameInput);
@@ -559,23 +655,22 @@ export default {
         prompt("Bu linki arkadaşlarına gönder:", url);
       }
     },
-    setting(key, event) {
-      this.act("settings", {
-        ...this.s.settings,
-        [key]: parseInt(event.target.value, 10),
-      });
+    setting(key, value, number) {
+      this.act("settings", { [key]: number ? parseInt(value, 10) : value });
     },
     start() {
       if (this.s.players.length < this.s.min) {
         toast(`En az ${this.s.min} oyuncu gerekiyor.`, "warning");
         return;
       }
-      if (confirm(`Oyun ${this.s.players.length} oyuncuyla başlasın mı?`))
+      if (confirm(`Oyun ${this.s.players.length} oyuncuyla başlasın mı?`)) {
         this.act("start");
+      }
     },
     kick(p) {
-      if (confirm(`${p.name} odadan çıkarılsın mı?`))
-        this.act("kick", { target: p.id });
+      if (confirm(`${p.name} odadan çıkarılsın mı?`)) {
+        this.act("kick", { target: p.pid });
+      }
     },
     nightPick(p) {
       if (!p.allowed) return;
@@ -587,7 +682,7 @@ export default {
       ) {
         return;
       }
-      this.act("night", { target: p.id });
+      this.act("night", { target: p.pid });
     },
     vote(target) {
       if (!this.canVote) return;
@@ -595,8 +690,9 @@ export default {
     },
     stToggle(p) {
       const verb = p.alive ? "öldürülsün" : "diriltilsin";
-      if (confirm(`${p.name} ${verb} mi?`))
-        this.act(p.alive ? "kill" : "revive", { target: p.id });
+      if (confirm(`${p.name} ${verb} mi?`)) {
+        this.act(p.alive ? "kill" : "revive", { target: p.pid });
+      }
     },
   },
 };
@@ -615,7 +711,7 @@ export default {
   margin: -12px -14px 4px;
   padding: calc(8px + env(safe-area-inset-top)) 12px 8px;
   background: rgba(5, 6, 12, 0.88);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
   border-bottom: 1px solid $line;
 }
 .code {
@@ -643,6 +739,15 @@ export default {
   font-variant-numeric: tabular-nums;
   font-weight: 800;
   color: $gold;
+  &.low {
+    color: #ff5a5f;
+    animation: blink 1s infinite;
+  }
+}
+@keyframes blink {
+  50% {
+    opacity: 0.4;
+  }
 }
 .icon {
   background: none;
@@ -663,7 +768,7 @@ export default {
   text-align: center;
 }
 h3 {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   font-size: 19px;
 }
 .my-role {
@@ -675,12 +780,20 @@ h3 {
   padding: 10px 14px;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(30, 40, 80, 0.55);
+  background: linear-gradient(
+    120deg,
+    rgba(30, 40, 90, 0.75),
+    rgba(15, 18, 40, 0.75)
+  );
   color: $text;
   text-align: left;
   cursor: pointer;
   &.vampir {
-    background: rgba(90, 10, 20, 0.6);
+    background: linear-gradient(
+      120deg,
+      rgba(110, 10, 22, 0.8),
+      rgba(40, 6, 12, 0.8)
+    );
   }
   &.st {
     background: rgba(233, 180, 76, 0.12);
@@ -712,37 +825,115 @@ h3 {
   color: $gold;
   margin: 2px 0 4px;
   padding-left: 0.2em;
+  text-shadow: 0 0 24px rgba(233, 180, 76, 0.35);
 }
-.names {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 10px;
-  li {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 40px;
-    border-bottom: 1px solid $line;
-    font-size: 17px;
+
+/* player tiles */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 4px 8px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.04);
+  color: $text;
+  font: inherit;
+  text-align: center;
+  .name {
+    font-weight: 600;
+    font-size: 15px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  small {
+    font-size: 12px;
+  }
+  &.dead .name {
+    opacity: 0.5;
+    text-decoration: line-through;
+  }
+  &.won {
+    background: rgba(233, 180, 76, 0.1);
+    border-color: rgba(233, 180, 76, 0.35);
   }
   .x {
-    margin-left: auto;
-    background: none;
+    position: absolute;
+    top: 2px;
+    right: 4px;
     border: 0;
+    background: none;
     color: $muted;
-    font-size: 18px;
-    padding: 6px 10px;
+    font-size: 15px;
+    padding: 4px;
     cursor: pointer;
   }
 }
-.dot {
-  display: inline-block;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #555;
-  &.on {
-    background: #3ddc84;
+.pick .tile {
+  cursor: pointer;
+  border-color: rgba(255, 255, 255, 0.12);
+  transition:
+    transform 0.12s,
+    background 0.12s;
+  &:active {
+    transform: scale(0.96);
+  }
+  &.selected {
+    background: rgba(123, 108, 255, 0.35);
+    border-color: #b4a9ff;
+    box-shadow: 0 0 0 2px rgba(180, 169, 255, 0.4);
+  }
+  &:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+}
+.phase-day .pick .tile.selected {
+  background: rgba(179, 18, 29, 0.35);
+  border-color: #ff7a80;
+  box-shadow: 0 0 0 2px rgba(255, 122, 128, 0.35);
+}
+.votes-badge {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 13px;
+  background: $blood;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+.pass {
+  width: 100%;
+  &.chosen {
+    border-color: $gold;
+    background: rgba(233, 180, 76, 0.18);
+  }
+}
+.who-voted {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 10px;
+  font-size: 13px;
+  color: $muted;
+  margin: 8px 0;
+  b {
+    color: $text;
+    font-weight: 600;
   }
 }
 .chips {
@@ -757,10 +948,10 @@ h3 {
   font-size: 14px;
 }
 .settings {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   gap: 10px;
   label {
-    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -777,37 +968,29 @@ h3 {
     padding: 0 8px;
   }
 }
+.toggles {
+  margin: 10px 0 4px;
+}
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  border-bottom: 1px solid $line;
+  font-size: 16px;
+  small {
+    display: block;
+    font-size: 12px;
+  }
+  input {
+    width: 24px;
+    height: 24px;
+    accent-color: $gold;
+  }
+}
 .night {
   border-color: rgba(123, 108, 255, 0.5);
-}
-.targets {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin: 10px 0;
-  button {
-    min-height: 54px;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.06);
-    color: $text;
-    font-size: 17px;
-    font-weight: 600;
-    cursor: pointer;
-    small {
-      display: block;
-      font-weight: 400;
-      font-size: 12px;
-      color: $muted;
-    }
-    &.selected {
-      background: rgba(123, 108, 255, 0.45);
-      border-color: #b4a9ff;
-    }
-    &:disabled {
-      opacity: 0.35;
-    }
-  }
+  box-shadow: 0 0 40px rgba(123, 108, 255, 0.12);
 }
 .team {
   font-size: 15px;
@@ -830,6 +1013,9 @@ h3 {
     background: rgba(179, 18, 29, 0.35);
   }
 }
+.seer-line {
+  margin: 4px 0;
+}
 .st-night {
   padding-left: 0;
   list-style: none;
@@ -844,56 +1030,10 @@ h3 {
   font-size: 17px;
   border-left: 4px solid $gold;
 }
-.votes {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 8px 0;
-}
-.vote-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 52px;
-  padding: 6px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.05);
-  color: $text;
-  font-size: 17px;
-  text-align: left;
-  cursor: pointer;
-  .who {
-    display: flex;
-    flex-direction: column;
-  }
-  em {
-    font-style: normal;
-    font-size: 13px;
-    color: $muted;
-  }
-  .count {
-    min-width: 34px;
-    height: 34px;
-    border-radius: 17px;
-    background: $blood;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-  }
-  &.mine {
-    border-color: $gold;
-    background: rgba(233, 180, 76, 0.18);
-  }
-  &:disabled {
-    cursor: default;
-  }
-  &.me:disabled {
-    opacity: 0.7;
-  }
-  &.pass .count {
-    background: #555;
+.lastwords {
+  border-color: rgba(179, 18, 29, 0.6);
+  h3 {
+    margin-top: 10px;
   }
 }
 .settle {
@@ -906,6 +1046,7 @@ h3 {
 .winner {
   .big {
     font-size: 80px;
+    animation: float 3s ease-in-out infinite;
   }
   h2 {
     margin: 4px 0;
@@ -915,44 +1056,32 @@ h3 {
   &.vampir h2 {
     color: #ff5a5f;
   }
+  .result {
+    font-size: 18px;
+    font-weight: 700;
+  }
 }
-.roles {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 8px;
-  li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    min-height: 42px;
-    border-bottom: 1px solid $line;
-    &.dead > span:first-child {
-      opacity: 0.55;
-    }
+@keyframes float {
+  50% {
+    transform: translateY(-8px);
   }
-  .right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  b.vampir {
-    color: #ff5a5f;
-  }
-  b.doktor {
-    color: #7fd6ff;
-  }
-  b.gozcu {
-    color: #c9a7ff;
-  }
+}
+small.vampir {
+  color: #ff5a5f;
+}
+small.doktor {
+  color: #7fd6ff;
+}
+small.gozcu {
+  color: #c9a7ff;
 }
 .mini {
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.06);
   color: $text;
   border-radius: 8px;
-  padding: 6px 8px;
-  font-size: 13px;
+  padding: 4px 8px;
+  font-size: 12px;
   cursor: pointer;
 }
 .log p {
@@ -963,5 +1092,8 @@ h3 {
   &:first-of-type {
     color: $text;
   }
+}
+.spacer {
+  height: 70px;
 }
 </style>

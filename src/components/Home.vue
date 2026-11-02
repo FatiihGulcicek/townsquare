@@ -24,6 +24,16 @@
       />
     </div>
 
+    <div class="profile-row">
+      <button class="btn small" @click="profileTab = 'me'">👤 Profilim</button>
+      <button class="btn small" @click="profileTab = 'top'">🏆 Sıralama</button>
+    </div>
+    <Profile
+      v-if="profileTab"
+      :initial-tab="profileTab"
+      @close="profileTab = null"
+    />
+
     <div class="card">
       <h3>Oda kur</h3>
       <button class="btn primary" :disabled="busy" @click="create('auto')">
@@ -99,10 +109,13 @@
 import { game, setName, createRoom, join, toast } from "../game";
 import { pwaState, install } from "../pwa";
 import { unlockVoice } from "../voice";
+import Profile from "./Profile";
 
 export default {
+  components: { Profile },
   data() {
     return {
+      profileTab: null,
       name: game.name,
       code: "",
       busy: false,
@@ -195,6 +208,14 @@ h3 {
   display: block;
   margin-bottom: 6px;
   font-weight: 600;
+}
+.profile-row {
+  display: flex;
+  gap: 8px;
+  .btn {
+    flex: 1;
+    width: auto;
+  }
 }
 .hint {
   margin: -2px 0 8px;

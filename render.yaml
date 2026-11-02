@@ -20,3 +20,6 @@ services:
       # keeps push notification keys stable across restarts
       - key: PUSH_SECRET
         generateValue: true
+      # database secret (rooms survive restarts, profiles and statistics)
+      - key: VK_DB_SECRET
+        sync: false

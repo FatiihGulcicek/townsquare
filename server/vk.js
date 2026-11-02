@@ -2,13 +2,14 @@
  * Vampir Köylü game engine.
  *
  * Roles: Vampir, Köylü, Doktor, Gözcü.
- * Two modes:
- *   auto  - the app is the storyteller: timers move the game along
+ * Modes:
+ *   auto  - the app is the storyteller: every phase has a deadline
  *   human - one person is the storyteller (not playing); they see everything
- *           and decide when each phase ends, and may kill / revive players.
+ *           and press "next" to move the game along, and may kill / revive.
  *
- * The rules are always enforced by the server, so nobody can cheat by
- * looking at the network traffic: each player only receives what they may see.
+ * Security: every player connects with a private id (never shown to others).
+ * Other players only ever see a public seat id ("pid"), so nobody can take
+ * over someone else's seat or read their role.
  */
 "use strict";
 const crypto = require("crypto");
@@ -16,32 +17,32 @@ const crypto = require("crypto");
 const ROLES = {
   vampir: {
     id: "vampir",
-    was: "Vampir'di",
     name: "Vampir",
+    was: "Vampir'di",
     team: "vampir",
     emoji: "🧛",
     desc: "Her gece diğer vampirlerle birlikte bir kurban seçersin. Gündüz köylü gibi davran ve yakalanma.",
   },
   koylu: {
     id: "koylu",
-    was: "Köylü'ydü",
     name: "Köylü",
+    was: "Köylü'ydü",
     team: "koy",
     emoji: "🧑‍🌾",
     desc: "Özel bir gücün yok. Gündüz konuş, şüphelendiğin kişiye oy ver ve vampirleri bul.",
   },
   doktor: {
     id: "doktor",
-    was: "Doktor'du",
     name: "Doktor",
+    was: "Doktor'du",
     team: "koy",
     emoji: "🩺",
     desc: "Her gece bir kişiyi korursun; vampirler onu o gece öldüremez. Aynı kişiyi iki gece üst üste koruyamazsın.",
   },
   gozcu: {
     id: "gozcu",
-    was: "Gözcü'ydü",
     name: "Gözcü",
+    was: "Gözcü'ydü",
     team: "koy",
     emoji: "👁️",
     desc: "Her gece bir kişiyi seçersin ve onun vampir olup olmadığını hemen öğrenirsin.",
@@ -53,13 +54,28 @@ const MAX_PLAYERS = 20;
 const SETTINGS = {
   dayMinutes: [2, 3, 5, 8, 12],
   nightSeconds: [30, 45, 60, 90, 120],
+  vampires: [0, 1, 2, 3, 4], // 0 = automatic
 };
+const DEFAULT_SETTINGS = {
+  dayMinutes: 5,
+  nightSeconds: 60,
+  vampires: 0,
+  doktor: true,
+  gozcu: true,
+  reveal: true,
+  lastWords: true,
+};
+const ROLES_MS = 10000;
 const MIN_NIGHT_MS = 8000;
 const VOTE_SETTLE_MS = 8000;
+const LAST_WORDS_MS = 20000;
 const DUSK_MS = 6000;
+const CHAT_KEEP = 60;
+const CHAT_MAX = 200;
 
 const rnd = (n) => (n > 0 ? crypto.randomInt(n) : 0);
 const pick = (list) => list[rnd(list.length)];
+const newPid = () => crypto.randomBytes(5).toString("hex");
 function shuffle(list) {
   const a = list.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -69,11 +85,18 @@ function shuffle(list) {
   return a;
 }
 
-/** how many of each role for n players */
-function setupFor(n) {
-  const vampir = n <= 6 ? 1 : n <= 10 ? 2 : n <= 14 ? 3 : 4;
-  const gozcu = 1;
-  const doktor = n >= 5 ? 1 : 0;
+/** automatic number of vampires for n players */
+function autoVampires(n) {
+  return n <= 6 ? 1 : n <= 10 ? 2 : n <= 14 ? 3 : 4;
+}
+
+/** role counts for n players with the room's settings */
+function setupFor(n, settings = DEFAULT_SETTINGS) {
+  let vampir = settings.vampires || autoVampires(n);
+  // vampires must start as a clear minority
+  vampir = Math.max(1, Math.min(vampir, Math.ceil(n / 2) - 1));
+  const gozcu = settings.gozcu ? 1 : 0;
+  const doktor = settings.doktor && n >= 5 ? 1 : 0;
   return {
     vampir,
     doktor,
@@ -86,8 +109,9 @@ class Room {
   /**
    * @param code room code
    * @param mode "auto" | "human"
-   * @param creatorId playerId of the creator (storyteller in human mode)
-   * @param io {sendTo(id, data), connectedIds(), push(ids, payload), destroy()}
+   * @param creatorId private id of the creator (storyteller in human mode)
+   * @param io {sendTo(id, data), connectedIds(), push(ids, payload), destroy(),
+   *            save(snapshot), gameOver(record), profile(id, name)}
    */
   constructor(code, mode, creatorId, io) {
     this.code = code;
@@ -97,75 +121,146 @@ class Room {
     this.io = io;
     this.players = [];
     this.kicked = new Set();
-    this.settings = { dayMinutes: 5, nightSeconds: 60 };
+    this.settings = { ...DEFAULT_SETTINGS };
     this.log = [];
-    this.timers = new Set();
+    this.timer = null;
+    this.gameId = 0;
     this.createdAt = Date.now();
     this.lastActivity = Date.now();
+    this.chatSeq = 0;
+    this.lastChat = {};
     this.reset();
+  }
+
+  // ---------- persistence ----------
+
+  toJSON() {
+    return {
+      v: 2,
+      code: this.code,
+      mode: this.mode,
+      stId: this.stId,
+      ownerId: this.ownerId,
+      players: this.players,
+      kicked: [...this.kicked],
+      settings: this.settings,
+      log: this.log,
+      phase: this.phase,
+      round: this.round,
+      deadline: this.deadline,
+      night: this.night,
+      nightStarted: this.nightStarted,
+      lastProtected: this.lastProtected,
+      votes: this.votes,
+      settleAt: this.settleAt,
+      lastNight: this.lastNight,
+      executed: this.executed,
+      condemned: this.condemned,
+      winner: this.winner,
+      seerLog: this.seerLog,
+      gameId: this.gameId,
+      startedAt: this.startedAt,
+      chat: this.chat,
+      chatSeq: this.chatSeq,
+      createdAt: this.createdAt,
+    };
+  }
+
+  static fromJSON(data, io) {
+    const room = new Room(data.code, data.mode, data.stId, io);
+    Object.assign(room, data, { kicked: new Set(data.kicked || []), io });
+    room.settings = { ...DEFAULT_SETTINGS, ...(data.settings || {}) };
+    room.lastActivity = Date.now();
+    room.schedule();
+    return room;
+  }
+
+  save() {
+    clearTimeout(this.saveTimer);
+    this.saveTimer = setTimeout(() => this.io.save(this.toJSON()), 800);
+  }
+
+  flush() {
+    clearTimeout(this.saveTimer);
+    return this.io.save(this.toJSON());
   }
 
   // ---------- plumbing ----------
 
   reset() {
-    this.clearTimers();
+    clearTimeout(this.timer);
     this.phase = "lobby";
     this.round = 0;
     this.deadline = 0;
     this.night = null;
+    this.nightStarted = 0;
     this.lastProtected = null;
     this.votes = {};
     this.settleAt = 0;
     this.lastNight = null;
     this.executed = null;
+    this.condemned = null;
     this.winner = null;
     this.seerLog = {};
+    this.startedAt = 0;
+    this.chat = { town: [], vampir: [], dead: [] };
     this.players.forEach((p) => {
       p.role = null;
       p.alive = true;
     });
   }
 
-  later(fn, ms) {
-    const handle = setTimeout(() => {
-      this.timers.delete(handle);
-      try {
-        fn();
-      } catch (e) {
-        console.log("vk room error", e);
-      }
-    }, ms);
-    this.timers.add(handle);
-    return handle;
+  isAuto() {
+    return this.mode === "auto";
   }
 
-  clearTimers() {
-    (this.timers || new Set()).forEach((h) => clearTimeout(h));
-    this.timers = new Set();
+  /** auto mode: run next() when the phase deadline passes */
+  schedule() {
+    clearTimeout(this.timer);
+    if (!this.isAuto() || !this.deadline) return;
+    if (["lobby", "over"].includes(this.phase)) return;
+    const phase = this.phase;
+    const round = this.round;
+    this.timer = setTimeout(
+      () => {
+        if (this.phase !== phase || this.round !== round) return;
+        try {
+          if (phase === "day" && !this.settleAt) {
+            this.narrate("Süre doldu, oylar sayılıyor.");
+          }
+          this.next();
+        } catch (e) {
+          console.log("vk room error", e);
+        }
+      },
+      Math.max(0, this.deadline - Date.now()),
+    );
+  }
+
+  setDeadline(ms) {
+    this.deadline = this.isAuto() && ms ? Date.now() + ms : 0;
+    this.schedule();
   }
 
   player(id) {
     return this.players.find((p) => p.id === id);
   }
 
+  byPid(pid) {
+    return this.players.find((p) => p.pid === pid);
+  }
+
   alive() {
     return this.players.filter((p) => p.alive);
   }
 
-  isAuto() {
-    return this.mode === "auto";
-  }
-
   owner() {
     if (this.mode === "human") return this.stId;
-    const seated = (id) => this.players.some((p) => p.id === id);
-    if (this.ownerId && seated(this.ownerId)) {
-      if (this.io.connectedIds().includes(this.ownerId)) return this.ownerId;
-      // a temporarily disconnected owner is replaced by the first one online
-      const online = this.players.find((p) =>
-        this.io.connectedIds().includes(p.id),
-      );
-      return online ? online.id : this.ownerId;
+    const online = this.io.connectedIds();
+    if (this.ownerId && this.player(this.ownerId)) {
+      if (online.includes(this.ownerId)) return this.ownerId;
+      const first = this.players.find((p) => online.includes(p.id));
+      return first ? first.id : this.ownerId;
     }
     this.ownerId = this.players.length ? this.players[0].id : null;
     return this.ownerId;
@@ -174,12 +269,14 @@ class Room {
   narrate(text) {
     this.log.push(text);
     if (this.log.length > 50) this.log.shift();
+    this.systemChat(text);
     this.io
       .connectedIds()
       .forEach((id) => this.io.sendTo(id, JSON.stringify(["narrate", text])));
   }
 
   update() {
+    this.save();
     if (this.queued) return;
     this.queued = true;
     setImmediate(() => {
@@ -198,12 +295,67 @@ class Room {
     this.io.push(ids, payload);
   }
 
+  // ---------- chat ----------
+
+  systemChat(text) {
+    this.chat.town.push({ n: ++this.chatSeq, sys: true, text, at: Date.now() });
+    if (this.chat.town.length > CHAT_KEEP) this.chat.town.shift();
+  }
+
+  /** which channels a person may write to right now */
+  canWrite(id) {
+    const out = [];
+    if (id === this.stId) return ["town"];
+    const me = this.player(id);
+    if (!me) return out;
+    if (this.phase === "lobby" || this.phase === "over") return ["town"];
+    if (!me.alive) return ["dead"];
+    if (this.phase === "lastwords") {
+      if (this.condemned === me.pid) out.push("town");
+    } else if (this.phase !== "night") {
+      out.push("town");
+    }
+    if (me.role === "vampir") out.push("vampir");
+    return out;
+  }
+
+  canRead(id, channel) {
+    if (channel === "town") return true;
+    if (id === this.stId || this.phase === "over") return true;
+    const me = this.player(id);
+    if (!me) return false;
+    if (channel === "vampir") return me.role === "vampir";
+    if (channel === "dead") return !me.alive;
+    return false;
+  }
+
+  say(id, channel, text) {
+    text = typeof text === "string" ? text.replace(/\s+/g, " ").trim() : "";
+    if (!text) return;
+    text = text.slice(0, CHAT_MAX);
+    if (!this.chat[channel] || !this.canWrite(id).includes(channel)) return;
+    const now = Date.now();
+    if (now - (this.lastChat[id] || 0) < 700) return;
+    this.lastChat[id] = now;
+    const me = this.player(id);
+    this.chat[channel].push({
+      n: ++this.chatSeq,
+      from: me ? me.pid : "st",
+      name: me ? me.name : "Anlatıcı",
+      text,
+      at: now,
+    });
+    if (this.chat[channel].length > CHAT_KEEP) this.chat[channel].shift();
+    this.update();
+  }
+
   // ---------- what each person sees ----------
 
   visibleRole(viewer, p) {
-    if (this.phase === "over" || !p.alive) return p.role;
+    if (this.phase === "over") return p.role;
     if (!viewer) return null;
     if (viewer.isSt || viewer.id === p.id) return p.role;
+    if (!p.alive && this.settings.reveal) return p.role;
     if (viewer.role === "vampir" && p.role === "vampir") return p.role;
     return null;
   }
@@ -212,10 +364,15 @@ class Room {
     const me = this.player(id);
     const isSt = this.stId === id;
     const viewer = isSt ? { isSt: true, id } : me;
+    const online = this.io.connectedIds();
     const n = this.players.length;
+    const chat = {};
+    Object.keys(this.chat).forEach((ch) => {
+      if (this.canRead(id, ch)) chat[ch] = this.chat[ch].slice(-40);
+    });
     const state = {
       code: this.code,
-      gameId: this.gameId || 0,
+      gameId: this.gameId,
       mode: this.mode,
       phase: this.phase,
       round: this.round,
@@ -225,9 +382,9 @@ class Room {
       roles: ROLES,
       min: MIN_PLAYERS,
       max: MAX_PLAYERS,
-      setup: n >= MIN_PLAYERS ? setupFor(n) : null,
+      setup: n >= MIN_PLAYERS ? setupFor(n, this.settings) : null,
       me: {
-        id,
+        pid: me ? me.pid : null,
         name: me ? me.name : "",
         role: me ? me.role : null,
         alive: me ? me.alive : false,
@@ -236,33 +393,38 @@ class Room {
         isStoryteller: isSt,
       },
       players: this.players.map((p) => ({
-        id: p.id,
+        pid: p.pid,
         name: p.name,
         alive: p.alive,
-        online: this.io.connectedIds().includes(p.id),
+        online: online.includes(p.id),
         role: this.visibleRole(viewer, p),
       })),
-      votes: this.phase === "day" || this.phase === "dusk" ? this.votes : {},
+      votes: ["day", "lastwords", "dusk"].includes(this.phase)
+        ? this.votes
+        : {},
       lastNight: this.lastNight,
       executed: this.executed,
+      condemned: this.condemned,
       winner: this.winner,
       log: this.log.slice(-10),
       night: null,
       seerLog: me && me.role === "gozcu" ? this.seerLog[id] || [] : [],
+      chat,
+      canWrite: this.canWrite(id),
       storyteller: null,
     };
     if (this.phase === "night" && me && me.alive) {
       const acts = this.night;
       const night = { action: me.role, target: null, done: false };
       if (me.role === "vampir") {
-        night.target = acts.vamp[id] || null;
+        night.target = acts.vamp[me.pid] || null;
         night.done = !!night.target;
         night.team = this.alive()
           .filter((p) => p.role === "vampir")
           .map((p) => ({
-            id: p.id,
+            pid: p.pid,
             name: p.name,
-            target: acts.vamp[p.id] || null,
+            target: acts.vamp[p.pid] || null,
           }));
       } else if (me.role === "doktor") {
         night.target = acts.doktor;
@@ -272,7 +434,7 @@ class Room {
         night.target = acts.gozcu;
         night.done = !!acts.gozcu;
       } else {
-        night.target = acts.suspects[id] || null;
+        night.target = acts.suspects[me.pid] || null;
         night.done = !!night.target;
       }
       state.night = night;
@@ -300,6 +462,9 @@ class Room {
     this.lastActivity = Date.now();
     if (command === "join") return this.join(id, params && params.name);
     if (command === "hello") return this.sendState(id);
+    if (command === "chat") {
+      return params && this.say(id, params.channel || "town", params.text);
+    }
     if (command !== "act" || !params || typeof params !== "object") return;
     const isBoss = this.owner() === id;
     const isSt = this.stId === id;
@@ -307,13 +472,18 @@ class Room {
       case "settings":
         if (!isBoss || this.phase !== "lobby") return;
         Object.keys(SETTINGS).forEach((key) => {
+          if (params[key] === undefined) return;
           const v = parseInt(params[key], 10);
           if (SETTINGS[key].includes(v)) this.settings[key] = v;
+        });
+        ["doktor", "gozcu", "reveal", "lastWords"].forEach((key) => {
+          if (typeof params[key] === "boolean")
+            this.settings[key] = params[key];
         });
         return this.update();
       case "kick": {
         if (!isBoss || this.phase !== "lobby") return;
-        const p = this.player(params.target);
+        const p = this.byPid(params.target);
         if (!p || p.id === id) return;
         this.kicked.add(p.id);
         this.players = this.players.filter((x) => x !== p);
@@ -327,6 +497,18 @@ class Room {
           this.update();
         }
         return;
+      case "rename": {
+        const me = this.player(id);
+        if (me && this.phase === "lobby") {
+          const name = this.uniqueName(params.name, me);
+          if (name) {
+            me.name = name;
+            this.io.profile(id, name);
+            this.update();
+          }
+        }
+        return;
+      }
       case "start":
         if (isBoss && this.phase === "lobby") this.start();
         return;
@@ -342,18 +524,17 @@ class Room {
         return this.nightAction(id, params.target);
       case "vote":
         return this.dayVote(id, params.target);
-      // storyteller (human mode) controls
       case "next":
         if (isSt) this.next();
         return;
       case "kill":
       case "revive": {
-        if (!isSt || this.phase === "lobby" || this.phase === "over") return;
-        const p = this.player(params.target);
+        if (!isSt || ["lobby", "over"].includes(this.phase)) return;
+        const p = this.byPid(params.target);
         if (!p) return;
         if (params.type === "kill" && p.alive) {
           p.alive = false;
-          this.narrate(`${p.name} öldü. O bir ${ROLES[p.role].was}.`);
+          this.narrate(this.deathText(p, "öldü"));
         } else if (params.type === "revive" && !p.alive) {
           p.alive = true;
           this.narrate(`${p.name} hayata döndü!`);
@@ -364,23 +545,48 @@ class Room {
     }
   }
 
-  join(id, name) {
-    name = typeof name === "string" ? name.trim().slice(0, 24) : "";
-    if (id === this.stId || this.player(id) || this.kicked.has(id)) {
-      return this.sendState(id);
-    }
-    if (!name || this.phase !== "lobby" || this.players.length >= MAX_PLAYERS) {
-      return this.sendState(id);
-    }
+  uniqueName(raw, except) {
+    const name =
+      typeof raw === "string"
+        ? raw.replace(/\s+/g, " ").trim().slice(0, 24)
+        : "";
+    if (!name) return "";
     const norm = (v) => v.toLocaleLowerCase("tr");
     let unique = name;
     let k = 2;
-    while (this.players.some((p) => norm(p.name) === norm(unique))) {
+    while (
+      this.players.some((p) => p !== except && norm(p.name) === norm(unique))
+    ) {
       unique = `${name} ${k++}`;
     }
-    this.players.push({ id, name: unique, role: null, alive: true });
+    return unique;
+  }
+
+  join(id, name) {
+    if (id === this.stId || this.player(id) || this.kicked.has(id)) {
+      return this.sendState(id);
+    }
+    if (this.phase !== "lobby" || this.players.length >= MAX_PLAYERS) {
+      return this.sendState(id);
+    }
+    const unique = this.uniqueName(name);
+    if (!unique) return this.sendState(id);
+    this.players.push({
+      id,
+      pid: newPid(),
+      name: unique,
+      role: null,
+      alive: true,
+    });
     if (!this.ownerId) this.ownerId = id;
+    this.io.profile(id, unique);
     this.update();
+  }
+
+  deathText(p, verb) {
+    return this.settings.reveal
+      ? `${p.name} ${verb}. O bir ${ROLES[p.role].was}.`
+      : `${p.name} ${verb}.`;
   }
 
   // ---------- game flow ----------
@@ -389,8 +595,9 @@ class Room {
     const n = this.players.length;
     if (n < MIN_PLAYERS) return;
     this.reset();
-    this.gameId = (this.gameId || 0) + 1;
-    const s = setupFor(n);
+    this.gameId++;
+    this.startedAt = Date.now();
+    const s = setupFor(n, this.settings);
     const bag = shuffle([
       ...Array(s.vampir).fill("vampir"),
       ...Array(s.doktor).fill("doktor"),
@@ -410,11 +617,11 @@ class Room {
       body: "Rolünü görmek için dokun.",
       tag: "phase",
     });
+    this.setDeadline(ROLES_MS);
     this.update();
-    if (this.isAuto()) this.later(() => this.startNight(), 10000);
   }
 
-  /** storyteller pressed "next" */
+  /** move to the next phase (storyteller button / auto deadline) */
   next() {
     switch (this.phase) {
       case "roles":
@@ -424,22 +631,21 @@ class Room {
         return this.resolveNight();
       case "day":
         return this.endDay();
+      case "lastwords":
+        return this.hang();
     }
   }
 
   startNight() {
-    if (this.phase === "over" || this.phase === "night") return;
-    this.clearTimers();
+    if (!["roles", "dusk"].includes(this.phase)) return;
     this.phase = "night";
     this.round++;
     this.night = { vamp: {}, doktor: null, gozcu: null, suspects: {} };
     this.votes = {};
     this.settleAt = 0;
     this.executed = null;
+    this.condemned = null;
     this.nightStarted = Date.now();
-    this.deadline = this.isAuto()
-      ? Date.now() + this.settings.nightSeconds * 1000
-      : 0;
     this.narrate(
       `${this.round}. gece. Köy uyusun, herkes gözlerini kapatsın ve telefonuna baksın.`,
     );
@@ -451,12 +657,7 @@ class Room {
       },
       true,
     );
-    if (this.isAuto()) {
-      const round = this.round;
-      this.later(() => {
-        if (this.phase === "night" && this.round === round) this.resolveNight();
-      }, this.settings.nightSeconds * 1000);
-    }
+    this.setDeadline(this.settings.nightSeconds * 1000);
     this.update();
   }
 
@@ -465,7 +666,7 @@ class Room {
     const living = this.alive();
     const vampsDone = living
       .filter((p) => p.role === "vampir")
-      .every((p) => this.night.vamp[p.id]);
+      .every((p) => this.night.vamp[p.pid]);
     const doctor = living.some((p) => p.role === "doktor");
     const seer = living.some((p) => p.role === "gozcu");
     return (
@@ -475,20 +676,20 @@ class Room {
     );
   }
 
-  nightAction(id, targetId) {
+  nightAction(id, targetPid) {
     if (this.phase !== "night") return;
     const me = this.player(id);
-    const target = this.player(targetId);
+    const target = this.byPid(targetPid);
     if (!me || !me.alive || !target || !target.alive) return;
     if (me.role === "vampir") {
       if (target.role === "vampir") return;
-      this.night.vamp[id] = target.id;
+      this.night.vamp[me.pid] = target.pid;
     } else if (me.role === "doktor") {
-      if (target.id === this.lastProtected) return;
-      this.night.doktor = target.id;
+      if (target.pid === this.lastProtected) return;
+      this.night.doktor = target.pid;
     } else if (me.role === "gozcu") {
       if (this.night.gozcu || target.id === id) return;
-      this.night.gozcu = target.id;
+      this.night.gozcu = target.pid;
       const list = this.seerLog[id] || (this.seerLog[id] = []);
       list.push({
         round: this.round,
@@ -497,46 +698,42 @@ class Room {
       });
     } else {
       if (target.id === id) return;
-      this.night.suspects[id] = target.id;
+      this.night.suspects[me.pid] = target.pid;
+    }
+    // everyone with a power has chosen: end the night a little earlier
+    if (this.isAuto() && this.nightReady()) {
+      const soon = Math.max(
+        this.nightStarted + MIN_NIGHT_MS,
+        Date.now() + 2000,
+      );
+      if (soon < this.deadline) {
+        this.deadline = soon;
+        this.schedule();
+      }
     }
     this.update();
-    if (this.isAuto() && this.nightReady()) {
-      const wait = Math.max(
-        1500,
-        this.nightStarted + MIN_NIGHT_MS - Date.now(),
-      );
-      const round = this.round;
-      clearTimeout(this.readyTimer);
-      this.readyTimer = this.later(() => {
-        if (
-          this.phase === "night" &&
-          this.round === round &&
-          this.nightReady()
-        ) {
-          this.resolveNight();
-        }
-      }, wait);
-    }
   }
 
   resolveNight() {
     if (this.phase !== "night") return;
-    this.clearTimers();
-    // the vampires' choice: most votes, ties broken randomly
     const tally = {};
-    Object.entries(this.night.vamp).forEach(([vid, t]) => {
-      const v = this.player(vid);
-      if (v && v.alive) tally[t] = (tally[t] || 0) + 1;
+    Object.entries(this.night.vamp).forEach(([vpid, t]) => {
+      const v = this.byPid(vpid);
+      if (v && v.alive && v.role === "vampir") tally[t] = (tally[t] || 0) + 1;
     });
     const max = Math.max(0, ...Object.values(tally));
     const top = Object.keys(tally).filter((t) => tally[t] === max);
-    const victim = top.length ? this.player(pick(top)) : null;
-    const saved = !!victim && this.night.doktor === victim.id;
+    const victim = top.length ? this.byPid(pick(top)) : null;
+    const saved = !!victim && this.night.doktor === victim.pid;
     this.lastProtected = this.night.doktor;
     this.lastNight = { round: this.round, died: [], saved };
     if (victim && !saved && victim.alive) {
       victim.alive = false;
-      this.lastNight.died.push({ name: victim.name, role: victim.role });
+      this.lastNight.died.push({
+        pid: victim.pid,
+        name: victim.name,
+        role: this.settings.reveal ? victim.role : null,
+      });
     }
     this.phase = "day";
     this.votes = {};
@@ -544,9 +741,11 @@ class Room {
     let text = `Günaydın köy! ${this.round}. gün başladı. `;
     if (this.lastNight.died.length) {
       const d = this.lastNight.died[0];
-      text += `Bu gece ${d.name} vampirlerin kurbanı oldu. O bir ${
-        ROLES[d.role].was
-      }.`;
+      text += this.settings.reveal
+        ? `Bu gece ${d.name} vampirlerin kurbanı oldu. O bir ${
+            ROLES[victim.role].was
+          }.`
+        : `Bu gece ${d.name} vampirlerin kurbanı oldu.`;
     } else if (saved) {
       text +=
         "Vampirler saldırdı ama Doktor kurbanı kurtardı! Bu gece kimse ölmedi.";
@@ -556,23 +755,12 @@ class Room {
     this.narrate(text);
     this.pushAll({ title: "Gün doğdu ☀️", body: text, tag: "phase" });
     if (this.checkWin()) return;
-    this.deadline = this.isAuto()
-      ? Date.now() + this.settings.dayMinutes * 60000
-      : 0;
-    if (this.isAuto()) {
-      const round = this.round;
-      this.later(() => {
-        if (this.phase === "day" && this.round === round) {
-          this.narrate("Süre doldu, oylar sayılıyor.");
-          this.endDay();
-        }
-      }, this.settings.dayMinutes * 60000);
-    }
+    this.setDeadline(this.settings.dayMinutes * 60000);
     this.update();
   }
 
   allVoted() {
-    return this.alive().every((p) => this.votes[p.id]);
+    return this.alive().every((p) => this.votes[p.pid]);
   }
 
   dayVote(id, target) {
@@ -580,28 +768,27 @@ class Room {
     const me = this.player(id);
     if (!me || !me.alive) return;
     if (target === null || target === undefined || target === "") {
-      delete this.votes[id];
+      delete this.votes[me.pid];
     } else if (target === "pass") {
-      this.votes[id] = "pass";
+      this.votes[me.pid] = "pass";
     } else {
-      const t = this.player(target);
-      if (!t || !t.alive) return;
-      this.votes[id] = t.id;
+      const t = this.byPid(target);
+      if (!t || !t.alive || t.id === id) return;
+      this.votes[me.pid] = t.pid;
     }
-    // everybody voted: give a few seconds to change minds, then count
     if (this.isAuto()) {
-      clearTimeout(this.settleTimer);
-      this.timers.delete(this.settleTimer);
       if (this.allVoted()) {
-        this.settleAt = Date.now() + VOTE_SETTLE_MS;
-        const round = this.round;
-        this.settleTimer = this.later(() => {
-          if (this.phase === "day" && this.round === round && this.allVoted()) {
-            this.endDay();
-          }
-        }, VOTE_SETTLE_MS);
-      } else {
+        // a few seconds to change minds, then count
+        if (!this.settleAt) {
+          this.settleAt = Date.now() + VOTE_SETTLE_MS;
+          this.dayDeadline = this.deadline;
+          this.deadline = Math.min(this.deadline, this.settleAt);
+          this.schedule();
+        }
+      } else if (this.settleAt) {
         this.settleAt = 0;
+        this.deadline = this.dayDeadline || this.deadline;
+        this.schedule();
       }
     }
     this.update();
@@ -609,10 +796,9 @@ class Room {
 
   endDay() {
     if (this.phase !== "day") return;
-    this.clearTimers();
     const tally = {};
     this.alive().forEach((p) => {
-      const t = this.votes[p.id];
+      const t = this.votes[p.pid];
       if (t) tally[t] = (tally[t] || 0) + 1;
     });
     const max = Math.max(0, ...Object.values(tally));
@@ -620,29 +806,54 @@ class Room {
     const lines = Object.keys(tally)
       .filter((t) => t !== "pass")
       .sort((a, b) => tally[b] - tally[a])
-      .map((t) => `${this.player(t).name}: ${tally[t]}`);
+      .map((t) => `${this.byPid(t).name}: ${tally[t]}`);
     if (tally.pass) lines.push(`Pas: ${tally.pass}`);
-    let text = lines.length ? "Oylar: " + lines.join(", ") + ". " : "";
-    this.executed = null;
-    if (max > 0 && top.length === 1 && top[0] !== "pass") {
-      const p = this.player(top[0]);
-      p.alive = false;
-      this.executed = { name: p.name, role: p.role };
-      text += `Köy kararını verdi: ${p.name} asıldı. O bir ${
-        ROLES[p.role].was
-      }.`;
-    } else if (max > 0 && top.length > 1) {
-      text += "Oylar eşit çıktı, bugün kimse asılmadı.";
-    } else {
-      text += "Bugün kimse asılmadı.";
-    }
-    this.narrate(text);
-    if (this.checkWin()) return;
-    this.phase = "dusk";
-    this.deadline = 0;
+    const summary = lines.length ? "Oylar: " + lines.join(", ") + ". " : "";
     this.settleAt = 0;
+    if (max > 0 && top.length === 1 && top[0] !== "pass") {
+      const p = this.byPid(top[0]);
+      this.condemned = p.pid;
+      if (this.settings.lastWords) {
+        this.phase = "lastwords";
+        this.narrate(
+          `${summary}Köy kararını verdi: ${p.name} asılacak. Son sözlerini söylesin.`,
+        );
+        this.setDeadline(LAST_WORDS_MS);
+        this.update();
+        return;
+      }
+      this.narrate(summary.trim());
+      return this.hang();
+    }
+    this.narrate(
+      summary +
+        (max > 0 && top.length > 1
+          ? "Oylar eşit çıktı, bugün kimse asılmadı."
+          : "Bugün kimse asılmadı."),
+    );
+    this.toDusk();
+  }
+
+  hang() {
+    const p = this.byPid(this.condemned);
+    if (p && p.alive) {
+      p.alive = false;
+      this.executed = {
+        pid: p.pid,
+        name: p.name,
+        role: this.settings.reveal ? p.role : null,
+      };
+      this.narrate(this.deathText(p, "asıldı"));
+    }
+    this.condemned = null;
+    if (this.checkWin()) return;
+    this.toDusk();
+  }
+
+  toDusk() {
+    this.phase = "dusk";
+    this.setDeadline(DUSK_MS);
     this.update();
-    if (this.isAuto()) this.later(() => this.startNight(), DUSK_MS);
   }
 
   checkWin() {
@@ -660,20 +871,43 @@ class Room {
       text = "Vampirler köyü ele geçirdi. Vampirler kazandı! 🧛";
     }
     if (!winner) return false;
-    this.clearTimers();
+    clearTimeout(this.timer);
     this.phase = "over";
     this.winner = winner;
     this.deadline = 0;
+    this.condemned = null;
     this.narrate(text);
     this.pushAll({ title: "Oyun bitti 🏁", body: text, tag: "phase" });
+    this.io.gameOver({
+      room: this.code,
+      mode: this.mode,
+      winner,
+      rounds: this.round,
+      startedAt: this.startedAt || Date.now(),
+      players: this.players.map((p) => ({
+        id: p.id,
+        name: p.name,
+        role: p.role,
+        won: ROLES[p.role].team === winner,
+        alive: p.alive,
+      })),
+    });
     this.update();
     return true;
   }
 
   destroy() {
-    this.clearTimers();
+    clearTimeout(this.timer);
+    clearTimeout(this.saveTimer);
     this.io.destroy();
   }
 }
 
-module.exports = { Room, ROLES, setupFor, MIN_PLAYERS, MAX_PLAYERS };
+module.exports = {
+  Room,
+  ROLES,
+  setupFor,
+  DEFAULT_SETTINGS,
+  MIN_PLAYERS,
+  MAX_PLAYERS,
+};
