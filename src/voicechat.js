@@ -1,30 +1,36 @@
 import Vue from "vue";
 
 /*
- * Voice chat between players (WebRTC, every phone connects to every other).
- * The server decides who may hear whom in each phase (night: only vampires
- * hear each other; the dead only hear the dead). The rule is enforced by the
- * speaker's own phone: it simply does not send its microphone to anyone who
- * is not allowed to hear it.
+ * Voice and video chat between players (WebRTC, every phone connects to every
+ * other). The server decides who may hear/see whom in each phase (night: only
+ * vampires; the dead only the dead). The rule is enforced by the speaker's
+ * own phone: it simply does not send its microphone or camera to anyone who
+ * is not allowed to receive it.
  */
 export const voiceChat = Vue.observable({
   on: false,
   joining: false,
   muted: false,
+  camOn: false,
+  camBusy: false,
   error: "",
   speaking: {}, // pid -> true while talking
-  connected: {}, // pid -> true when the audio link works
+  connected: {}, // pid -> true when the link works
+  videos: {}, // pid -> MediaStream with the remote camera
+  localVideo: null, // own camera preview
 });
 
 let send = () => {};
 let localStream = null;
 let localTrack = null;
+let videoTrack = null;
 let iceServers = null;
 let myPid = null;
-let lastPolicy = { peers: [], sendTo: [], hearFrom: [] };
-const peers = new Map(); // pid -> { pc, sender, audio, analyser, initiator }
+let lastPolicy = { peers: [], sendTo: [], hearFrom: [], cams: [] };
+const peers = new Map(); // pid -> peer
 let audioCtx = null;
 let meterTimer = null;
+let localMeter = null;
 
 export function bindVoice(sendFn) {
   send = sendFn;
@@ -75,7 +81,6 @@ function level(m) {
   return Math.sqrt(sum / m.data.length);
 }
 
-let localMeter = null;
 function startMeters() {
   clearInterval(meterTimer);
   meterTimer = setInterval(() => {
@@ -129,19 +134,63 @@ function stopLocal() {
   localMeter = null;
 }
 
+function stopCamera() {
+  if (videoTrack) videoTrack.stop();
+  videoTrack = null;
+  voiceChat.localVideo = null;
+  voiceChat.camOn = false;
+}
+
 export function leaveVoice() {
+  send("cam", false);
   send("voice", false);
   peers.forEach((_, pid) => closePeer(pid));
+  stopCamera();
   stopLocal();
   clearInterval(meterTimer);
   voiceChat.on = false;
   voiceChat.speaking = {};
   voiceChat.connected = {};
+  voiceChat.videos = {};
 }
 
 export function toggleMute() {
   voiceChat.muted = !voiceChat.muted;
   applyPolicy();
+}
+
+/** turn the camera on / off (only while in the voice chat) */
+export async function toggleCamera() {
+  if (!voiceChat.on || voiceChat.camBusy) return;
+  if (voiceChat.camOn) {
+    stopCamera();
+    send("cam", false);
+    applyPolicy();
+    return;
+  }
+  voiceChat.camBusy = true;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: "user",
+        width: { ideal: 320 },
+        height: { ideal: 240 },
+        frameRate: { ideal: 15, max: 20 },
+      },
+      audio: false,
+    });
+    videoTrack = stream.getVideoTracks()[0];
+    voiceChat.localVideo = stream;
+    voiceChat.camOn = true;
+    send("cam", true);
+    applyPolicy();
+  } catch (e) {
+    voiceChat.error =
+      e && e.name === "NotAllowedError"
+        ? "Kamera izni verilmedi. Telefonun ayarlarından izin ver."
+        : "Kamera açılamadı.";
+  }
+  voiceChat.camBusy = false;
 }
 
 function closePeer(pid) {
@@ -158,36 +207,64 @@ function closePeer(pid) {
   }
   peers.delete(pid);
   Vue.delete(voiceChat.connected, pid);
+  Vue.delete(voiceChat.videos, pid);
+}
+
+/** remember the senders of an audio and a video transceiver */
+function bindTransceivers(peer) {
+  peer.pc.getTransceivers().forEach((t) => {
+    const kind = t.receiver && t.receiver.track && t.receiver.track.kind;
+    if (kind === "audio" && !peer.sender) peer.sender = t.sender;
+    if (kind === "video" && !peer.videoSender) peer.videoSender = t.sender;
+    try {
+      t.direction = "sendrecv";
+    } catch (e) {
+      // ignore
+    }
+  });
 }
 
 function createPeer(pid) {
   const initiator = myPid < pid;
   const pc = new RTCPeerConnection({ iceServers });
-  const transceiver = pc.addTransceiver("audio", { direction: "sendrecv" });
   const peer = {
     pc,
-    sender: transceiver.sender,
     initiator,
+    sender: null,
+    videoSender: null,
     audio: null,
     meter: null,
   };
   peers.set(pid, peer);
+  if (initiator) {
+    // the answering side reuses the transceivers created by the offer
+    peer.sender = pc.addTransceiver("audio", { direction: "sendrecv" }).sender;
+    peer.videoSender = pc.addTransceiver("video", {
+      direction: "sendrecv",
+    }).sender;
+  }
   pc.onicecandidate = (event) => {
     if (event.candidate) {
       send("rtc", { to: pid, data: { candidate: event.candidate } });
     }
   };
   pc.ontrack = (event) => {
-    const stream = event.streams[0] || new MediaStream([event.track]);
-    if (!peer.audio) {
-      peer.audio = document.createElement("audio");
-      peer.audio.autoplay = true;
-      peer.audio.setAttribute("playsinline", "");
-      document.body.appendChild(peer.audio);
+    const track = event.track;
+    if (track.kind === "audio") {
+      const stream = new MediaStream([track]);
+      if (!peer.audio) {
+        peer.audio = document.createElement("audio");
+        peer.audio.autoplay = true;
+        peer.audio.setAttribute("playsinline", "");
+        document.body.appendChild(peer.audio);
+      }
+      peer.audio.srcObject = stream;
+      peer.audio.play().catch(() => {});
+      peer.meter = meter(stream);
+      applyPeer(pid, peer);
+    } else if (track.kind === "video") {
+      Vue.set(voiceChat.videos, pid, new MediaStream([track]));
     }
-    peer.audio.srcObject = stream;
-    peer.audio.play().catch(() => {});
-    peer.meter = meter(stream);
   };
   pc.onconnectionstatechange = () => {
     const state = pc.connectionState;
@@ -195,7 +272,6 @@ function createPeer(pid) {
     if (state === "failed" || state === "closed") {
       Vue.delete(voiceChat.connected, pid);
       if (state === "failed" && voiceChat.on) {
-        // try again from scratch
         closePeer(pid);
         setTimeout(() => sync(lastPolicy), 2000);
       }
@@ -215,11 +291,34 @@ function createPeer(pid) {
   return peer;
 }
 
+function limitVideo(sender) {
+  try {
+    const params = sender.getParameters();
+    if (!params.encodings || !params.encodings.length) params.encodings = [{}];
+    params.encodings[0].maxBitrate = 250000;
+    params.encodings[0].maxFramerate = 15;
+    sender.setParameters(params).catch(() => {});
+  } catch (e) {
+    // older browsers
+  }
+}
+
 function applyPeer(pid, peer) {
-  const allowed = lastPolicy.sendTo.includes(pid) && !voiceChat.muted;
-  const track = allowed ? localTrack : null;
-  if (peer.sender.track !== track) {
-    peer.sender.replaceTrack(track).catch(() => {});
+  const allowed = lastPolicy.sendTo.includes(pid);
+  if (peer.sender) {
+    const track = allowed && !voiceChat.muted ? localTrack : null;
+    if (peer.sender.track !== track) {
+      peer.sender.replaceTrack(track).catch(() => {});
+    }
+  }
+  if (peer.videoSender) {
+    const track = allowed && voiceChat.camOn ? videoTrack : null;
+    if (peer.videoSender.track !== track) {
+      peer.videoSender
+        .replaceTrack(track)
+        .then(() => track && limitVideo(peer.videoSender))
+        .catch(() => {});
+    }
   }
   if (peer.audio) peer.audio.muted = !lastPolicy.hearFrom.includes(pid);
 }
@@ -245,13 +344,25 @@ function sync(policy) {
 export function voiceState(voice) {
   if (!voice) return;
   myPid = voice.me;
-  lastPolicy = voice;
+  lastPolicy = { cams: [], ...voice };
   if (voiceChat.on && !voice.on) {
     // the server forgot us (reconnect): join again
     send("voice", true);
+    if (voiceChat.camOn) send("cam", true);
     return;
   }
-  sync(voice);
+  sync(lastPolicy);
+}
+
+/** camera streams this player may see right now */
+export function visibleVideos() {
+  const out = [];
+  Object.keys(voiceChat.videos).forEach((pid) => {
+    if (lastPolicy.cams.includes(pid) && lastPolicy.hearFrom.includes(pid)) {
+      out.push({ pid, stream: voiceChat.videos[pid] });
+    }
+  });
+  return out;
 }
 
 /** WebRTC signalling message from another player */
@@ -267,6 +378,7 @@ export async function voiceSignal({ from, data }) {
           await pc.setLocalDescription({ type: "rollback" }).catch(() => {});
         }
         await pc.setRemoteDescription(data.sdp);
+        bindTransceivers(peer);
         await pc.setLocalDescription(await pc.createAnswer());
         send("rtc", { to: from, data: { sdp: pc.localDescription } });
         applyPeer(from, peer);
@@ -286,4 +398,5 @@ export function voiceReconnected() {
   if (!voiceChat.on) return;
   peers.forEach((_, pid) => closePeer(pid));
   send("voice", true);
+  if (voiceChat.camOn) send("cam", true);
 }

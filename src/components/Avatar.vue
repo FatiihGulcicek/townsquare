@@ -9,7 +9,8 @@
       background,
     }"
   >
-    <span class="initials">{{ initials }}</span>
+    <img v-if="photo" :src="photo" alt="" class="photo" />
+    <span v-else class="initials">{{ initials }}</span>
     <span class="badge" v-if="badge">{{ badge }}</span>
     <span class="skull" v-if="dead">💀</span>
     <span class="mic" v-if="mic">🎙️</span>
@@ -17,6 +18,8 @@
 </template>
 
 <script>
+import { game } from "../game";
+
 const PALETTE = [
   ["#7b2cbf", "#3c096c"],
   ["#d62828", "#6a040f"],
@@ -44,9 +47,20 @@ export default {
     online: { type: Boolean, default: undefined },
     badge: { type: String, default: "" },
     speaking: Boolean,
+    pid: { type: String, default: "" },
+    src: { type: String, default: "" },
     mic: Boolean,
   },
   computed: {
+    photo() {
+      if (this.src) return this.src;
+      let pid = this.pid;
+      if (!pid && game.state && this.name) {
+        const p = game.state.players.find((x) => x.name === this.name);
+        pid = p ? p.pid : "";
+      }
+      return pid ? game.photos[pid] || "" : "";
+    },
     initials() {
       const parts = this.name.trim().split(/\s+/).filter(Boolean);
       if (!parts.length) return "?";
@@ -76,6 +90,14 @@ export default {
     inset 0 0 0 2px rgba(255, 255, 255, 0.18),
     0 4px 12px rgba(0, 0, 0, 0.45);
   letter-spacing: 0.02em;
+}
+.photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
 }
 .avatar.dead {
   filter: grayscale(1) brightness(0.55);

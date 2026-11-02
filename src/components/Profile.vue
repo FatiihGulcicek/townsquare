@@ -14,7 +14,7 @@
 
       <template v-else-if="tab === 'me'">
         <div class="head">
-          <Avatar :name="name" :size="72" />
+          <Avatar :name="name" :size="72" :src="game.myPhoto" />
           <div>
             <h3>{{ name || "İsimsiz" }}</h3>
             <small class="muted" v-if="profile && profile.since">

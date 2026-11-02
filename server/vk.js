@@ -138,6 +138,8 @@ class Room {
     this.chatSeq = 0;
     this.lastChat = {};
     this.voice = new Set(); // private ids in the voice chat
+    this.cams = new Set(); // private ids with the camera on
+    this.photos = {}; // pid -> small jpeg data url
     this.reset();
   }
 
@@ -171,6 +173,7 @@ class Room {
       penalties: this.penalties,
       deathOrder: this.deathOrder,
       events: this.events,
+      photos: this.photos,
       gameId: this.gameId,
       startedAt: this.startedAt,
       chat: this.chat,
@@ -184,6 +187,8 @@ class Room {
     Object.assign(room, data, {
       kicked: new Set(data.kicked || []),
       voice: new Set(),
+      cams: new Set(),
+      photos: data.photos || {},
       io,
     });
     room.settings = { ...DEFAULT_SETTINGS, ...(data.settings || {}) };
@@ -474,6 +479,7 @@ class Room {
     const members = [...this.voice].filter((v) => v !== id);
     return {
       on,
+      cams: [...this.cams].map((v) => this.voicePid(v)).filter(Boolean),
       members: [...this.voice].map((v) => this.voicePid(v)).filter(Boolean),
       peers: on ? members.map((v) => this.voicePid(v)).filter(Boolean) : [],
       sendTo: on
@@ -497,7 +503,10 @@ class Room {
       return;
     }
     if (on) this.voice.add(id);
-    else this.voice.delete(id);
+    else {
+      this.voice.delete(id);
+      this.cams.delete(id);
+    }
     this.update();
   }
 
@@ -516,7 +525,37 @@ class Room {
 
   /** the last connection of a person closed */
   left(id) {
-    if (this.voice.delete(id)) this.update();
+    const a = this.voice.delete(id);
+    const b = this.cams.delete(id);
+    if (a || b) this.update();
+  }
+
+  // ---------- profile photos (sent separately: they are big) ----------
+
+  setPhoto(id, data) {
+    const me = this.player(id);
+    if (!me) return;
+    if (data === null || data === "") {
+      delete this.photos[me.pid];
+    } else if (
+      typeof data === "string" &&
+      data.length < 60000 &&
+      /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(data)
+    ) {
+      this.photos[me.pid] = data;
+    } else {
+      return;
+    }
+    const message = JSON.stringify([
+      "photo",
+      { pid: me.pid, data: this.photos[me.pid] || null },
+    ]);
+    this.io.connectedIds().forEach((other) => this.io.sendTo(other, message));
+    this.save();
+  }
+
+  sendPhotos(id) {
+    this.io.sendTo(id, JSON.stringify(["photos", this.photos]));
   }
 
   // ---------- what each person sees ----------
@@ -657,6 +696,13 @@ class Room {
     if (command === "join") return this.join(id, params && params.name);
     if (command === "hello") return this.sendState(id);
     if (command === "voice") return this.setVoice(id, !!params);
+    if (command === "cam") {
+      if (params && this.voice.has(id)) this.cams.add(id);
+      else this.cams.delete(id);
+      return this.update();
+    }
+    if (command === "photo") return this.setPhoto(id, params);
+    if (command === "photos") return this.sendPhotos(id);
     if (command === "rtc") return this.signal(id, params);
     if (command === "chat") {
       return params && this.say(id, params.channel || "town", params.text);

@@ -13,6 +13,15 @@
       >
         {{ vc.muted ? "🔇" : "🎙️" }}
       </button>
+      <button
+        class="mic cam"
+        :class="{ off: !vc.camOn }"
+        :disabled="vc.camBusy"
+        @click="cam"
+        aria-label="Kamera"
+      >
+        {{ vc.camOn ? "📹" : "📷" }}
+      </button>
       <div class="info">
         <b>{{ title }}</b>
         <small>{{ hint }}</small>
@@ -24,7 +33,13 @@
 
 <script>
 import { game, toast } from "../game";
-import { voiceChat, joinVoice, leaveVoice, toggleMute } from "../voicechat";
+import {
+  voiceChat,
+  joinVoice,
+  leaveVoice,
+  toggleMute,
+  toggleCamera,
+} from "../voicechat";
 
 export default {
   data() {
@@ -83,6 +98,9 @@ export default {
     toggle() {
       toggleMute();
     },
+    cam() {
+      toggleCamera();
+    },
   },
 };
 </script>
@@ -138,6 +156,9 @@ export default {
   &.off {
     background: #444;
   }
+}
+.cam {
+  margin-left: -4px;
 }
 .info {
   flex: 1;

@@ -11,17 +11,27 @@
       <p class="muted">Kasaba Meydanı · arkadaşlarınla telefondan oyna</p>
     </header>
 
-    <div class="card">
-      <label class="label" for="name">Adın</label>
-      <input
-        id="name"
-        class="field"
-        v-model="name"
-        maxlength="24"
-        placeholder="Örn. Fatih"
-        autocomplete="nickname"
-        @change="saveName"
-      />
+    <div class="card me-card">
+      <button
+        class="photo-btn"
+        @click="choosePhoto"
+        aria-label="Profil fotoğrafı"
+      >
+        <Avatar :name="name || '?'" :size="64" :src="game.myPhoto" />
+        <span class="cam">📷</span>
+      </button>
+      <div class="grow">
+        <label class="label" for="name">Adın</label>
+        <input
+          id="name"
+          class="field"
+          v-model="name"
+          maxlength="24"
+          placeholder="Örn. Fatih"
+          autocomplete="nickname"
+          @change="saveName"
+        />
+      </div>
     </div>
 
     <div class="profile-row">
@@ -106,16 +116,19 @@
 </template>
 
 <script>
-import { game, setName, createRoom, join, toast } from "../game";
+import { game, setName, createRoom, join, toast, setMyPhoto } from "../game";
 import { pwaState, install } from "../pwa";
 import { unlockVoice } from "../voice";
 import Profile from "./Profile";
+import Avatar from "./Avatar";
+import { pickPhoto } from "../photo";
 
 export default {
-  components: { Profile },
+  components: { Profile, Avatar },
   data() {
     return {
       profileTab: null,
+      game,
       name: game.name,
       code: "",
       busy: false,
@@ -130,6 +143,21 @@ export default {
     },
   },
   methods: {
+    async choosePhoto() {
+      if (
+        game.myPhoto &&
+        !confirm("Fotoğrafını değiştirmek ister misin? (İptal: kaldır)")
+      ) {
+        setMyPhoto("");
+        toast("Profil fotoğrafı kaldırıldı.", "info");
+        return;
+      }
+      const data = await pickPhoto();
+      if (data) {
+        setMyPhoto(data);
+        toast("Profil fotoğrafın kaydedildi 📷", "success");
+      }
+    },
     saveName() {
       setName(this.name);
     },
@@ -208,6 +236,30 @@ h3 {
   display: block;
   margin-bottom: 6px;
   font-weight: 600;
+}
+.me-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  .grow {
+    flex: 1;
+  }
+}
+.photo-btn {
+  position: relative;
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  .cam {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    font-size: 18px;
+    background: #1b1f30;
+    border-radius: 50%;
+    padding: 3px;
+  }
 }
 .profile-row {
   display: flex;

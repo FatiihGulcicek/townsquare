@@ -47,15 +47,11 @@ export const game = Vue.observable({
   receivedAt: 0,
   toasts: [],
   roleCardOpen: false,
-  transition: null, // {kind, title, sub} full screen phase change
+  lastStory: 0,
+  photos: {}, // pid -> profile photo of the people in the room
+  myPhoto: store("vkPhoto") || "",
+  liveQueue: [], // story events to play full screen as they happen
 });
-
-let transitionTimer = null;
-function showTransition(kind, title, sub) {
-  game.transition = { kind, title, sub, at: Date.now() };
-  clearTimeout(transitionTimer);
-  transitionTimer = setTimeout(() => (game.transition = null), 2600);
-}
 
 // ---------- toasts ----------
 
@@ -119,44 +115,21 @@ function presence() {
   if (sub) send("push", sub);
 }
 
-function phaseChanged(prev, next) {
-  if (!prev) return;
-  if (prev.phase === next.phase && prev.gameId === next.gameId) return;
-  const r = next.round;
-  if (next.phase === "night") {
-    play("night");
-    showTransition("night", `${r}. Gece`, "Köy uyuyor… telefonuna bak");
-  } else if (next.phase === "day") {
-    const died = next.lastNight && next.lastNight.died[0];
-    play(died ? "death" : "day");
-    showTransition(
-      "day",
-      `${r}. Gün`,
-      died
-        ? `${died.name} bu gece öldü`
-        : next.lastNight && next.lastNight.saved
-        ? "Doktor birini kurtardı!"
-        : "Bu gece kimse ölmedi",
-    );
-  } else if (next.phase === "lastwords") {
-    play("death");
-  } else if (next.phase === "dusk" && next.executed) {
-    play("death");
-  } else if (next.phase === "over") {
-    const mine = next.me.role && next.roles[next.me.role].team;
-    play(mine ? (mine === next.winner ? "win" : "lose") : "win");
-    showTransition(
-      "over",
-      next.winner === "vampir" ? "Vampirler kazandı" : "Köylüler kazandı",
-      mine
-        ? mine === next.winner
-          ? "Tebrikler, kazandın! 🎉"
-          : "Bu sefer kaybettin"
-        : "",
-    );
-  } else if (next.phase === "roles") {
-    play("turn");
+/** new story events are played full screen while the game goes on */
+function queueStory(prev, next) {
+  const events = next.events || [];
+  if (!prev || prev.code !== next.code) {
+    // first state after (re)connecting: don't replay the past
+    game.lastStory = events.length ? events[events.length - 1].n : 0;
+    return;
   }
+  if (prev.gameId !== next.gameId) game.lastStory = 0;
+  const fresh = events.filter((e) => e.n > (game.lastStory || 0));
+  if (!fresh.length) return;
+  game.lastStory = fresh[fresh.length - 1].n;
+  fresh.forEach((e) => game.liveQueue.push(e));
+  if (game.liveQueue.length > 8)
+    game.liveQueue.splice(0, game.liveQueue.length - 8);
 }
 
 function onState(next) {
@@ -164,7 +137,7 @@ function onState(next) {
   game.state = next;
   game.receivedAt = Date.now();
   if (!next.me) return;
-  phaseChanged(prev, next);
+  queueStory(prev, next);
   if (prev && prev.phase === "day" && next.phase === "day") {
     const before = Object.keys(prev.votes).length;
     const after = Object.keys(next.votes).length;
@@ -221,6 +194,8 @@ function open(code) {
     lastMessage = Date.now();
     if (game.name) send("join", { name: game.name });
     else send("hello");
+    send("photos");
+    if (game.myPhoto) send("photo", game.myPhoto);
     presence();
     voiceReconnected();
   };
@@ -233,7 +208,12 @@ function open(code) {
       return;
     }
     if (command === "state") onState(params);
-    else if (command === "rtc") voiceSignal(params);
+    else if (command === "photo") {
+      if (params.data) Vue.set(game.photos, params.pid, params.data);
+      else Vue.delete(game.photos, params.pid);
+    } else if (command === "photos") {
+      game.photos = { ...(params || {}) };
+    } else if (command === "rtc") voiceSignal(params);
     else if (command === "notice") {
       toast(params, "warning", 8000);
       vibrate([300, 100, 300]);
@@ -275,6 +255,7 @@ export function join(code) {
   if (code.length !== 4) return false;
   wanted = true;
   game.code = code;
+  game.photos = {};
   game.state = null;
   store("vkRoom", code);
   if (location.hash !== "#" + code) {
@@ -338,6 +319,13 @@ export function restore() {
   const last = store("vkRoom");
   if (last) return join(last);
   return false;
+}
+
+/** set (or clear with "") the profile photo */
+export function setMyPhoto(data) {
+  game.myPhoto = data || "";
+  store("vkPhoto", data ? data : null);
+  send("photo", data || null);
 }
 
 export function chat(channel, text) {

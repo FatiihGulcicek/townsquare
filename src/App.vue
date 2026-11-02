@@ -6,22 +6,9 @@
     <Home v-if="!game.code" @settings="settingsOpen = true" />
     <Room v-else @settings="settingsOpen = true" />
     <RoleCard />
-    <transition name="phase">
-      <div
-        class="phase-overlay"
-        v-if="game.transition"
-        :class="game.transition.kind"
-        @click="game.transition = null"
-      >
-        <div class="phase-icon">
-          {{ { night: "🌙", day: "☀️", over: "🏁" }[game.transition.kind] }}
-        </div>
-        <h2>{{ game.transition.title }}</h2>
-        <p>{{ game.transition.sub }}</p>
-      </div>
-    </transition>
+    <LiveStory />
     <Settings v-if="settingsOpen" @close="settingsOpen = false" />
-    <div class="toasts">
+    <div class="toasts" v-show="!game.liveQueue.length">
       <transition-group name="toast">
         <div
           v-for="t in game.toasts"
@@ -42,10 +29,11 @@ import Home from "./components/Home";
 import Room from "./components/Room";
 import RoleCard from "./components/RoleCard";
 import Settings from "./components/Settings";
+import LiveStory from "./components/LiveStory";
 import { game, restore } from "./game";
 
 export default {
-  components: { Home, Room, RoleCard, Settings },
+  components: { Home, Room, RoleCard, Settings, LiveStory },
   data() {
     return { game, settingsOpen: false };
   },

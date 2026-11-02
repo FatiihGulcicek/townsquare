@@ -13,6 +13,7 @@
         ⚙️
       </button>
     </div>
+    <VideoStrip />
     <div class="offline" v-if="game.status !== 'online'">
       {{
         game.status === "connecting"
@@ -651,12 +652,14 @@
 </template>
 
 <script>
-import { game, act, setName, toast, shareLink } from "../game";
+import { game, act, setName, toast, shareLink, setMyPhoto } from "../game";
+import { pickPhoto } from "../photo";
 import { unlockVoice } from "../voice";
 import Avatar from "./Avatar";
 import Chat from "./Chat";
 import VoiceBar from "./VoiceBar";
 import StoryReel from "./StoryReel";
+import VideoStrip from "./VideoStrip";
 import { voiceChat } from "../voicechat";
 
 const TOGGLES = [
@@ -672,7 +675,7 @@ const TOGGLES = [
 ];
 
 export default {
-  components: { Avatar, Chat, VoiceBar, StoryReel },
+  components: { Avatar, Chat, VoiceBar, StoryReel, VideoStrip },
   data() {
     return {
       game,
@@ -854,8 +857,17 @@ export default {
     clearInterval(this.timer);
   },
   methods: {
-    openMod(p) {
-      if (!this.isBoss || p.pid === this.s.me.pid || p.kicked) return;
+    async openMod(p) {
+      if (p.pid === this.s.me.pid) {
+        // tapping yourself changes your photo
+        const data = await pickPhoto();
+        if (data) {
+          setMyPhoto(data);
+          toast("Profil fotoğrafın güncellendi 📷", "success");
+        }
+        return;
+      }
+      if (!this.isBoss || p.kicked) return;
       this.mod = p;
     },
     modAct(kind) {
