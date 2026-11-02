@@ -15,6 +15,8 @@ const { Room } = require("./vk");
 const db = require("./db");
 if (db.init) db.init(); // create the MySQL tables right away
 const { Lobby } = require("./lobby");
+const updater = require("./updater");
+const STARTED = new Date().toISOString();
 
 const PORT = parseInt(process.env.PORT || "8080", 10);
 const STATIC_DIR = path.resolve(
@@ -504,6 +506,8 @@ server.on("request", async (req, res) => {
       push: push.stats(),
       db: db.stats(),
       lobby: lobby.stats(),
+      updater: updater.status(),
+      started: STARTED,
     });
   }
   if (url.pathname === "/push/key") {
@@ -642,6 +646,21 @@ async function shutdown() {
 }
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
+
+// cPanel: pull new versions from GitHub by itself, restart between games
+updater.start({
+  restart() {
+    const since = Date.now();
+    const tryNow = () => {
+      const playing = [...rooms.values()].some(
+        (e) => !["lobby", "over"].includes(e.room.phase),
+      );
+      if (!playing || Date.now() - since > 20 * 60 * 1000) shutdown();
+      else setTimeout(tryNow, 30000);
+    };
+    tryNow();
+  },
+});
 
 // Render's free plan sleeps after 15 idle minutes, which makes the first
 // visit slow. Stay awake during typical playing hours (Istanbul time).

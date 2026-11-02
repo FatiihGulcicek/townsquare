@@ -5,7 +5,7 @@
 set -e
 npm run build
 rm -rf /tmp/cpanel-out && mkdir -p /tmp/cpanel-out
-cp -r dist server /tmp/cpanel-out/
+cp -r dist server scripts /tmp/cpanel-out/
 node -e '
 const p = require("./package.json");
 const keep = ["ws", "web-push", "mysql2"];
@@ -14,7 +14,7 @@ keep.forEach((k) => (deps[k] = p.dependencies[k]));
 require("fs").writeFileSync("/tmp/cpanel-out/package.json", JSON.stringify({
   name: "vampir-koylu", version: p.version, private: true,
   main: "app.js", engines: { node: ">=18" },
-  scripts: { start: "node app.js" }, dependencies: deps,
+  scripts: { start: "node app.js", restart: "node scripts/restart.js" }, dependencies: deps,
 }, null, 2) + "\n");'
 cat > /tmp/cpanel-out/app.js <<'JS'
 // cPanel "Setup Node.js App" startup file
