@@ -1,4 +1,5 @@
 import Vue from "vue";
+import { lang, t } from "./i18n";
 
 /*
  * Spoken narration (Turkish text-to-speech through the browser).
@@ -43,9 +44,10 @@ if (synth) {
 }
 
 function utter(text) {
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "tr-TR";
-  if (voice || pickVoice()) u.voice = voice;
+  const english = lang === "en";
+  const u = new SpeechSynthesisUtterance(english ? t(text) : text);
+  u.lang = english ? "en-US" : "tr-TR";
+  if (!english && (voice || pickVoice())) u.voice = voice;
   u.rate = 0.95;
   u.pitch = 0.9;
   u.volume = 1;

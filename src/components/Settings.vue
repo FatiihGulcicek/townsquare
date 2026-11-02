@@ -28,6 +28,10 @@
         <span>🔔 Bildirimler</span>
         <b :class="{ on: notif.permission === 'granted' }">{{ notifLabel }}</b>
       </div>
+      <div class="row" @click="switchLang">
+        <span>🌐 Dil · Language</span>
+        <b class="on">{{ lang === "en" ? "English" : "Türkçe" }}</b>
+      </div>
       <div class="row" @click="toggleArrivals">
         <span>🌙 Biri siteye girince haber ver</span>
         <b :class="{ on: lobby.notifyArrivals }">{{
@@ -69,6 +73,7 @@ import { enableNotifications, notificationState } from "../notifications";
 import { sfxState, setSfx } from "../sfx";
 import { musicState, setMusic } from "../music";
 import { lobby, setArrivalNotifications, unblockUser } from "../lobby";
+import { lang, setLang } from "../i18n";
 import Profile from "./Profile";
 
 export default {
@@ -76,6 +81,7 @@ export default {
   data() {
     return {
       game,
+      lang,
       voice: voiceState,
       pwa: pwaState,
       notif: notificationState,
@@ -96,6 +102,9 @@ export default {
     },
   },
   methods: {
+    switchLang() {
+      setLang(lang === "en" ? "tr" : "en");
+    },
     unblock(pub) {
       unblockUser(pub);
     },

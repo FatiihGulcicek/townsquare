@@ -1,5 +1,6 @@
 import Vue from "vue";
 import App from "./App";
+import { startTranslating } from "./i18n";
 import { registerServiceWorker } from "./pwa";
 import { setupPush } from "./push";
 import "@fontsource/cinzel/700.css";
@@ -10,3 +11,4 @@ setupPush();
 Vue.config.productionTip = false;
 
 new Vue({ render: (h) => h(App) }).$mount("#app");
+startTranslating();

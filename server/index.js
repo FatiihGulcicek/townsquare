@@ -537,6 +537,26 @@ server.on("request", async (req, res) => {
     if (!code) return json(res, 503, { error: "busy" });
     return json(res, 200, { code });
   }
+  if (url.pathname === "/.well-known/assetlinks.json") {
+    // proves to Android that the Play Store app (TWA) and this site belong
+    // together, so the app opens full screen without a browser bar
+    const pkg = process.env.TWA_PACKAGE;
+    const prints = (process.env.TWA_SHA256 || "")
+      .split(",")
+      .map((s) => s.trim().toUpperCase())
+      .filter(Boolean);
+    if (!pkg || !prints.length) return json(res, 404, []);
+    return json(res, 200, [
+      {
+        relation: ["delegate_permission/common.handle_all_urls"],
+        target: {
+          namespace: "android_app",
+          package_name: pkg,
+          sha256_cert_fingerprints: prints,
+        },
+      },
+    ]);
+  }
   if (url.pathname === "/api/ice") {
     // STUN finds a direct route between phones; a TURN relay (optional)
     // helps when mobile networks block direct connections
