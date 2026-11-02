@@ -6,10 +6,7 @@
 const crypto = require("crypto");
 
 // on cPanel hosting the MySQL database is used instead
-if (process.env.DB_NAME && process.env.DB_USER) {
-  module.exports = require("./db-mysql");
-  return;
-}
+const USE_MYSQL = !!(process.env.DB_NAME && process.env.DB_USER);
 
 const URL_BASE =
   process.env.SUPABASE_URL || "https://bwkoitiyryfbgdgtolqk.supabase.co";
@@ -62,27 +59,32 @@ const profileKey = (playerId) =>
     .update("vk-profile:" + playerId)
     .digest("hex");
 
-module.exports = {
-  enabled: () => !!SECRET,
-  stats: () => ({ enabled: !!SECRET, ...stats }),
-  profileKey,
-  saveRoom: (code, data) =>
-    rpc("vampir_save_room", { room_code: code, room_data: data }),
-  closeRoom: (code) =>
-    rpc("vampir_save_room", { room_code: code, room_data: { closed: true } }),
-  loadRoom: (code) => rpc("vampir_load_room", { room_code: code }),
-  touchProfile: (playerId, name) =>
-    rpc("vampir_touch_profile", {
-      profile_key: profileKey(playerId),
-      profile_name: name,
-    }),
-  recordGame: (game) => rpc("vampir_record_game", { game }),
-  getProfile: (playerId) =>
-    rpc("vampir_get_profile", { profile_key: profileKey(playerId) }),
-  leaderboard: () => rpc("vampir_leaderboard", {}),
-  leaderboardSince: (since, until) =>
-    rpc("vampir_leaderboard_range", {
-      since: new Date(since).toISOString(),
-      until: new Date(until || Date.now() + 86400000).toISOString(),
-    }),
-};
+module.exports = USE_MYSQL
+  ? require("./db-mysql")
+  : {
+      enabled: () => !!SECRET,
+      stats: () => ({ enabled: !!SECRET, ...stats }),
+      profileKey,
+      saveRoom: (code, data) =>
+        rpc("vampir_save_room", { room_code: code, room_data: data }),
+      closeRoom: (code) =>
+        rpc("vampir_save_room", {
+          room_code: code,
+          room_data: { closed: true },
+        }),
+      loadRoom: (code) => rpc("vampir_load_room", { room_code: code }),
+      touchProfile: (playerId, name) =>
+        rpc("vampir_touch_profile", {
+          profile_key: profileKey(playerId),
+          profile_name: name,
+        }),
+      recordGame: (game) => rpc("vampir_record_game", { game }),
+      getProfile: (playerId) =>
+        rpc("vampir_get_profile", { profile_key: profileKey(playerId) }),
+      leaderboard: () => rpc("vampir_leaderboard", {}),
+      leaderboardSince: (since, until) =>
+        rpc("vampir_leaderboard_range", {
+          since: new Date(since).toISOString(),
+          until: new Date(until || Date.now() + 86400000).toISOString(),
+        }),
+    };
