@@ -1,5 +1,13 @@
 import { t } from "../i18n";
 import { notify } from "../notify";
+import { getPushSubscription, onPushSubscription } from "../push";
+import {
+  autoState,
+  setAutoState,
+  resetAutoState,
+  registerAutoSender,
+} from "../auto";
+import { speak } from "../voice";
 
 class LiveSession {
   constructor(store) {
@@ -102,10 +110,22 @@ class LiveSession {
         this._store.state.session.playerId,
       );
       this.sendJoin();
+      this.sendPresence();
     } else {
       this.sendGamestate();
     }
     this._ping();
+  }
+
+  /**
+   * Tell the server whether the app is visible and where to push
+   * notifications while it is not. Players only.
+   */
+  sendPresence() {
+    if (!this._isSpectator) return;
+    this._send("visible", document.visibilityState !== "hidden");
+    const subscription = getPushSubscription();
+    if (subscription) this._send("push", subscription);
   }
 
   /**
@@ -192,7 +212,11 @@ class LiveSession {
         break;
       case "isNight":
         if (!this._isSpectator) return;
-        if (!!params !== this._store.state.grimoire.isNight) {
+        // the automatic storyteller announces phases itself
+        if (
+          !!params !== this._store.state.grimoire.isNight &&
+          !autoState.active
+        ) {
           if (params) {
             notify("Night falls. Close your eyes…", null, {
               type: "night",
@@ -219,7 +243,11 @@ class LiveSession {
         break;
       case "isVoteInProgress":
         if (!this._isSpectator) return;
-        if (params && !this._store.state.session.isVoteInProgress) {
+        if (
+          params &&
+          !this._store.state.session.isVoteInProgress &&
+          !autoState.active
+        ) {
           notify("Voting has started: raise or lower your hand", null, {
             type: "vote",
             important: true,
@@ -238,6 +266,15 @@ class LiveSession {
         break;
       case "pronouns":
         this._updatePlayerPronouns(params);
+        break;
+      case "auto":
+        if (this._isSpectator) setAutoState(params);
+        break;
+      case "narrate":
+        if (this._isSpectator && typeof params === "string") {
+          notify(params, null, { type: "info", duration: 7000 });
+          speak(params);
+        }
         break;
     }
   }
@@ -1124,16 +1161,21 @@ export default (store) => {
 
   // resync after the phone wakes up / the tab comes back to the foreground
   const onVisible = () => {
+    session.sendPresence();
     if (document.visibilityState === "visible") session.resume();
   };
   document.addEventListener("visibilitychange", onVisible);
   window.addEventListener("pageshow", onVisible);
+  window.addEventListener("pagehide", () => session._send("visible", false));
+  onPushSubscription(() => session.sendPresence());
+  registerAutoSender((payload) => session._sendDirect("host", "auto", payload));
   window.addEventListener("online", () => session.resume());
 
   // listen to mutations
   store.subscribe(({ type, payload }, state) => {
     switch (type) {
       case "session/setSessionId":
+        resetAutoState();
         if (state.session.sessionId) {
           session.connect(state.session.sessionId);
         } else {

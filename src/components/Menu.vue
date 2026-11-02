@@ -118,6 +118,14 @@
             {{ $t("Notifications") }}
             <em><font-awesome-icon icon="bell" /></em>
           </li>
+          <li v-if="voice.supported" @click="toggleVoice">
+            {{ $t("Voice narration") }}
+            <em>
+              <font-awesome-icon
+                :icon="voice.enabled ? 'volume-up' : 'volume-mute'"
+              />
+            </em>
+          </li>
           <li @click="toggleLocale">
             {{ $t("Language") }}
             <em>{{ currentLanguage }}</em>
@@ -137,6 +145,10 @@
               {{ $t("Host (Storyteller)") }}<em>[H]</em>
             </li>
             <li @click="joinSession">{{ $t("Join (Player)") }}<em>[J]</em></li>
+            <li @click="autoRoom">
+              {{ $t("Automatic storyteller") }}
+              <em><font-awesome-icon icon="robot" /></em>
+            </li>
           </template>
           <template v-else>
             <li v-if="session.ping">
@@ -150,6 +162,10 @@
             <li v-if="session.isSpectator" @click="askPlayerName(true)">
               {{ $t("Your name") }}
               <em>{{ session.playerName || "—" }}</em>
+            </li>
+            <li v-if="myRole" @click="showMyCharacter">
+              {{ $t("My character") }}
+              <em><font-awesome-icon icon="theater-masks" /></em>
             </li>
             <li @click="copySessionUrl">
               {{ $t("Copy player link") }}
@@ -245,9 +261,18 @@ import { mapMutations, mapState } from "vuex";
 import { languages, setLocale } from "../i18n";
 import { pwaState, install } from "../pwa";
 import { notify, requestPermission, permissionState } from "../notify";
+import { setupPush } from "../push";
+import { showMyCharacter } from "../reveal";
+import { voiceState, setVoice } from "../voice";
+import { createAutoRoom } from "../auto";
 
 export default {
   computed: {
+    myRole() {
+      if (!this.session.isSpectator) return null;
+      const me = this.players.find((p) => p.id === this.session.playerId);
+      return me && me.role && me.role.id ? me.role : null;
+    },
     currentLanguage() {
       const lang = languages.find((l) => l.id === this.$i18n.locale);
       return lang ? lang.name : this.$i18n.locale;
@@ -258,6 +283,7 @@ export default {
   data() {
     return {
       pwa: pwaState,
+      voice: voiceState,
       notificationPermission: permissionState(),
       tab: "grimoire",
     };
@@ -274,6 +300,13 @@ export default {
     document.removeEventListener("pointerdown", this._outside);
   },
   methods: {
+    toggleVoice() {
+      setVoice(!this.voice.enabled);
+    },
+    showMyCharacter() {
+      showMyCharacter();
+      this.$store.commit("toggleMenu");
+    },
     async installApp() {
       if (pwaState.canInstall) {
         await install();
@@ -330,7 +363,14 @@ export default {
       const result = await requestPermission();
       this.notificationPermission = result;
       if (result === "granted") {
-        notify("Notifications are on", null, { type: "success" });
+        const subscription = await setupPush();
+        notify(
+          subscription
+            ? "Notifications are on, even when the app is closed"
+            : "Notifications are on",
+          null,
+          { type: "success" },
+        );
       } else if (result === "unsupported") {
         alert(
           this.$t(
@@ -381,6 +421,26 @@ export default {
         this.$store.commit("toggleGrimoire", false);
         this.$store.commit("session/setSessionId", sessionId);
       }
+    },
+    async autoRoom() {
+      if (this.session.sessionId) return this.leaveSession();
+      this.askPlayerName();
+      if (!this.session.playerName) return;
+      let channel;
+      try {
+        channel = await createAutoRoom();
+      } catch (e) {
+        alert(
+          this.$t("Could not create a room right now. Try again in a minute."),
+        );
+        return;
+      }
+      this.$store.commit("players/clear");
+      this.$store.commit("session/clearVoteHistory");
+      this.$store.commit("session/setSpectator", true);
+      this.$store.commit("toggleGrimoire", false);
+      this.$store.commit("session/setSessionId", channel);
+      if (this.grimoire.isMenuOpen) this.$store.commit("toggleMenu");
     },
     askPlayerName(force = false) {
       if (this.session.playerName && !force) return;

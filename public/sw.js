@@ -3,7 +3,7 @@
  * - hashed build assets (js/css/img/fonts/media): cache first, they never change
  * - live game traffic (WebSocket) and server endpoints are never cached
  */
-const SHELL = "km-shell-v3";
+const SHELL = "km-shell-v4";
 const ASSETS = "km-assets-v2";
 const MAX_ASSETS = 400;
 
@@ -46,15 +46,41 @@ async function trim(cache) {
   }
 }
 
+// push messages from the server (the app is closed or in the background)
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    data = { body: event.data ? event.data.text() : "" };
+  }
+  const title = data.title || "Kasaba Meydanı";
+  // always show it: iOS cancels subscriptions that receive silent pushes
+  // (the server only pushes to players whose app is in the background)
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || "",
+      icon: "/static/android-icon-192x192.png",
+      badge: "/static/android-icon-96x96.png",
+      tag: data.tag || "kasaba-meydani",
+      renotify: true,
+      vibrate: [120, 60, 120],
+      data: { url: data.url || "/" },
+    }),
+  );
+});
+
 // tapping a notification brings the game back to the front
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || "/";
   event.waitUntil(
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
-      .then((clients) =>
-        clients.length ? clients[0].focus() : self.clients.openWindow("/"),
-      ),
+      .then((clients) => {
+        if (clients.length) return clients[0].focus();
+        return self.clients.openWindow(target);
+      }),
   );
 });
 
@@ -63,7 +89,7 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (/^\/(live|healthz|metrics)/.test(url.pathname)) return;
+  if (/^\/(live|healthz|metrics|push)/.test(url.pathname)) return;
 
   // app pages: always try the network so updates arrive immediately
   if (request.mode === "navigate") {

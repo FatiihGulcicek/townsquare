@@ -43,6 +43,7 @@
 
 <script>
 import { mapState } from "vuex";
+import { autoState } from "../auto";
 
 function readJSON(key, fallback) {
   try {
@@ -60,6 +61,7 @@ export default {
       nightCount: readJSON("nightCount", 0),
       bluffsSkipped: readJSON("bluffsSkipped", false),
       expanded: false,
+      auto: autoState,
     };
   },
   computed: {
@@ -83,7 +85,7 @@ export default {
     },
     step() {
       const t = this.$t;
-      if (!this.players.length) return null;
+      if (!this.players.length || this.auto.active) return null;
       if (!this.isStoryteller) return this.playerStep;
       const seated = this.players.filter((p) => p.id).length;
       const night = this.nightCount;

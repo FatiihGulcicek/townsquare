@@ -17,3 +17,6 @@ services:
       # protects /metrics?token=... ; leave empty to keep it public
       - key: METRICS_TOKEN
         generateValue: true
+      # keeps push notification keys stable across restarts
+      - key: PUSH_SECRET
+        generateValue: true

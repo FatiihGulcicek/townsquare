@@ -15,16 +15,30 @@
         {{ $t("Join (Player)") }}
       </div>
     </div>
-    <div class="install" v-if="!pwa.isStandalone && (pwa.canInstall || pwa.isIOS)">
+    <div class="actions auto-room">
+      <div class="button demon" @click="$parent.$refs.menu.autoRoom()">
+        <font-awesome-icon icon="robot" />
+        {{ $t("Play with the automatic storyteller") }}
+      </div>
+    </div>
+    <p class="auto-hint">
+      {{
+        $t(
+          "No storyteller needed: the app runs Trouble Brewing by itself. Everyone plays on their own phone.",
+        )
+      }}
+    </p>
+    <div
+      class="install"
+      v-if="!pwa.isStandalone && (pwa.canInstall || pwa.isIOS)"
+    >
       <span class="link" @click="installApp">
         <font-awesome-icon icon="file-upload" />
         {{ $t("Add to home screen") }}
       </span>
       <p v-if="showIOSHelp" class="ios-help">
         {{
-          $t(
-            "In Safari, tap the Share button and choose \"Add to Home Screen\"."
-          )
+          $t('In Safari, tap the Share button and choose "Add to Home Screen".')
         }}
       </p>
     </div>
@@ -116,6 +130,19 @@ export default {
   font-size: 95%;
 }
 
+.auto-room {
+  margin-top: 10px;
+  .button {
+    width: 100%;
+    max-width: 420px;
+    justify-content: center;
+  }
+}
+.auto-hint {
+  font-size: 85%;
+  opacity: 0.75;
+  margin: 6px 0 0;
+}
 .actions {
   display: flex;
   gap: 10px;
@@ -150,7 +177,6 @@ export default {
   font-size: 85%;
   opacity: 0.8;
 }
-
 
 @keyframes intro-in {
   from {

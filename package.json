@@ -24,6 +24,7 @@
     "vue": "^2.6.12",
     "vue-template-compiler": "^2.7.15",
     "vuex": "^3.6.0",
+    "web-push": "^3.6.7",
     "ws": "^8.22.1"
   },
   "devDependencies": {

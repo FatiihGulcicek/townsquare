@@ -30,6 +30,9 @@
     <Guide @action="onGuideAction" />
     <Menu ref="menu"></Menu>
     <Toasts />
+    <RoleReveal />
+    <Narrator />
+    <AutoPanel />
     <EditionModal />
     <FabledModal />
     <RolesModal />
@@ -68,11 +71,17 @@ import GameStateModal from "@/components/modals/GameStateModal";
 import HomebrewModal from "@/components/modals/HomebrewModal";
 import { takeLaunchAction } from "./pwa";
 import Toasts from "./components/Toasts";
+import RoleReveal from "./components/RoleReveal";
+import Narrator from "./components/Narrator";
+import AutoPanel from "./components/AutoPanel";
 import Guide from "./components/Guide";
 import { notify } from "./notify";
 
 export default {
   components: {
+    RoleReveal,
+    Narrator,
+    AutoPanel,
     Toasts,
     Guide,
     GameStateModal,

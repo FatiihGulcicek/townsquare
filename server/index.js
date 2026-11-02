@@ -5,6 +5,8 @@ const zlib = require("zlib");
 const https = require("https");
 const WebSocket = require("ws");
 const client = require("prom-client");
+const push = require("./push");
+const { AutoGame } = require("./bot");
 
 // Create a Registry which registers the metrics
 const register = new client.Registry();
@@ -126,6 +128,179 @@ function heartbeat() {
 
 // map of channels currently in use
 const channels = {};
+// names of the seated players per channel (from the host's last gamestate)
+const channelNames = {};
+// channels run by the automatic storyteller
+const bots = {};
+const MAX_BOTS = parseInt(process.env.MAX_BOTS || "30", 10);
+
+// deliver a message to a client; the bot gets to know who sent it
+function deliver(client, data, from) {
+  if (client.isBot) client.receive(data, from);
+  else client.send(data);
+}
+
+function createBot() {
+  if (Object.keys(bots).length >= MAX_BOTS) return null;
+  let channel;
+  do {
+    channel = "oto" + Math.random().toString(36).slice(2, 7);
+  } while (channels[channel] || bots[channel]);
+  const open = (c) => !c.isBot && c.readyState === WebSocket.OPEN;
+  const list = () => channels[channel] || [];
+  const fake = {
+    isBot: true,
+    playerId: "host",
+    channel,
+    readyState: WebSocket.OPEN,
+    visible: true,
+    latency: 0,
+    receive: (data, from) => game.receive(data, from),
+    send() {},
+  };
+  const game = new AutoGame(channel, {
+    broadcast: (data) =>
+      list().forEach((c) => {
+        if (open(c)) {
+          c.send(data);
+          metrics.messages_outgoing.inc();
+        }
+      }),
+    sendTo: (id, data) =>
+      list().forEach((c) => {
+        if (open(c) && c.playerId === id) {
+          c.send(data);
+          metrics.messages_outgoing.inc();
+        }
+      }),
+    isConnected: (id) => list().some((c) => open(c) && c.playerId === id),
+    connectedIds: () => [
+      ...new Set(
+        list()
+          .filter(open)
+          .map((c) => c.playerId),
+      ),
+    ],
+    push: (ids, payload) => pushToChannel(channel, payload, ids),
+    destroy: () => {
+      fake.readyState = WebSocket.CLOSED;
+      if (channels[channel]) {
+        channels[channel] = channels[channel].filter((c) => c !== fake);
+      }
+      delete bots[channel];
+    },
+  });
+  channels[channel] = [fake];
+  bots[channel] = game;
+  return channel;
+}
+
+// a player is "away" when no visible app of theirs is connected
+function isAway(channel, playerId) {
+  return !(channels[channel] || []).some(
+    (c) =>
+      c.playerId === playerId &&
+      c.readyState === WebSocket.OPEN &&
+      c.visible !== false,
+  );
+}
+
+/**
+ * Push a notification to the players of a channel whose app is closed or in
+ * the background. `only` limits it to some player ids.
+ */
+function pushToChannel(channel, payload, only) {
+  if (!push.enabled()) return;
+  push.subscribedPlayers(channel).forEach((playerId) => {
+    if (playerId === "host") return;
+    if (only && !only.includes(playerId)) return;
+    if (!isAway(channel, playerId)) return;
+    push.send(channel, playerId, { url: "/#" + channel, ...payload });
+  });
+}
+
+// turn host messages into push notifications for absent players
+function pushHooks(ws, data) {
+  if (ws.playerId !== "host" || !push.enabled()) return;
+  let command, params;
+  try {
+    [command, params] = JSON.parse(data);
+  } catch (e) {
+    return;
+  }
+  const channel = ws.channel;
+  switch (command) {
+    case "gs":
+      if (params && Array.isArray(params.gamestate)) {
+        channelNames[channel] = params.gamestate.map((p) =>
+          String((p && p.name) || "").slice(0, 40),
+        );
+      }
+      break;
+    case "direct": {
+      const roleFor = Object.keys(params || {}).filter(
+        (id) =>
+          Array.isArray(params[id]) &&
+          params[id][0] === "player" &&
+          params[id][1] &&
+          params[id][1].property === "role" &&
+          params[id][1].value,
+      );
+      if (roleFor.length) {
+        pushToChannel(
+          channel,
+          {
+            title: "Karakterin geldi 🎭",
+            body: "Kim olduğunu görmek için dokun.",
+            tag: "role",
+          },
+          roleFor,
+        );
+      }
+      break;
+    }
+    case "isNight":
+      pushToChannel(
+        channel,
+        params
+          ? {
+              title: "Gece çöktü 🌙",
+              body: "Kasaba uyuyor. Anlatıcı seni uyandırabilir.",
+              tag: "phase",
+            }
+          : {
+              title: "Gün doğdu ☀️",
+              body: "Kasaba uyandı, tartışma başlıyor.",
+              tag: "phase",
+            },
+      );
+      break;
+    case "nomination": {
+      if (!Array.isArray(params) || params.length < 2) break;
+      const names = channelNames[channel] || [];
+      const nominator = names[params[0]];
+      const nominee = names[params[1]];
+      pushToChannel(channel, {
+        title: "Aday gösterildi ⚖️",
+        body:
+          nominator && nominee
+            ? nominator + ", " + nominee + " adlı oyuncuyu aday gösterdi."
+            : "Oylama birazdan başlıyor.",
+        tag: "vote",
+      });
+      break;
+    }
+    case "isVoteInProgress":
+      if (params) {
+        pushToChannel(channel, {
+          title: "Oylama başladı ✋",
+          body: "Elini kaldırmak için şimdi uygulamaya dön.",
+          tag: "vote",
+        });
+      }
+      break;
+  }
+}
 
 // metrics
 const metrics = {
@@ -198,6 +373,11 @@ wss.on("connection", function connection(ws, req) {
     ws.close(1000, "Invalid channel name");
     return;
   }
+  // rooms of the automatic storyteller end when the server restarts
+  if (/^oto[a-z0-9]{5}$/.test(ws.channel) && !bots[ws.channel]) {
+    ws.close(1000, "This automatic room has ended");
+    return;
+  }
   const open = (channels[ws.channel] || []).filter(
     (c) => c.readyState === WebSocket.OPEN,
   ).length;
@@ -255,11 +435,30 @@ wss.on("connection", function connection(ws, req) {
     }
     const messageType = data.toLowerCase().slice(1).split(",", 1).pop();
     switch (messageType) {
+      case '"push"':
+        // register a push subscription for this player (never relayed)
+        try {
+          const sub = JSON.parse(data)[1];
+          if (sub) push.register(ws.channel, ws.playerId, sub);
+          else push.unregister(ws.channel, ws.playerId);
+        } catch (e) {
+          // ignore malformed subscriptions
+        }
+        break;
+      case '"visible"':
+        // the app went to the background / came back (never relayed)
+        try {
+          ws.visible = JSON.parse(data)[1] !== false;
+        } catch (e) {
+          // ignore
+        }
+        break;
       case '"ping"':
         // ping messages will only be sent host -> all or all -> host
         channels[ws.channel].forEach(function each(client) {
           if (
             client !== ws &&
+            !client.isBot &&
             client.readyState === WebSocket.OPEN &&
             (ws.playerId === "host" || client.playerId === "host")
           ) {
@@ -278,30 +477,47 @@ wss.on("connection", function connection(ws, req) {
         logMessage(ws, data);
         try {
           const dataToPlayer = JSON.parse(data)[1];
+          const isBotChannel = !!bots[ws.channel];
           channels[ws.channel].forEach(function each(client) {
             if (
               client !== ws &&
               client.readyState === WebSocket.OPEN &&
-              dataToPlayer[client.playerId]
+              dataToPlayer[client.playerId] &&
+              // with the automatic storyteller players only talk to it
+              (!isBotChannel || client.isBot)
             ) {
-              client.send(JSON.stringify(dataToPlayer[client.playerId]));
+              deliver(
+                client,
+                JSON.stringify(dataToPlayer[client.playerId]),
+                ws,
+              );
               metrics.messages_outgoing.inc();
             }
           });
+          pushHooks(ws, data);
         } catch (e) {
           console.log("error parsing direct message JSON", e);
         }
         break;
-      default:
+      default: {
         // all other messages
         logMessage(ws, data);
+        // with the automatic storyteller only votes are shared between players,
+        // everything else goes to the storyteller alone (no spoofed game states)
+        const botOnly = !!bots[ws.channel] && messageType !== '"vote"';
         channels[ws.channel].forEach(function each(client) {
-          if (client !== ws && client.readyState === WebSocket.OPEN) {
-            client.send(data);
+          if (
+            client !== ws &&
+            client.readyState === WebSocket.OPEN &&
+            (!botOnly || client.isBot)
+          ) {
+            deliver(client, data, ws);
             metrics.messages_outgoing.inc();
           }
         });
+        pushHooks(ws, data);
         break;
+      }
     }
   });
 });
@@ -331,6 +547,7 @@ const interval = setInterval(function ping() {
     ) {
       metrics.channels_list.remove({ name: channel });
       delete channels[channel];
+      delete channelNames[channel];
     }
   }
 }, PING_INTERVAL);
@@ -422,7 +639,34 @@ server.on("request", (req, res) => {
         players: wss.clients.size,
         channels: Object.keys(channels).length,
         connections: diagnostics,
+        push: push.stats(),
+        autoGames: Object.keys(bots).length,
       }),
+    );
+  }
+  if (url.pathname === "/auto/new") {
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Cache-Control", "no-store");
+    if (req.method !== "POST") {
+      res.statusCode = 405;
+      return res.end(JSON.stringify({ error: "POST only" }));
+    }
+    if (!isAllowedOrigin(req.headers.origin, req)) {
+      res.statusCode = 403;
+      return res.end(JSON.stringify({ error: "origin" }));
+    }
+    const channel = createBot();
+    if (!channel) {
+      res.statusCode = 503;
+      return res.end(JSON.stringify({ error: "busy" }));
+    }
+    return res.end(JSON.stringify({ channel }));
+  }
+  if (url.pathname === "/push/key") {
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Cache-Control", "no-cache");
+    return res.end(
+      JSON.stringify({ enabled: push.enabled(), key: push.publicKey() }),
     );
   }
   if (url.pathname === "/metrics") {

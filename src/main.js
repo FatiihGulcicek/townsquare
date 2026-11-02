@@ -3,11 +3,17 @@ import App from "./App";
 import store from "./store";
 import i18n from "./i18n";
 import { registerServiceWorker } from "./pwa";
+import { setupPush } from "./push";
 import "@fontsource/cinzel/700.css";
 import "@fontsource/cormorant-garamond/700.css";
 import { library } from "@fortawesome/fontawesome-svg-core";
 import {
   faBell,
+  faChevronUp,
+  faChevronDown,
+  faPlay,
+  faFlagCheckered,
+  faRobot,
   faSun,
   faAddressCard,
   faBookOpen,
@@ -90,6 +96,11 @@ library.add(
   faSearchMinus,
   faSun,
   faBell,
+  faChevronUp,
+  faChevronDown,
+  faPlay,
+  faFlagCheckered,
+  faRobot,
   faSearchPlus,
   faSkull,
   faSquare,
@@ -113,6 +124,8 @@ library.add(
 Vue.component("font-awesome-icon", FontAwesomeIcon);
 Vue.use(i18n);
 registerServiceWorker();
+// refresh the push subscription when notifications were already allowed
+setupPush();
 Vue.config.productionTip = false;
 
 new Vue({
