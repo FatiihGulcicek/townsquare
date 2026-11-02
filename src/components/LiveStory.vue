@@ -36,6 +36,11 @@ const SOUND = {
   win: "win",
   penalty: "pop",
   votes: "vote",
+  shot: "death",
+  poison: "death",
+  grief: "death",
+  lovers: "turn",
+  defense: "turn",
 };
 // a little shorter than in the story player: the game goes on meanwhile
 const DURATION = {

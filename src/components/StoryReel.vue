@@ -70,6 +70,9 @@ const SOUND = {
   win: "win",
   penalty: "pop",
   start: "turn",
+  shot: "death",
+  poison: "death",
+  grief: "death",
 };
 
 export default {

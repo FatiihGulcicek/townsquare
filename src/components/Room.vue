@@ -62,6 +62,26 @@
         kaybedersin.
       </div>
 
+      <div class="card shot" v-if="s.shot && s.shot.mine">
+        <h3>🏹 Son atışın!</h3>
+        <p>Öldün ama yanında birini götürebilirsin. Kimi vuruyorsun?</p>
+        <div class="grid pick">
+          <button
+            v-for="p in alivePlayers"
+            :key="p.pid"
+            class="tile"
+            @click="shoot(p)"
+          >
+            <Avatar :name="p.name" :size="50" />
+            <span class="name">{{ p.name }}</span>
+          </button>
+        </div>
+      </div>
+      <div class="card lover" v-if="s.lover && phase !== 'over'">
+        💘 Aşkın: <b>{{ s.lover.name }}</b
+        >. Biriniz ölürse diğeri de kederden ölür.
+      </div>
+
       <!-- ========== LOBBY ========== -->
       <template v-if="phase === 'lobby'">
         <div class="card" v-if="!s.me.seated && !isSt">
@@ -115,10 +135,13 @@
           </div>
           <p v-if="!s.players.length" class="muted">Henüz kimse yok.</p>
           <div class="chips" v-if="s.setup">
-            <span class="chip">🧛 {{ s.setup.vampir }} Vampir</span>
-            <span class="chip" v-if="s.setup.doktor">🩺 Doktor</span>
-            <span class="chip" v-if="s.setup.gozcu">👁️ Gözcü</span>
-            <span class="chip">🧑‍🌾 {{ s.setup.koylu }} Köylü</span>
+            <template v-for="(count, role) in s.setup">
+              <span class="chip" v-if="count && s.roles[role]" :key="role">
+                {{ s.roles[role].emoji }}
+                {{ count > 1 ? count + " " : "" }}{{ s.roles[role].name }}
+              </span>
+            </template>
+            <span class="chip" v-if="s.settings.lovers">💘 Aşıklar</span>
           </div>
           <p v-else class="muted">En az {{ s.min }} oyuncu gerekiyor.</p>
         </div>
@@ -167,6 +190,41 @@
               </label>
             </template>
           </div>
+          <h4 class="sub-h">Hazır ayarlar</h4>
+          <div class="presets">
+            <button
+              v-for="p in presets"
+              :key="p.id"
+              class="preset"
+              @click="applyPreset(p)"
+            >
+              <b>{{ p.emoji }} {{ p.name }}</b>
+              <small>{{ p.desc }}</small>
+            </button>
+          </div>
+          <h4 class="sub-h">Özel roller</h4>
+          <div class="cat-chips role-chips">
+            <button
+              v-for="r in specialRoles"
+              :key="r"
+              class="cat"
+              :class="{ on: s.settings[r] }"
+              @click="setting(r, !s.settings[r])"
+            >
+              {{ s.roles[r].emoji }} {{ s.roles[r].name }}
+            </button>
+            <button
+              class="cat"
+              :class="{ on: s.settings.lovers }"
+              @click="setting('lovers', !s.settings.lovers)"
+            >
+              💘 Aşıklar
+            </button>
+          </div>
+          <p class="muted small role-help">
+            Bir role dokununca açılır/kapanır. Ne işe yaradığını rol kartında
+            görürsün.
+          </p>
           <div class="toggles">
             <label class="toggle" v-for="t in toggles" :key="t.key">
               <span>
@@ -295,6 +353,44 @@
       <div class="card night" v-if="phase === 'night' && s.night">
         <h3>{{ nightTitle }}</h3>
         <p>{{ nightHelp }}</p>
+        <template v-if="s.night.action === 'cadi'">
+          <p class="victim" v-if="s.night.victim">
+            🧛 Vampirlerin şu anki hedefi:
+            <b>{{ nameOf(s.night.victim) }}</b>
+          </p>
+          <p class="muted small" v-else>Vampirler henüz karar vermedi…</p>
+          <label class="toggle potion" v-if="s.night.potions.heal">
+            <span
+              >🧪 Kurtarma iksirini kullan
+              <small class="muted"
+                >(bu gecenin kurbanını kurtarır, oyunda 1 kez)</small
+              ></span
+            >
+            <input type="checkbox" v-model="witchHeal" />
+          </label>
+          <p class="muted small" v-else>🧪 Kurtarma iksirini kullandın.</p>
+          <template v-if="s.night.potions.poison">
+            <p class="small">
+              ☠️ Zehir iksiri (oyunda 1 kez): istersen birini seç
+            </p>
+            <div class="grid pick">
+              <button
+                v-for="p in alivePlayers.filter((x) => x.pid !== s.me.pid)"
+                :key="p.pid"
+                class="tile"
+                :class="{ selected: witchPoison === p.pid }"
+                @click="witchPoison = witchPoison === p.pid ? null : p.pid"
+              >
+                <Avatar :name="p.name" :size="46" />
+                <span class="name">{{ p.name }}</span>
+              </button>
+            </div>
+          </template>
+          <p class="muted small" v-else>☠️ Zehir iksirini kullandın.</p>
+          <button class="btn primary" @click="witchDone">
+            {{ s.night.done ? "✔ Kaydedildi (güncelle)" : "Kararımı ver" }}
+          </button>
+        </template>
         <div
           v-if="seerResult"
           class="seer-result"
@@ -308,7 +404,10 @@
         </div>
         <div
           class="grid pick"
-          v-if="!(s.night.action === 'gozcu' && s.night.done)"
+          v-if="
+            !(s.night.action === 'gozcu' && s.night.done) &&
+            s.night.action !== 'cadi'
+          "
         >
           <button
             v-for="p in nightTargets"
@@ -377,8 +476,27 @@
       </div>
 
       <!-- ========== DAY ========== -->
-      <template v-if="phase === 'day'">
-        <div class="card banner" v-if="s.lastNight">
+      <div class="card center defense" v-if="phase === 'defense' && s.runoff">
+        <h3>🗣️ Savunma zamanı</h3>
+        <div class="duo">
+          <div v-for="pid in s.runoff.candidates" :key="pid">
+            <Avatar :name="nameOf(pid)" :size="76" :speaking="talk(pid)" />
+            <b>{{ nameOf(pid) }}</b>
+          </div>
+        </div>
+        <p v-if="s.runoff.candidates.includes(s.me.pid)">
+          Sen aday gösterildin! Kendini savun; sadece ikiniz konuşabilirsiniz.
+        </p>
+        <p class="muted" v-else>
+          Dinleyin, sonra ikisi arasında oylama olacak.
+        </p>
+        <button class="btn primary" v-if="isSt" @click="act('next')">
+          ⚖️ Son oylamayı başlat
+        </button>
+      </div>
+
+      <template v-if="phase === 'day' || phase === 'runoff'">
+        <div class="card banner" v-if="s.lastNight && phase === 'day'">
           <template v-if="s.lastNight.died.length">
             🩸 Bu gece <b>{{ s.lastNight.died[0].name }}</b> öldü<template
               v-if="s.lastNight.died[0].role"
@@ -392,14 +510,17 @@
           <template v-else>🌅 Bu gece kimse ölmedi.</template>
         </div>
         <div class="card">
-          <h3>Oylama</h3>
+          <h3>{{ phase === "runoff" ? "⚖️ Son oylama" : "Oylama" }}</h3>
+          <p class="muted small" v-if="s.settings.secretVotes">
+            🤫 Gizli oylama: kimin kime oy verdiği sayım bitene kadar görünmez.
+          </p>
           <p class="muted small" v-if="canVote">
             Şüphelendiğin kişiye dokun. Fikrini değiştirebilirsin; aynı kişiye
             tekrar dokunursan oyun geri alınır.
           </p>
           <div class="grid pick">
             <button
-              v-for="p in alivePlayers"
+              v-for="p in voteTargets"
               :key="p.pid"
               class="tile"
               :class="{ selected: myVote === p.pid }"
@@ -437,8 +558,12 @@
             Herkes oy verdi. Oylar {{ settle }} sn sonra sayılacak…
           </p>
           <p class="muted small">
-            {{ votedCount }}/{{ alivePlayers.length }} kişi oy verdi. En çok oyu
-            alan asılır; eşitlikte kimse asılmaz.
+            {{ s.votedCount }}/{{ alivePlayers.length }} kişi oy verdi. En çok
+            oyu alan asılır; eşitlikte kimse asılmaz.<template
+              v-if="s.settings.defense && phase === 'day'"
+            >
+              İlk ikiye savunma hakkı verilir.</template
+            >
           </p>
           <button class="btn danger" v-if="isSt" @click="act('next')">
             ⚖️ Oylamayı bitir
@@ -481,10 +606,15 @@
       <!-- ========== OVER ========== -->
       <template v-if="phase === 'over'">
         <div class="card center winner" :class="s.winner">
-          <div class="big">{{ s.winner === "vampir" ? "🧛" : "🎉" }}</div>
+          <div class="big">
+            {{ { vampir: "🧛", deli: "🤡" }[s.winner] || "🎉" }}
+          </div>
           <h2>
             {{
-              s.winner === "vampir" ? "Vampirler kazandı!" : "Köylüler kazandı!"
+              {
+                vampir: "Vampirler kazandı!",
+                deli: "Deli kazandı!",
+              }[s.winner] || "Köylüler kazandı!"
             }}
           </h2>
           <p v-if="myResult" class="result">{{ myResult }}</p>
@@ -662,7 +792,92 @@ import StoryReel from "./StoryReel";
 import VideoStrip from "./VideoStrip";
 import { voiceChat } from "../voicechat";
 
+const PRESETS = [
+  {
+    id: "yeni",
+    emoji: "🌱",
+    name: "Yeni başlayanlar",
+    desc: "Vampir, Köylü, Doktor",
+    s: {
+      doktor: true,
+      gozcu: false,
+      avci: false,
+      cadi: false,
+      deli: false,
+      muhtar: false,
+      kurtadam: false,
+      lovers: false,
+      secretVotes: false,
+      defense: false,
+    },
+  },
+  {
+    id: "klasik",
+    emoji: "🏛️",
+    name: "Klasik",
+    desc: "Doktor + Gözcü",
+    s: {
+      doktor: true,
+      gozcu: true,
+      avci: false,
+      cadi: false,
+      deli: false,
+      muhtar: false,
+      kurtadam: false,
+      lovers: false,
+      secretVotes: false,
+      defense: false,
+    },
+  },
+  {
+    id: "zengin",
+    emoji: "🎭",
+    name: "Zengin",
+    desc: "Avcı, Cadı, Muhtar, savunma",
+    s: {
+      doktor: true,
+      gozcu: true,
+      avci: true,
+      cadi: true,
+      deli: false,
+      muhtar: true,
+      kurtadam: false,
+      lovers: false,
+      secretVotes: false,
+      defense: true,
+    },
+  },
+  {
+    id: "kaos",
+    emoji: "🌪️",
+    name: "Kaos",
+    desc: "Bütün roller, aşıklar, gizli oy",
+    s: {
+      doktor: true,
+      gozcu: true,
+      avci: true,
+      cadi: true,
+      deli: true,
+      muhtar: true,
+      kurtadam: true,
+      lovers: true,
+      secretVotes: true,
+      defense: true,
+    },
+  },
+];
+
 const TOGGLES = [
+  {
+    key: "secretVotes",
+    label: "🤫 Gizli oylama",
+    hint: "oylar sayım bitene kadar görünmez",
+  },
+  {
+    key: "defense",
+    label: "🗣️ Savunma turu",
+    hint: "en çok oy alan ikisi savunma yapar, sonra son oylama",
+  },
   { key: "doktor", label: "🩺 Doktor", hint: "5+ oyuncuda" },
   {
     key: "idlePenalty",
@@ -685,6 +900,10 @@ export default {
       toggles: TOGGLES,
       mod: null,
       customText: "",
+      witchHeal: false,
+      witchPoison: null,
+      specialRoles: ["avci", "cadi", "muhtar", "deli", "kurtadam"],
+      presets: PRESETS,
     };
   },
   computed: {
@@ -731,6 +950,8 @@ export default {
           night: `🌙 ${r}. Gece`,
           day: `☀️ ${r}. Gün`,
           lastwords: "⚖️ Son sözler",
+          defense: "🗣️ Savunma",
+          runoff: "⚖️ Son oylama",
           dusk: "🌆 Akşam",
           over: "🏁 Oyun bitti",
         }[this.phase] || ""
@@ -745,6 +966,14 @@ export default {
     takenCount() {
       return this.s.cards ? this.s.cards.filter((c) => c.taken).length : 0;
     },
+    voteTargets() {
+      if (this.phase === "runoff" && this.s.runoff) {
+        return this.alivePlayers.filter((p) =>
+          this.s.runoff.candidates.includes(p.pid),
+        );
+      }
+      return this.alivePlayers;
+    },
     hasBots() {
       return this.s.players.some((p) => p.bot);
     },
@@ -756,7 +985,11 @@ export default {
     },
     canVote() {
       return (
-        this.s && this.s.me.seated && this.s.me.alive && this.phase === "day"
+        this.s &&
+        this.s.me.seated &&
+        this.s.me.alive &&
+        !this.s.me.noVote &&
+        (this.phase === "day" || this.phase === "runoff")
       );
     },
     votedCount() {
@@ -775,24 +1008,31 @@ export default {
       return this.s.players.find((p) => p.pid === this.s.condemned) || null;
     },
     nightTitle() {
-      return {
-        vampir: "🧛 Kurbanını seç",
-        doktor: "🩺 Kimi koruyacaksın?",
-        gozcu: "👁️ Kimi araştıracaksın?",
-        koylu: "🧑‍🌾 Uyuyorsun",
-      }[this.s.night.action];
+      return (
+        {
+          vampir: "🧛 Kurbanını seç",
+          doktor: "🩺 Kimi koruyacaksın?",
+          gozcu: "👁️ Kimi araştıracaksın?",
+          koylu: "🧑‍🌾 Uyuyorsun",
+          cadi: "🧙‍♀️ İksirlerin",
+        }[this.s.night.action] || "😴 Uyuyorsun"
+      );
     },
     nightHelp() {
-      return {
-        vampir:
-          "Diğer vampirlerle aynı kişiyi seçin. Sabah en çok seçilen kişiye saldırılır. Vampir sohbetinden anlaşabilirsiniz.",
-        doktor:
-          "Seçtiğin kişi bu gece vampirlerden korunur. Kendini de seçebilirsin, ama aynı kişiyi iki gece üst üste koruyamazsın.",
-        gozcu:
-          "Seçtiğin kişinin vampir olup olmadığını hemen öğreneceksin. Gecede bir kez.",
-        koylu:
-          "Kimse anlamasın diye sen de şüphelendiğin birini seç. Bunun hiçbir etkisi yok.",
-      }[this.s.night.action];
+      return (
+        {
+          vampir:
+            "Diğer vampirlerle aynı kişiyi seçin. Sabah en çok seçilen kişiye saldırılır. Vampir sohbetinden anlaşabilirsiniz.",
+          doktor:
+            "Seçtiğin kişi bu gece vampirlerden korunur. Kendini de seçebilirsin, ama aynı kişiyi iki gece üst üste koruyamazsın.",
+          gozcu:
+            "Seçtiğin kişinin vampir olup olmadığını hemen öğreneceksin. Gecede bir kez.",
+          koylu:
+            "Kimse anlamasın diye sen de şüphelendiğin birini seç. Bunun hiçbir etkisi yok.",
+          cadi: "Vampirlerin kimi hedeflediğini görüyorsun. İstersen kurtarma iksiriyle kurbanı kurtar, istersen zehirle birini öldür. Kararını verince gözlerini kapat.",
+        }[this.s.night.action] ||
+        "Bu gece yeteneğin seni uyandırmıyor. Kimse anlamasın diye şüphelendiğin birini seç; etkisi yok."
+      );
     },
     nightTargets() {
       const s = this.s;
@@ -808,7 +1048,7 @@ export default {
           allowed = false;
           note = "dün korundu";
         }
-        if ((action === "gozcu" || action === "koylu") && p.pid === s.me.pid) {
+        if (!["vampir", "doktor"].includes(action) && p.pid === s.me.pid) {
           allowed = false;
         }
         if (p.pid === s.me.pid && allowed) note = "sen";
@@ -857,6 +1097,17 @@ export default {
     clearInterval(this.timer);
   },
   methods: {
+    applyPreset(p) {
+      this.act("settings", p.s);
+      toast(`${p.name} ayarı seçildi.`, "success");
+    },
+    shoot(p) {
+      if (confirm(`${p.name} vurulsun mu?`))
+        this.act("shoot", { target: p.pid });
+    },
+    witchDone() {
+      this.act("witch", { heal: this.witchHeal, poison: this.witchPoison });
+    },
     async openMod(p) {
       if (p.pid === this.s.me.pid) {
         // tapping yourself changes your photo
@@ -1453,6 +1704,84 @@ h3 {
   margin-bottom: 8px;
   h3 {
     margin: 0;
+  }
+}
+.sub-h {
+  margin: 14px 0 6px;
+  font-size: 15px;
+  color: $muted;
+}
+.presets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  .preset {
+    text-align: left;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(233, 180, 76, 0.35);
+    background: rgba(233, 180, 76, 0.08);
+    color: $text;
+    b {
+      display: block;
+      font-size: 15px;
+    }
+    small {
+      color: $muted;
+      font-size: 12px;
+    }
+  }
+}
+.role-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0;
+  .cat {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    color: $muted;
+    border-radius: 18px;
+    padding: 7px 12px;
+    font-size: 14px;
+    &.on {
+      color: #1a1204;
+      background: $gold;
+      border-color: $gold;
+      font-weight: 700;
+    }
+  }
+}
+.role-help {
+  margin-top: 0;
+}
+.shot {
+  border-color: rgba(233, 180, 76, 0.8);
+  box-shadow: 0 0 30px rgba(233, 180, 76, 0.25);
+}
+.lover {
+  border-color: rgba(255, 105, 180, 0.6);
+  background: rgba(120, 20, 70, 0.4);
+}
+.victim {
+  font-size: 16px;
+  background: rgba(179, 18, 29, 0.25);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.potion {
+  margin: 8px 0;
+}
+.duo {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin: 10px 0;
+  > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
   }
 }
 .need {

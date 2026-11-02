@@ -41,6 +41,38 @@
         </span>
       </template>
 
+      <template v-else-if="e.type === 'shot'">
+        <span class="bow">🏹</span>
+        <span class="arrow">➶</span>
+        <span class="victim">
+          <Avatar :name="e.name" :size="avatarSize" />
+        </span>
+      </template>
+
+      <template v-else-if="e.type === 'poison'">
+        <span class="potion-big">🧪</span>
+        <span v-for="i in 5" :key="'bub' + i" class="bubble" :style="spark(i)"
+          >🫧</span
+        >
+        <span class="victim">
+          <Avatar :name="e.name" :size="avatarSize" />
+        </span>
+      </template>
+
+      <template v-else-if="e.type === 'grief' || e.type === 'lovers'">
+        <span class="heart" :class="{ broken: e.type === 'grief' }">{{
+          e.type === "grief" ? "💔" : "💘"
+        }}</span>
+        <span v-for="i in 6" :key="'h' + i" class="spark" :style="spark(i)">{{
+          e.type === "grief" ? "🖤" : "💗"
+        }}</span>
+      </template>
+
+      <template v-else-if="e.type === 'defense'">
+        <span class="speech">🗣️</span>
+        <span class="scale">⚖️</span>
+      </template>
+
       <template v-else-if="e.type === 'saved'">
         <span class="vampire left">🧛</span>
         <span class="shield">🛡️</span>
@@ -127,6 +159,9 @@
             >🦇</span
           >
         </template>
+        <template v-else-if="e.winner === 'deli'">
+          <span class="trophy">🤡</span>
+        </template>
         <template v-else>
           <span class="trophy">🏆</span>
         </template>
@@ -166,6 +201,11 @@ export const ROLE_NAMES = {
   koylu: "Köylü",
   doktor: "Doktor",
   gozcu: "Gözcü",
+  avci: "Avcı",
+  cadi: "Cadı",
+  deli: "Deli",
+  muhtar: "Muhtar",
+  kurtadam: "Kurt Adam",
 };
 
 /** one line describing an event (also read aloud by the story player) */
@@ -217,9 +257,27 @@ export function captionFor(e) {
     case "revive":
       return [`${e.name} hayata döndü!`, "Anlatıcının mucizesi"];
     case "win":
+      if (e.winner === "deli")
+        return ["Deli kazandı! 🤡", "Köy, Deli'yi asarak tuzağa düştü"];
       return e.winner === "vampir"
         ? ["Vampirler kazandı!", "Köy karanlığa gömüldü"]
         : ["Köylüler kazandı!", "Bütün vampirler yok edildi"];
+    case "shot":
+      return [`${e.by} ateş etti!`, `${e.name} vuruldu${role}`];
+    case "poison":
+      return [`${e.name} zehirlendi`, `Cadının iksiri işini gördü${role}`];
+    case "grief":
+      return [
+        `${e.name} kederden öldü 💔`,
+        `Sevdiği ${e.other} ölünce yaşayamadı${role}`,
+      ];
+    case "lovers":
+      return ["İki kalp birleşti 💘", "Köyde gizli bir aşk var…"];
+    case "defense":
+      return [
+        "Savunma zamanı",
+        (e.names || []).join(" ve ") + " kendini savunuyor",
+      ];
     case "penalty":
       return ["Ceza zamanı! 🎲", (e.items || []).map((x) => x.name).join(", ")];
   }
@@ -623,6 +681,67 @@ export default {
   &.two {
     left: 54%;
     animation-delay: 0.3s;
+  }
+}
+
+.bow {
+  left: 10%;
+  bottom: 26%;
+  animation: float 2s ease-in-out infinite;
+}
+.arrow {
+  left: 22%;
+  bottom: 34%;
+  font-size: 0.8em;
+  animation: arrow 1.4s ease-in infinite;
+}
+.potion-big {
+  left: 14%;
+  bottom: 24%;
+  font-size: 1.3em;
+  animation: wobble-p 1.6s ease-in-out infinite;
+}
+.bubble {
+  bottom: 30%;
+  font-size: 0.5em;
+  animation: ascend-spark 2.2s ease-out infinite;
+}
+.heart {
+  left: 50%;
+  top: 20%;
+  transform: translateX(-50%);
+  font-size: 1.6em;
+  animation: beat 1.2s ease-in-out infinite;
+  &.broken {
+    animation: shake 0.6s ease-in-out infinite;
+  }
+}
+@keyframes arrow {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(55vw);
+    opacity: 0;
+  }
+}
+@keyframes wobble-p {
+  50% {
+    transform: rotate(-15deg);
+  }
+}
+@keyframes beat {
+  50% {
+    transform: translateX(-50%) scale(1.2);
+  }
+}
+@keyframes shake {
+  25% {
+    transform: translateX(-54%) rotate(-6deg);
+  }
+  75% {
+    transform: translateX(-46%) rotate(6deg);
   }
 }
 

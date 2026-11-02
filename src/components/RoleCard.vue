@@ -12,12 +12,19 @@
         <h2>{{ role.name }}</h2>
         <div class="team">
           {{
-            role.team === "vampir" ? "Vampirlerin takımı" : "Köylülerin takımı"
+            role.team === "vampir"
+              ? "Vampirlerin takımı"
+              : role.team === "deli"
+              ? "Tek başına oynuyorsun"
+              : "Köylülerin takımı"
           }}
         </div>
         <p class="desc">{{ role.desc }}</p>
         <p class="mates" v-if="mates.length">
           Diğer vampirler: <b>{{ mates.join(", ") }}</b>
+        </p>
+        <p class="mates" v-if="state.lover">
+          💘 Aşık oldun: <b>{{ state.lover.name }}</b>
         </p>
         <p class="secret">Gizli tut! Bunu sadece sen görüyorsun.</p>
         <button class="btn primary" @click="close">Anladım</button>
@@ -51,9 +58,12 @@ export default {
     },
     mates() {
       const s = this.state;
-      if (!s || s.me.role !== "vampir") return [];
+      if (!s || !s.me.role || s.roles[s.me.role].team !== "vampir") return [];
       return s.players
-        .filter((p) => p.role === "vampir" && p.pid !== s.me.pid)
+        .filter(
+          (p) =>
+            p.role && s.roles[p.role].team === "vampir" && p.pid !== s.me.pid,
+        )
         .map((p) => p.name);
     },
     canAskNotifications() {
