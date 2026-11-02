@@ -272,4 +272,33 @@ export default {
   "öldü ({}).": "died ({}).",
   Oylama: "Voting",
   "📜 Olanlar": "📜 What happened",
+
+  "Hoş geldin! Önce profilini oluşturalım.":
+    "Welcome! Let's set up your profile first.",
+  "Fotoğrafı değiştirmek için dokun": "Tap to change the photo",
+  "Fotoğraf ekle (isteğe bağlı)": "Add a photo (optional)",
+  "Adın (oyunda görünür)": "Your name (shown in the game)",
+  Devam: "Continue",
+  İzinler: "Permissions",
+  "Oyunun tam çalışması için şunlara izin ver. Hepsi isteğe bağlı; sonra Ayarlar'dan da açabilirsin.":
+    "Allow these so the game works fully. All optional; you can turn them on later in Settings.",
+  "Ana ekrana ekle": "Add to home screen",
+  "iPhone'da bildirimler için gerekli: Safari'de Paylaş düğmesine dokun → “Ana Ekrana Ekle”, sonra oyunu ana ekrandan aç.":
+    "Needed for notifications on iPhone: in Safari tap Share → “Add to Home Screen”, then open the game from your home screen.",
+  "Uygulama gibi tam ekran açılır.": "Opens full screen like an app.",
+  Ekle: "Add",
+  Bildirimler: "Notifications",
+  "Sıra sende olunca, davet gelince ve arkadaşların gelince haber verir.":
+    "Lets you know when it's your turn, when you're invited and when friends arrive.",
+  "Önce ana ekrana ekle": "Add to home screen first",
+  Desteklenmiyor: "Not supported",
+  "Mikrofon ve kamera": "Microphone and camera",
+  "Oyunda sesli ve görüntülü sohbet için.":
+    "For voice and video chat in the game.",
+  "Sesli anlatım": "Voice narration",
+  "Anlatıcı olanları yüksek sesle okur.": "The narrator reads events aloud.",
+  "Engellenen izinleri telefonunun ayarlarından (Safari/Chrome → bu site) açabilirsin.":
+    "You can turn blocked permissions back on in your phone settings (Safari/Chrome → this site).",
+  "Başla 🎉": "Let's go 🎉",
+  "← Geri": "← Back",
 };

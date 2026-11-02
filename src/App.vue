@@ -11,6 +11,7 @@
     <Home v-if="!game.code" @settings="settingsOpen = true" />
     <Room v-else @settings="settingsOpen = true" />
     <RoleCard />
+    <Welcome v-if="onboarding" @done="finishOnboarding" />
     <LiveStory />
     <div class="sheet-bg invite-bg" v-if="lobby.invite">
       <div class="sheet center">
@@ -77,15 +78,29 @@ import Room from "./components/Room";
 import RoleCard from "./components/RoleCard";
 import Settings from "./components/Settings";
 import LiveStory from "./components/LiveStory";
+import Welcome from "./components/Welcome";
 import { setMood, setTheme } from "./music";
 import { pwaState, applyUpdate } from "./pwa";
 import { lobby, startLobby, acceptInvite, declineInvite } from "./lobby";
 import { game, restore, join } from "./game";
 
 export default {
-  components: { Home, Room, RoleCard, Settings, LiveStory },
+  components: { Home, Room, RoleCard, Settings, LiveStory, Welcome },
   data() {
-    return { game, settingsOpen: false, pwa: pwaState, lobby, pass: "" };
+    let onboarding = true;
+    try {
+      onboarding = localStorage.getItem("vkOnboarded") !== "1";
+    } catch (e) {
+      // ignore
+    }
+    return {
+      game,
+      settingsOpen: false,
+      pwa: pwaState,
+      lobby,
+      pass: "",
+      onboarding,
+    };
   },
   computed: {
     theme() {
@@ -133,10 +148,12 @@ export default {
   mounted() {
     const boot = document.getElementById("boot");
     if (boot) boot.remove();
-    restore();
+    // first visit: profile and permissions first, then the room from the link
+    if (!this.onboarding) restore();
     startLobby();
     window.addEventListener("hashchange", () => {
       const code = location.hash.replace("#", "");
+      if (this.onboarding) return;
       if (/^[A-Za-z]{4}$/.test(code) && code.toUpperCase() !== game.code) {
         restore();
         startLobby();
@@ -146,6 +163,15 @@ export default {
   methods: {
     acceptInvite() {
       acceptInvite();
+    },
+    finishOnboarding() {
+      try {
+        localStorage.setItem("vkOnboarded", "1");
+      } catch (e) {
+        // ignore
+      }
+      this.onboarding = false;
+      restore();
     },
     enterPass() {
       const { code } = game.passPrompt;
