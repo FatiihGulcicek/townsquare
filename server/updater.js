@@ -78,7 +78,16 @@ async function check(opts) {
     ]);
     status.remote = (line.split(/\s+/)[0] || "").trim() || null;
     status.checkedAt = new Date().toISOString();
-    if (!status.remote || status.remote === status.head) return;
+    if (!status.remote) return;
+    // the files may already be new (pulled by an earlier copy) while this
+    // process still runs the old code: then only a restart is needed
+    if (status.remote === status.head) {
+      if (status.running && status.running !== status.head) {
+        status.pending = true;
+        opts.restart();
+      }
+      return;
+    }
     const before = await run(git, ["rev-parse", "HEAD:package.json"]).catch(
       () => "",
     );
