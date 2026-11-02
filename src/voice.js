@@ -16,7 +16,6 @@ export const voiceState = Vue.observable({
   supported: !!synth,
   enabled: getFlag("voice", false) && !!synth,
   bots: getFlag("vkBotVoice", true) && !!synth,
-  queued: 0,
   unlocked: false,
 });
 
@@ -91,17 +90,11 @@ export function speakAs(who, text) {
   const h = hash(who);
   try {
     if (synth.paused) synth.resume();
-    // do not let bot chatter pile up behind the narrator
-    if (synth.pending && voiceState.queued > 2) return;
     const u = new SpeechSynthesisUtterance(said);
     u.lang = english ? "en-US" : "tr-TR";
     if (mine.length) u.voice = mine[h % mine.length];
     u.pitch = 0.7 + (h % 7) * 0.1; // 0.7 … 1.3
     u.rate = 0.95 + ((h >> 3) % 4) * 0.07; // 0.95 … 1.16
-    voiceState.queued++;
-    u.onend = u.onerror = () => {
-      voiceState.queued = Math.max(0, voiceState.queued - 1);
-    };
     synth.speak(u);
   } catch (e) {
     // speech is optional
@@ -111,21 +104,53 @@ export function speakAs(who, text) {
 export function setBotVoices(on) {
   voiceState.bots = !!on && !!synth;
   setFlag("vkBotVoice", voiceState.bots);
-  if (voiceState.bots) unlockVoice();
+  if (voiceState.bots) {
+    unlockVoice();
+    speakAs(
+      "test",
+      lang === "en"
+        ? "Bots will talk out loud."
+        : "Botlar artık sesli konuşacak.",
+    );
+  }
 }
 
-/** Call from a tap handler: unlocks speech on iOS. */
+/*
+ * iPhone (and some Android browsers) only allow speech after it was first
+ * started from a tap. Any tap on the page does that once; an empty text does
+ * not count on iOS, so a real word is spoken silently.
+ */
 export function unlockVoice() {
   if (!synth || voiceState.unlocked) return;
   try {
-    const u = utter(" ");
+    const u = new SpeechSynthesisUtterance("a");
     u.volume = 0;
+    u.rate = 2;
     synth.speak(u);
+    if (synth.paused) synth.resume();
     voiceState.unlocked = true;
   } catch (e) {
     // ignore
   }
 }
+if (synth) {
+  const firstTap = () => {
+    unlockVoice();
+    if (voiceState.unlocked) {
+      document.removeEventListener("pointerdown", firstTap, true);
+      document.removeEventListener("touchend", firstTap, true);
+    }
+  };
+  document.addEventListener("pointerdown", firstTap, true);
+  document.addEventListener("touchend", firstTap, true);
+}
+
+// coming back to the game: Chrome sometimes leaves speech paused
+document.addEventListener("visibilitychange", () => {
+  if (synth && document.visibilityState === "visible" && synth.paused) {
+    synth.resume();
+  }
+});
 
 export function setVoice(enabled) {
   voiceState.enabled = !!enabled && !!synth;
