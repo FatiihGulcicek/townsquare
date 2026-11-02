@@ -32,12 +32,9 @@ const VALID_ID = /^[a-z0-9_-]{4,40}$/i;
 const ROOM_CODE = /^[A-Z]{4}$/;
 const CODE_LETTERS = "ABCDEFGHJKLMNPRSTUVYZ";
 
-const OWN_HOSTS = [
-  process.env.RENDER_EXTERNAL_HOSTNAME,
-  process.env.PUBLIC_HOSTNAME,
-]
-  .filter(Boolean)
-  .map((h) => h.toLowerCase());
+const OWN_HOSTS = process.env.PUBLIC_URL
+  ? [new URL(process.env.PUBLIC_URL).hostname.toLowerCase()]
+  : [];
 const hostname = (h) =>
   (h || "").split(",")[0].trim().toLowerCase().replace(/:\d+$/, "");
 
@@ -229,28 +226,40 @@ const wss = new WebSocket.Server({
   },
 });
 
+/** liveness and flood counters shared by both kinds of sockets */
+function watchSocket(ws) {
+  ws.isAlive = true;
+  ws.counter = 0;
+  ws.on("pong", () => {
+    ws.isAlive = true;
+    ws.counter = 0;
+  });
+  ws.on("error", () => {});
+}
+
+/** ["command", params] or null */
+function parseMessage(raw) {
+  try {
+    const message = JSON.parse(raw.toString());
+    return Array.isArray(message) ? message : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 wss.on("connection", (ws, req) => {
   const parts = req.url.split("?")[0].split("/").filter(Boolean);
   // /lobby/<playerId>
   if (parts[0] === "lobby" && parts.length === 2 && VALID_ID.test(parts[1])) {
     const id = parts[1];
-    ws.isAlive = true;
-    ws.counter = 0;
-    ws.on("pong", () => {
-      ws.isAlive = true;
-      ws.counter = 0;
-    });
-    ws.on("error", () => {});
+    watchSocket(ws);
     lobby.connect(ws, id);
     ws.on("close", () => lobby.disconnect(ws, id));
     ws.on("message", (raw, isBinary) => {
       if (isBinary || ++ws.counter > 120) return;
-      let command, params;
-      try {
-        [command, params] = JSON.parse(raw.toString());
-      } catch (e) {
-        return;
-      }
+      const message = parseMessage(raw);
+      if (!message) return;
+      const [command, params] = message;
       if (command === "ping") return ws.send('["pong"]');
       lobby.receive(id, command, params);
     });
@@ -266,24 +275,15 @@ wss.on("connection", (ws, req) => {
     return ws.close(1000, "Geçersiz oda");
   }
   ws.playerId = playerId;
-  ws.isAlive = true;
-  ws.counter = 0;
-  ws.on("pong", () => {
-    ws.isAlive = true;
-    ws.counter = 0;
-  });
-  ws.on("error", () => {});
+  watchSocket(ws);
   // messages that arrive while the room is being loaded wait here
   const queue = [];
   let entry = null;
   const handle = (raw) => {
     if (++ws.counter > 150) return ws.close(1000, "Çok fazla mesaj");
-    let command, params;
-    try {
-      [command, params] = JSON.parse(raw.toString());
-    } catch (e) {
-      return;
-    }
+    const message = parseMessage(raw);
+    if (!message) return;
+    const [command, params] = message;
     if (command === "ping") return ws.send('["pong"]');
     if (command === "visible") {
       ws.visible = params !== false;
@@ -662,9 +662,9 @@ updater.start({
   },
 });
 
-// Render's free plan sleeps after 15 idle minutes, which makes the first
-// visit slow. Stay awake during typical playing hours (Istanbul time).
-const SELF_URL = process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL;
+// The host stops idle Node apps, which makes the first visit slow. Stay
+// awake during typical playing hours (Istanbul time).
+const SELF_URL = process.env.PUBLIC_URL;
 const AWAKE_FROM = parseInt(process.env.AWAKE_FROM || "10", 10);
 const AWAKE_TO = parseInt(process.env.AWAKE_TO || "2", 10);
 if (SELF_URL && process.env.KEEP_AWAKE !== "false") {
