@@ -34,7 +34,7 @@
         <span v-for="i in 3" :key="'b' + i" class="bat" :style="bat(i)"
           >🦇</span
         >
-        <span class="vampire">🧛</span>
+        <img class="char left lunge" :src="art('vampir')" alt="" />
         <span class="victim">
           <Avatar :name="e.name" :size="avatarSize" />
           <span class="drop">🩸</span>
@@ -42,7 +42,7 @@
       </template>
 
       <template v-else-if="e.type === 'shot'">
-        <span class="bow">🏹</span>
+        <img class="char left" :src="art('avci')" alt="" />
         <span class="arrow">➶</span>
         <span class="victim">
           <Avatar :name="e.name" :size="avatarSize" />
@@ -50,7 +50,7 @@
       </template>
 
       <template v-else-if="e.type === 'poison'">
-        <span class="potion-big">🧪</span>
+        <img class="char left" :src="art('cadi')" alt="" />
         <span v-for="i in 5" :key="'bub' + i" class="bubble" :style="spark(i)"
           >🫧</span
         >
@@ -60,6 +60,12 @@
       </template>
 
       <template v-else-if="e.type === 'grief' || e.type === 'lovers'">
+        <img
+          class="char mid"
+          :class="{ gray: e.type === 'grief' }"
+          :src="art('asiklar')"
+          alt=""
+        />
         <span class="heart" :class="{ broken: e.type === 'grief' }">{{
           e.type === "grief" ? "💔" : "💘"
         }}</span>
@@ -74,9 +80,9 @@
       </template>
 
       <template v-else-if="e.type === 'saved'">
-        <span class="vampire left">🧛</span>
+        <img class="char left" :src="art('vampir')" alt="" />
         <span class="shield">🛡️</span>
-        <span class="doctor">🩺</span>
+        <img class="char right" :src="art('doktor')" alt="" />
       </template>
 
       <template v-else-if="e.type === 'day'">
@@ -128,6 +134,12 @@
         <span class="victim swing">
           <Avatar :name="e.name" :size="avatarSize" dead />
         </span>
+        <img
+          v-if="e.role && art(e.role)"
+          class="char right reveal"
+          :src="art(e.role)"
+          alt=""
+        />
         <span class="crow">🐦‍⬛</span>
       </template>
 
@@ -154,16 +166,17 @@
       <template v-else-if="e.type === 'win'">
         <template v-if="e.winner === 'vampir'">
           <span class="moon red">🌕</span>
-          <span class="vampire big">🧛</span>
+          <img class="char mid big" :src="art('vampir')" alt="" />
           <span v-for="i in 5" :key="'vb' + i" class="bat" :style="bat(i)"
             >🦇</span
           >
         </template>
         <template v-else-if="e.winner === 'deli'">
-          <span class="trophy">🤡</span>
+          <img class="char mid big" :src="art('deli')" alt="" />
         </template>
         <template v-else>
-          <span class="trophy">🏆</span>
+          <img class="char mid big" :src="art('koylu')" alt="" />
+          <span class="trophy small">🏆</span>
         </template>
         <span
           v-for="i in 18"
@@ -206,6 +219,7 @@
 
 <script>
 import Avatar from "./Avatar";
+import { roleArt } from "../roleArt";
 
 export const ROLE_NAMES = {
   vampir: "Vampir",
@@ -360,6 +374,9 @@ export default {
     },
   },
   methods: {
+    art(role) {
+      return roleArt(role);
+    },
     seed(i) {
       return ((this.e.n || 1) * 37 + i * 101) % 97;
     },
@@ -520,6 +537,62 @@ export default {
   left: -15%;
   animation: fly 3s linear infinite;
   font-size: 0.8em;
+}
+/* character artwork standing at the bottom of the scene */
+.char {
+  bottom: 0;
+  height: 82%;
+  width: auto;
+  pointer-events: none;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.7));
+  animation: char-in 0.9s cubic-bezier(0.2, 1.2, 0.4, 1) both;
+  .full & {
+    height: 58%;
+    bottom: 12%;
+  }
+  &.left {
+    left: -6%;
+  }
+  &.right {
+    right: -6%;
+  }
+  &.mid {
+    left: 50%;
+    margin-left: -30%;
+  }
+  &.big {
+    height: 92%;
+    .full & {
+      height: 66%;
+    }
+  }
+  &.lunge {
+    animation:
+      char-in 0.9s cubic-bezier(0.2, 1.2, 0.4, 1) both,
+      lunge 2.2s ease-in-out 0.9s infinite;
+  }
+  &.gray {
+    filter: grayscale(0.85) brightness(0.8)
+      drop-shadow(0 8px 18px rgba(0, 0, 0, 0.7));
+  }
+  &.reveal {
+    height: 60%;
+    opacity: 0.9;
+    animation: char-in 1.2s ease-out 1.2s both;
+    filter: grayscale(0.6) drop-shadow(0 0 18px rgba(255, 60, 60, 0.6));
+  }
+}
+@keyframes char-in {
+  from {
+    opacity: 0;
+    transform: translateY(18%) scale(0.92);
+  }
+}
+.stage .trophy.small {
+  font-size: 0.7em;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
 }
 .vampire {
   left: 12%;

@@ -34,7 +34,13 @@
         @click="game.roleCardOpen = true"
         :class="myRole.team"
       >
-        <span class="em">{{ myRole.emoji }}</span>
+        <img
+          v-if="artOf(s.me.role)"
+          class="em face"
+          :src="artOf(s.me.role)"
+          alt=""
+        />
+        <span class="em" v-else>{{ myRole.emoji }}</span>
         <span>
           <b>{{ myRole.name }}</b>
           <small>{{
@@ -187,7 +193,7 @@
           <div class="chips" v-if="s.setup">
             <template v-for="(count, role) in s.setup">
               <span class="chip" v-if="count && s.roles[role]" :key="role">
-                {{ s.roles[role].emoji }}
+                <img class="mini" :src="artOf(role)" alt="" />
                 {{ count > 1 ? count + " " : "" }}{{ s.roles[role].name }}
               </span>
             </template>
@@ -318,7 +324,8 @@
               :class="{ on: s.settings[r] }"
               @click="setting(r, !s.settings[r])"
             >
-              {{ s.roles[r].emoji }} {{ s.roles[r].name }}
+              <img class="mini" :src="artOf(r)" alt="" />
+              {{ s.roles[r].name }}
             </button>
             <button
               class="cat"
@@ -447,7 +454,13 @@
                 <span class="who" v-if="c.taken && !c.role">{{ c.by }}</span>
               </span>
               <span class="front" v-if="c.role">
-                <span class="em">{{ s.roles[c.role].emoji }}</span>
+                <img
+                  v-if="artOf(c.role)"
+                  class="card-art"
+                  :src="artOf(c.role, false)"
+                  alt=""
+                />
+                <span class="em" v-else>{{ s.roles[c.role].emoji }}</span>
                 <span class="rn">{{ s.roles[c.role].name }}</span>
                 <span class="who" v-if="isSt && c.by">{{ c.by }}</span>
               </span>
@@ -872,7 +885,14 @@
                   r.emoji
                 }}</span></span
               >
-              <small :class="p.role">{{ roleName(p.role) }}</small>
+              <small :class="p.role" class="rolename"
+                ><img
+                  v-if="artOf(p.role)"
+                  class="mini"
+                  :src="artOf(p.role)"
+                  alt=""
+                />{{ roleName(p.role) }}</small
+              >
             </div>
           </div>
           <button
@@ -946,7 +966,14 @@
                 r.emoji
               }}</span></span
             >
-            <small v-if="p.role" :class="p.role">{{ roleName(p.role) }}</small>
+            <small v-if="p.role" :class="p.role" class="rolename"
+              ><img
+                v-if="artOf(p.role)"
+                class="mini"
+                :src="artOf(p.role)"
+                alt=""
+              />{{ roleName(p.role) }}</small
+            >
             <small v-else-if="p.pid === s.me.pid" class="muted">sen</small>
             <span class="note-tag" v-if="noteOf(p.pid).tag">{{
               tags[noteOf(p.pid).tag].emoji
@@ -1057,6 +1084,7 @@ import {
   setRoomPassword,
 } from "../game";
 import qrcode from "qrcode-generator";
+import { roleArt } from "../roleArt";
 import { pickPhoto } from "../photo";
 import { unlockVoice } from "../voice";
 import Avatar from "./Avatar";
@@ -1429,6 +1457,9 @@ export default {
     clearInterval(this.timer);
   },
   methods: {
+    artOf(role, small = true) {
+      return roleArt(role, small);
+    },
     reactsFor(pid) {
       return this.game.reactions.filter((r) => r.to === pid);
     },
@@ -1725,6 +1756,14 @@ h3 {
   .em {
     font-size: 34px;
   }
+  .face {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid $gold;
+    flex: 0 0 auto;
+  }
   b {
     display: block;
     font-size: 18px;
@@ -1937,12 +1976,32 @@ h3 {
     transform: rotateY(180deg);
     border: 2px solid $gold;
     background: radial-gradient(circle at 50% 35%, #2a2f5c, #0b0d1c 80%);
+    overflow: hidden;
+    justify-content: flex-end;
     .em {
       font-size: 32px;
+      margin: auto 0;
+    }
+    .card-art {
+      position: absolute;
+      inset: 4% 0 0;
+      width: 100%;
+      height: 96%;
+      object-fit: cover;
+      object-position: 50% 8%;
     }
     .rn {
+      position: relative;
+      width: 100%;
+      text-align: center;
       font-weight: 800;
       font-size: 13px;
+      padding: 14px 2px 4px;
+      background: linear-gradient(transparent, rgba(0, 0, 0, 0.85) 45%);
+    }
+    .who {
+      position: relative;
+      margin-bottom: 4px;
     }
   }
   .who {
@@ -2379,10 +2438,30 @@ h3 {
   gap: 6px;
 }
 .chip {
-  padding: 5px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 3px;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.08);
   font-size: 14px;
+}
+.rolename {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  img.mini {
+    width: 20px;
+    height: 20px;
+  }
+}
+img.mini {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  vertical-align: middle;
+  background: rgba(0, 0, 0, 0.3);
 }
 .settings {
   display: grid;

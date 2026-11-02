@@ -8,7 +8,11 @@
     >
       <div class="inner">
         <div class="eyebrow">Senin rolün</div>
-        <div class="emoji">{{ role.emoji }}</div>
+        <div class="art-wrap" v-if="art">
+          <span class="halo"></span>
+          <img class="art" :src="art" :alt="role.name" />
+        </div>
+        <div class="emoji" v-else>{{ role.emoji }}</div>
         <h2>{{ role.name }}</h2>
         <div class="team">
           {{
@@ -23,8 +27,11 @@
         <p class="mates" v-if="mates.length">
           Diğer vampirler: <b>{{ mates.join(", ") }}</b>
         </p>
-        <p class="mates" v-if="state.lover">
-          💘 Aşık oldun: <b>{{ state.lover.name }}</b>
+        <p class="mates lover" v-if="state.lover">
+          <img :src="loversArt" alt="" />
+          <span
+            >💘 Aşık oldun: <b>{{ state.lover.name }}</b></span
+          >
         </p>
         <p class="secret">Gizli tut! Bunu sadece sen görüyorsun.</p>
         <button class="btn primary" @click="close">Anladım</button>
@@ -42,6 +49,7 @@
 
 <script>
 import { game, toast } from "../game";
+import { roleArt } from "../roleArt";
 import { enableNotifications, notificationState } from "../notifications";
 
 export default {
@@ -51,6 +59,12 @@ export default {
   computed: {
     state() {
       return game.state;
+    },
+    art() {
+      return this.state && roleArt(this.state.me.role);
+    },
+    loversArt() {
+      return roleArt("asiklar", true);
     },
     role() {
       const s = this.state;
@@ -96,6 +110,7 @@ export default {
   align-items: center;
   justify-content: center;
   padding: 18px;
+  overflow-y: auto;
   background: radial-gradient(circle at 50% 35%, #1a2348, #03040a 75%);
   &.vampir {
     background: radial-gradient(circle at 50% 35%, #4a0910, #03040a 75%);
@@ -111,6 +126,75 @@ export default {
   letter-spacing: 0.25em;
   font-size: 13px;
   color: $muted;
+}
+.art-wrap {
+  position: relative;
+  height: min(42vh, 360px);
+  margin: 4px auto -10px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  .art {
+    position: relative;
+    height: 100%;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.75));
+    animation: art-in 0.8s cubic-bezier(0.2, 1.2, 0.4, 1) both;
+    -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent);
+    mask-image: linear-gradient(180deg, #000 82%, transparent);
+  }
+  .halo {
+    position: absolute;
+    left: 50%;
+    top: 45%;
+    width: 80%;
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      rgba(233, 180, 76, 0.45),
+      rgba(233, 180, 76, 0) 65%
+    );
+    animation: halo 3s ease-in-out infinite;
+  }
+}
+.vampir .halo {
+  background: radial-gradient(circle, rgba(255, 40, 60, 0.5), transparent 65%);
+}
+.deli .halo {
+  background: radial-gradient(
+    circle,
+    rgba(170, 90, 255, 0.45),
+    transparent 65%
+  );
+}
+@keyframes art-in {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+  }
+}
+@keyframes halo {
+  50% {
+    transform: translate(-50%, -50%) scale(1.12);
+    opacity: 0.7;
+  }
+}
+.lover {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ff6b9a;
+  }
 }
 .emoji {
   font-size: 110px;
