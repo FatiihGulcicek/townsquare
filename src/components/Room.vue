@@ -1407,9 +1407,6 @@ export default {
         ? "Tebrikler, kazandın! 🏆"
         : "Bu sefer kaybettin.";
     },
-    reversedLog() {
-      return this.s.log.slice().reverse();
-    },
   },
   watch: {
     "s.gameId": {
@@ -1619,12 +1616,6 @@ export default {
     vote(target) {
       if (!this.canVote) return;
       this.act("vote", { target: this.myVote === target ? null : target });
-    },
-    stToggle(p) {
-      const verb = p.alive ? "öldürülsün" : "diriltilsin";
-      if (confirm(`${p.name} ${verb} mi?`)) {
-        this.act(p.alive ? "kill" : "revive", { target: p.pid });
-      }
     },
   },
 };

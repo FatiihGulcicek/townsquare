@@ -83,16 +83,12 @@ import { setMood, setTheme } from "./music";
 import { pwaState, applyUpdate } from "./pwa";
 import { lobby, startLobby, acceptInvite, declineInvite } from "./lobby";
 import { game, restore, join } from "./game";
+import { getItem, setItem } from "./storage";
 
 export default {
   components: { Home, Room, RoleCard, Settings, LiveStory, Welcome },
   data() {
-    let onboarding = true;
-    try {
-      onboarding = localStorage.getItem("vkOnboarded") !== "1";
-    } catch (e) {
-      // ignore
-    }
+    const onboarding = getItem("vkOnboarded") !== "1";
     return {
       game,
       settingsOpen: false,
@@ -165,11 +161,7 @@ export default {
       acceptInvite();
     },
     finishOnboarding() {
-      try {
-        localStorage.setItem("vkOnboarded", "1");
-      } catch (e) {
-        // ignore
-      }
+      setItem("vkOnboarded", "1");
       this.onboarding = false;
       restore();
     },
@@ -252,7 +244,7 @@ body {
     left: 0;
     right: -22%;
     bottom: -22%;
-    background: url("assets/background.jpg") 40% top / cover no-repeat;
+    background: url("assets/background.webp") 40% top / cover no-repeat;
   }
 }
 .night-sky {

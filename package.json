@@ -1,15 +1,14 @@
 {
-  "name": "townsquare",
-  "version": "2.16.2",
-  "description": "Blood on the Clocktower Town Square",
-  "author": "Steffen Baumgart",
+  "name": "vampir-koylu",
+  "version": "3.0.0",
+  "description": "Vampir Köylü · Kasaba Meydanı",
+  "author": "FatiihGulcicek",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build ./src/main.js",
     "lint": "vue-cli-service lint",
-    "lint-ci": "vue-cli-service lint --no-fix --max-warnings=0"
+    "start": "node server/index.js"
   },
-  "main": "App.vue",
   "dependencies": {
     "@fontsource/cinzel": "^5.3.0",
     "@vue/cli-service": "^5.0.8",
@@ -31,14 +30,15 @@
     "prettier": "^3.0.3"
   },
   "keywords": [
-    "botc",
-    "townsquare",
+    "vampir-koylu",
+    "werewolf",
+    "mafia",
     "vue",
-    "scss"
+    "pwa"
   ],
   "license": "GPL-3.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com//bra1n/townsquare.git"
+    "url": "https://github.com/FatiihGulcicek/townsquare.git"
   }
 }

@@ -35,3 +35,23 @@ Ortam değişkeni ekleyip değiştirince: Setup Node.js App → **Run JS script*
 - `vk_profiles`: oyuncular (ad, oyun, galibiyet, rol istatistikleri)
 - `vk_games`, `vk_game_players`: biten oyunlar
 - `vk_rooms`: açık odalar (sunucu yeniden başlarsa oyunlar kaldığı yerden devam eder)
+
+## Ses/görüntü için aktarma sunucusu (TURN, isteğe bağlı)
+Bazı mobil operatörler telefonların birbirine doğrudan bağlanmasını engeller;
+o zaman sesli/kameralı sohbet bazı kişiler arasında kurulamaz. Ücretsiz bir
+TURN hesabı bunu çözer:
+
+1. https://www.metered.ca/stun-turn adresinden ücretsiz hesap aç.
+2. Setup Node.js App → Environment variables'a ekle: `TURN_URL` (virgülle
+   birden fazla olabilir), `TURN_USERNAME`, `TURN_CREDENTIAL`.
+3. SAVE, sonra **Run JS script → restart**.
+
+## Tüm ayarlar
+| Ad | Ne işe yarar |
+| --- | --- |
+| `DB_NAME`, `DB_USER`, `DB_PASS` | MySQL bağlantısı (`DB_HOST` varsayılan `localhost`) |
+| `PUBLIC_URL` | sitenin adresi (`https://darkspire.co`) |
+| `PUSH_SECRET` | bildirim anahtarı; değişirse herkes bildirimleri yeniden açmalı |
+| `TURN_URL`, `TURN_USERNAME`, `TURN_CREDENTIAL` | isteğe bağlı aktarma sunucusu |
+| `AUTO_UPDATE` | `0` yazılırsa otomatik güncelleme kapanır |
+| `MAX_ROOMS` | aynı anda en fazla oda (varsayılan 200) |

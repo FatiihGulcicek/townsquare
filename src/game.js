@@ -2,6 +2,7 @@ import Vue from "vue";
 import { speak } from "./voice";
 import { getPushSubscription, onPushSubscription } from "./push";
 import { play } from "./sfx";
+import { getItem, setItem, getJSON, setJSON } from "./storage";
 import {
   onCosmeticsChange,
   recordGame,
@@ -24,16 +25,8 @@ import {
  * Connection to a Vampir Köylü room. The server is the source of truth: it
  * sends this player's personal view of the game ("state") after every change.
  */
-const store = (key, value) => {
-  try {
-    if (value === undefined) return localStorage.getItem(key);
-    if (value === null) localStorage.removeItem(key);
-    else localStorage.setItem(key, value);
-  } catch (e) {
-    // private mode
-  }
-  return null;
-};
+const store = (key, value) =>
+  value === undefined ? getItem(key) : setItem(key, value);
 
 function newId() {
   const bytes = new Uint8Array(12);
@@ -64,35 +57,30 @@ export const game = Vue.observable({
   reactions: [], // flying emoji {id, to, emoji}
 });
 
-const readJSON = (key, fallback) => {
-  try {
-    return JSON.parse(store(key) || "") || fallback;
-  } catch (e) {
-    return fallback;
-  }
-};
-
 /** rooms this phone created (to open them again with the same code) */
 export function savedRooms() {
-  return readJSON("vkRooms", []);
+  return getJSON("vkRooms", []);
 }
 function rememberRoom(code, mode) {
   const list = savedRooms().filter((r) => r.code !== code);
   list.unshift({ code, mode, at: Date.now() });
-  store("vkRooms", JSON.stringify(list.slice(0, 8)));
+  setJSON("vkRooms", list.slice(0, 8));
 }
 export function forgetRoom(code) {
-  store("vkRooms", JSON.stringify(savedRooms().filter((r) => r.code !== code)));
+  setJSON(
+    "vkRooms",
+    savedRooms().filter((r) => r.code !== code),
+  );
 }
 
 /** people you played with on this phone */
 export function friends() {
-  return Object.values(readJSON("vkFriends", {})).sort(
+  return Object.values(getJSON("vkFriends", {})).sort(
     (a, b) => b.last - a.last,
   );
 }
 function rememberFriends(state) {
-  const all = readJSON("vkFriends", {});
+  const all = getJSON("vkFriends", {});
   state.players
     .filter((p) => !p.bot && p.pid !== state.me.pid)
     .forEach((p) => {
@@ -103,13 +91,9 @@ function rememberFriends(state) {
   const trimmed = Object.values(all)
     .sort((a, b) => b.last - a.last)
     .slice(0, 40);
-  store(
+  setJSON(
     "vkFriends",
-    JSON.stringify(
-      Object.fromEntries(
-        trimmed.map((f) => [f.name.toLocaleLowerCase("tr"), f]),
-      ),
-    ),
+    Object.fromEntries(trimmed.map((f) => [f.name.toLocaleLowerCase("tr"), f])),
   );
 }
 

@@ -68,25 +68,6 @@ export function registerServiceWorker() {
   });
 }
 
-/** Reads ?action=host|join|reference|night from home screen shortcuts. */
-export function takeLaunchAction() {
-  const params = new URLSearchParams(window.location.search);
-  const action = params.get("action");
-  if (action || params.get("source")) {
-    params.delete("action");
-    params.delete("source");
-    const query = params.toString();
-    window.history.replaceState(
-      null,
-      "",
-      window.location.pathname +
-        (query ? "?" + query : "") +
-        window.location.hash,
-    );
-  }
-  return action;
-}
-
 /*
  * New version check: every build has an id; when the server has a newer one
  * the app shows a "new version" banner. Updating refreshes the cached shell.

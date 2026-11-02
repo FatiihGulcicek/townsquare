@@ -1,4 +1,5 @@
 import Vue from "vue";
+import { getJSON, setJSON, setItem, storedKeys } from "./storage";
 
 /*
  * Private notebook: your own tags and notes about the other players.
@@ -16,28 +17,16 @@ export function useNotes(code, gameId) {
   const key = "vkNotes:" + code + ":" + gameId;
   if (notes.key === key) return;
   notes.key = key;
-  try {
-    notes.map = JSON.parse(localStorage.getItem(key) || "{}");
-  } catch (e) {
-    notes.map = {};
-  }
+  notes.map = getJSON(key, {});
   // forget notebooks of old games
-  try {
-    Object.keys(localStorage)
-      .filter((k) => k.startsWith("vkNotes:") && k !== key)
-      .slice(0, -3)
-      .forEach((k) => localStorage.removeItem(k));
-  } catch (e) {
-    // ignore
-  }
+  storedKeys()
+    .filter((k) => k.startsWith("vkNotes:") && k !== key)
+    .slice(0, -3)
+    .forEach((k) => setItem(k, null));
 }
 
 export function setNote(pid, patch) {
   const current = notes.map[pid] || { tag: "", text: "" };
   Vue.set(notes.map, pid, { ...current, ...patch });
-  try {
-    localStorage.setItem(notes.key, JSON.stringify(notes.map));
-  } catch (e) {
-    // ignore
-  }
+  setJSON(notes.key, notes.map);
 }

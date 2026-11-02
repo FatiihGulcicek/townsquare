@@ -1,5 +1,6 @@
 import Vue from "vue";
 import { lang, t } from "./i18n";
+import { getFlag, setFlag } from "./storage";
 
 /*
  * Spoken narration (Turkish text-to-speech through the browser).
@@ -11,16 +12,9 @@ const synth =
     ? window.speechSynthesis
     : null;
 
-let stored = false;
-try {
-  stored = localStorage.getItem("voice") === "on";
-} catch (e) {
-  // ignore
-}
-
 export const voiceState = Vue.observable({
   supported: !!synth,
-  enabled: stored && !!synth,
+  enabled: getFlag("voice", false) && !!synth,
   unlocked: false,
 });
 
@@ -81,11 +75,7 @@ export function unlockVoice() {
 
 export function setVoice(enabled) {
   voiceState.enabled = !!enabled && !!synth;
-  try {
-    localStorage.setItem("voice", voiceState.enabled ? "on" : "off");
-  } catch (e) {
-    // ignore
-  }
+  setFlag("voice", voiceState.enabled);
   if (voiceState.enabled) {
     unlockVoice();
     speak("Sesli anlatım açık.");

@@ -3,23 +3,12 @@ import { game, join, createRoom, toast } from "./game";
 import { getPushSubscription, onPushSubscription } from "./push";
 import { progress, levelFor } from "./progress";
 import { play } from "./sfx";
+import { getJSON, setJSON, getFlag, setFlag } from "./storage";
 
 /*
  * Connection to the town square: who is on the site, the shared chat and
  * invitations. Stays open the whole time the app is open.
  */
-let notifyStored = "on";
-let blockedStored = [];
-try {
-  blockedStored = JSON.parse(localStorage.getItem("vkBlocked") || "[]");
-} catch (e) {
-  // ignore
-}
-try {
-  notifyStored = localStorage.getItem("vkArrivals") || "on";
-} catch (e) {
-  // ignore
-}
 
 export const lobby = Vue.observable({
   connected: false,
@@ -28,8 +17,8 @@ export const lobby = Vue.observable({
   chat: [],
   invite: null, // { from, code }
   invited: {}, // pub -> time I invited them
-  notifyArrivals: notifyStored === "on",
-  blocked: Array.isArray(blockedStored) ? blockedStored : [], // [{ pub, name }]
+  notifyArrivals: getFlag("vkArrivals", true),
+  blocked: [].concat(getJSON("vkBlocked", [])), // [{ pub, name }]
 });
 
 export function isBlocked(pub) {
@@ -37,11 +26,7 @@ export function isBlocked(pub) {
 }
 
 function saveBlocked() {
-  try {
-    localStorage.setItem("vkBlocked", JSON.stringify(lobby.blocked));
-  } catch (e) {
-    // ignore
-  }
+  setJSON("vkBlocked", lobby.blocked);
 }
 
 /** hide someone's messages and invitations, on this phone and on the server */
@@ -190,11 +175,7 @@ export function declineInvite() {
 
 export function setArrivalNotifications(on) {
   lobby.notifyArrivals = on;
-  try {
-    localStorage.setItem("vkArrivals", on ? "on" : "off");
-  } catch (e) {
-    // ignore
-  }
+  setFlag("vkArrivals", on);
   lobbyHello();
 }
 

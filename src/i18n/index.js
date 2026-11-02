@@ -8,14 +8,11 @@ import en1 from "./en1";
 import en2 from "./en2";
 import en3 from "./en3";
 import en4 from "./en4";
+import { getItem, setItem } from "../storage";
 
 function readLang() {
-  try {
-    const saved = localStorage.getItem("vkLang");
-    if (saved === "tr" || saved === "en") return saved;
-  } catch (e) {
-    // ignore
-  }
+  const saved = getItem("vkLang");
+  if (saved === "tr" || saved === "en") return saved;
   const nav = (navigator.language || "tr").toLowerCase();
   return nav.startsWith("tr") ? "tr" : "en";
 }
@@ -23,11 +20,7 @@ function readLang() {
 export const lang = readLang();
 
 export function setLang(value) {
-  try {
-    localStorage.setItem("vkLang", value);
-  } catch (e) {
-    // ignore
-  }
+  setItem("vkLang", value);
   location.reload();
 }
 

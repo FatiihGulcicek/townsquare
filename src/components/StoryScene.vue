@@ -435,7 +435,7 @@ export default {
     left: 0;
     right: -25%;
     bottom: -25%;
-    background: url("../assets/background.jpg") 40% 30% / cover no-repeat;
+    background: url("../assets/background.webp") 40% 30% / cover no-repeat;
   }
   &::after {
     content: "";

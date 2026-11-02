@@ -10,6 +10,6 @@
 - If package.json dependencies change, the updater runs npm install itself.
 - New environment variables (cPanel → Setup Node.js App) only apply after the
   running copy stops: cPanel → Setup Node.js App → Run JS script → `restart`.
-- Database: `server/db-mysql.js` (tables `vk_*`, created on start).
+- Database: `server/db.js` (tables `vk_*`, created on start).
 - UI language: Turkish source text, English via `src/i18n/en*.js`; add new
   strings there.

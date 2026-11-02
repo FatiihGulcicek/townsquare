@@ -12,14 +12,11 @@ yüklemek gerekmez.
   (https://play.google.com/console/signup)
 - Bir Android telefon (test için)
 - **12 test kullanıcısı** (aşağıya bak)
-- İsteğe bağlı ama önerilir: kendi alan adın (bkz. `ALAN_ADI.md`). Paket
-  adresi sonradan değişirse uygulamayı yeniden yayınlaman gerekir; o yüzden
-  alan adını Play'den önce almak en iyisi.
 
 ## 1. Android paketini oluştur (PWABuilder, kod yazmadan)
 
 1. https://www.pwabuilder.com adresine git, sitenin adresini yaz
-   (`https://townsquare-jqei.onrender.com` ya da kendi alan adın) →
+   (`https://darkspire.co`) →
    **Start**.
 2. **Package For Stores → Android → Generate Package**.
 3. Ayarlar:
@@ -33,9 +30,10 @@ yüklemek gerekmez.
      klasöre koy.
    - `assetlinks.json` → içindeki `sha256_cert_fingerprints` değeri lazım.
 
-## 2. Siteyi uygulamaya bağla (Render)
+## 2. Siteyi uygulamaya bağla (cPanel)
 
-Render → townsquare servisi → **Environment** → şu iki değişkeni ekle:
+cPanel → **Setup Node.js App** → uygulama → **Environment variables** → şu iki
+değişkeni ekle, sonra **Run JS script → restart**:
 
 | Anahtar | Değer |
 | --- | --- |

@@ -6,7 +6,7 @@
  * starts, their character arrives, the automatic storyteller wakes them) and
  * their app is in the background or closed, the server sends a push message.
  *
- * VAPID keys are derived from PUSH_SECRET (or METRICS_TOKEN) so they survive
+ * VAPID keys are derived from PUSH_SECRET so they survive
  * restarts. Without a secret a random key is used; clients notice the changed
  * key and subscribe again.
  */
@@ -27,9 +27,7 @@ const b64url = (buf) =>
     .replace(/=+$/, "");
 
 const SECRET =
-  process.env.PUSH_SECRET ||
-  process.env.METRICS_TOKEN ||
-  crypto.randomBytes(32).toString("hex");
+  process.env.PUSH_SECRET || crypto.randomBytes(32).toString("hex");
 
 let publicKey = "";
 if (webpush) {
@@ -41,8 +39,9 @@ if (webpush) {
     const ecdh = crypto.createECDH("prime256v1");
     ecdh.setPrivateKey(privateKey);
     publicKey = b64url(ecdh.getPublicKey());
-    const host =
-      process.env.RENDER_EXTERNAL_HOSTNAME || process.env.PUBLIC_HOSTNAME;
+    const host = process.env.PUBLIC_URL
+      ? new URL(process.env.PUBLIC_URL).hostname
+      : null;
     const subject =
       process.env.PUSH_SUBJECT ||
       (host

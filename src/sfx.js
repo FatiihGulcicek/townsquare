@@ -1,18 +1,13 @@
 import Vue from "vue";
+import { getFlag, setFlag } from "./storage";
 
 /*
  * Small sound effects synthesised with Web Audio (no sound files to load).
  * Browsers only allow audio after a tap, so unlock() runs on the first tap.
  */
 let ctx = null;
-let stored = "on";
-try {
-  stored = localStorage.getItem("vkSfx") || "on";
-} catch (e) {
-  // ignore
-}
 
-export const sfxState = Vue.observable({ enabled: stored === "on" });
+export const sfxState = Vue.observable({ enabled: getFlag("vkSfx", true) });
 
 function context() {
   if (!ctx) {
@@ -34,11 +29,7 @@ export function unlockSfx() {
 
 export function setSfx(on) {
   sfxState.enabled = on;
-  try {
-    localStorage.setItem("vkSfx", on ? "on" : "off");
-  } catch (e) {
-    // ignore
-  }
+  setFlag("vkSfx", on);
   if (on) play("pop");
 }
 

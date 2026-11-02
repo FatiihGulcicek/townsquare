@@ -57,9 +57,7 @@
         🚪 Odadan çık
       </button>
       <button class="btn ghost" @click="$emit('close')">Kapat</button>
-      <p class="credit muted">
-        Görseller ve logo: Vampir Köylü · darkspire.co
-      </p>
+      <p class="credit muted">Görseller ve logo: Vampir Köylü · darkspire.co</p>
     </div>
     <Profile v-if="profile" @close="profile = false" />
   </div>

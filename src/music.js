@@ -1,19 +1,14 @@
 import Vue from "vue";
+import { getFlag, setFlag } from "./storage";
 
 /*
  * Atmosphere music, generated live with Web Audio (no files to download):
  * a soft drone plus slow notes, different for the night, the day, the
  * waiting room and the end of the game.
  */
-let stored = "off";
-try {
-  stored = localStorage.getItem("vkMusic") || "off";
-} catch (e) {
-  // ignore
-}
 
 export const musicState = Vue.observable({
-  enabled: stored === "on",
+  enabled: getFlag("vkMusic", false),
   mood: null,
 });
 
@@ -174,11 +169,7 @@ export function setMood(mood) {
 
 export function setMusic(on) {
   musicState.enabled = on;
-  try {
-    localStorage.setItem("vkMusic", on ? "on" : "off");
-  } catch (e) {
-    // ignore
-  }
+  setFlag("vkMusic", on);
   apply();
 }
 

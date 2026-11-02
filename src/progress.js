@@ -1,23 +1,12 @@
 import Vue from "vue";
+import { getJSON, setJSON } from "./storage";
 
 /*
  * Levels, titles, badges and match history. Kept on this phone (and moved
  * along with the profile code), so it works even without the database.
  */
-const read = (key, fallback) => {
-  try {
-    return JSON.parse(localStorage.getItem(key) || "") || fallback;
-  } catch (e) {
-    return fallback;
-  }
-};
-const write = (key, value) => {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (e) {
-    // storage full or private mode
-  }
-};
+const read = getJSON;
+const write = setJSON;
 
 export const TITLES = [
   [1, "Çaylak Köylü"],

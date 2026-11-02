@@ -20,5 +20,7 @@ module.exports = {
   publicPath: "/",
   configureWebpack: {
     plugins: [new VersionFile()],
+    // a game with artwork: the size hints are expected
+    performance: { hints: false },
   },
 };

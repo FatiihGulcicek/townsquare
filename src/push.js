@@ -60,7 +60,7 @@ export async function setupPush() {
     listeners.forEach((fn) => fn(current));
     return current;
   } catch (e) {
-    console.log("push subscription failed", e);
+    // not supported or blocked
     return null;
   }
 }
