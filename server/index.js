@@ -14,6 +14,7 @@ const push = require("./push");
 const { Room } = require("./vk");
 const db = require("./db");
 if (db.init) db.init(); // create the MySQL tables right away
+if (db.enabled()) push.attach(db); // notifications survive restarts
 const { Lobby } = require("./lobby");
 const updater = require("./updater");
 const STARTED = new Date().toISOString();
