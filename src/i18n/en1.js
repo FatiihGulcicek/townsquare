@@ -394,8 +394,8 @@ export default {
     "To get notifications on iPhone while the game is closed, first tap Share → “Add to Home Screen” in Safari and open the app from there.",
   "📲 Ana ekrana ekle": "📲 Add to home screen",
   "🚪 Odadan çık": "🚪 Leave the room",
-  "Arka plan görseli: Ryan Maloney (3D Artist) · Topluluk yapımı, ücretsiz.":
-    "Background image: Ryan Maloney (3D Artist) · Community made, free.",
+  "Görseller ve logo: Vampir Köylü · darkspire.co":
+    "Artwork and logo: Vampire Village · darkspire.co",
   Ayarlar: "Settings",
   Kapat: "Close",
   Aç: "Turn on",

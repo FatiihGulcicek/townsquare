@@ -58,7 +58,7 @@
       </button>
       <button class="btn ghost" @click="$emit('close')">Kapat</button>
       <p class="credit muted">
-        Arka plan görseli: Ryan Maloney (3D Artist) · Topluluk yapımı, ücretsiz.
+        Görseller ve logo: Vampir Köylü · darkspire.co
       </p>
     </div>
     <Profile v-if="profile" @close="profile = false" />
