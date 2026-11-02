@@ -241,6 +241,7 @@ class Room {
       cards: this.cards,
       penalties: this.penalties,
       potions: this.potions,
+      stats: this.stats,
       runoff: this.runoff,
       deathOrder: this.deathOrder,
       events: this.events,
@@ -302,6 +303,8 @@ class Room {
     this.deathOrder = [];
     this.events = [];
     this.potions = { heal: true, poison: true };
+    this.stats = {};
+    this.rightVoters = [];
     this.shot = null;
     this.runoff = null;
     this.chat = { town: [], vampir: [], dead: [] };
@@ -458,6 +461,14 @@ class Room {
     this.update();
   }
 
+  /** small achievements of a player in this game (for badges) */
+  credit(p, key, n = 1) {
+    if (!p) return;
+    if (!this.stats) this.stats = {};
+    const s = this.stats[p.pid] || (this.stats[p.pid] = {});
+    s[key] = (s[key] || 0) + n;
+  }
+
   // ---------- story (animated recap) ----------
 
   /** record an event for the animated story of the game */
@@ -545,6 +556,7 @@ class Room {
     if (!me || !this.shot || this.shot.pid !== me.pid) return;
     if (!target || !target.alive || target === me) return;
     this.shot = null;
+    if (isVamp(target)) this.credit(me, "shotVamp");
     this.kill(target);
     this.story("shot", {
       name: target.name,
@@ -802,6 +814,14 @@ class Room {
         idle: me ? me.idle || 0 : 0,
       },
       penalties: this.phase === "over" ? this.penalties : null,
+      myStats:
+        this.phase === "over" && me
+          ? {
+              ...((this.stats || {})[me.pid] || {}),
+              firstDead: (this.deathOrder || [])[0] === me.pid,
+              lover: !!me.lover,
+            }
+          : null,
       events: this.events || [],
       penaltyCategories: CATEGORIES,
       players: this.players.map((p) => ({
@@ -1437,6 +1457,7 @@ class Room {
     } else if (me.role === "gozcu") {
       if (this.night.gozcu || target.id === id) return;
       this.night.gozcu = target.pid;
+      if (target.role === "vampir") this.credit(me, "found");
       const list = this.seerLog[id] || (this.seerLog[id] = []);
       list.push({
         round: this.round,
@@ -1488,6 +1509,22 @@ class Room {
     }
     this.lastProtected = this.night.doktor;
     this.lastNight = { round: this.round, died: [], saved, witchSaved };
+    if (saved && !witchSaved) {
+      this.credit(
+        this.alive().find((p) => p.role === "doktor"),
+        "save",
+      );
+    }
+    if (witchSaved)
+      this.credit(
+        this.alive().find((p) => p.role === "cadi"),
+        "witchSave",
+      );
+    if (victim && !saved && victim.alive) {
+      this.alive()
+        .filter((p) => isVamp(p) && p !== victim)
+        .forEach((p) => this.credit(p, "kill"));
+    }
     if (victim && !saved && victim.alive) {
       this.kill(victim);
       this.lastNight.died.push({
@@ -1501,6 +1538,12 @@ class Room {
       this.potions.poison = false;
       const t = this.byPid(cadi.poison);
       if (t && t.alive) {
+        if (isVamp(t)) {
+          this.credit(
+            this.alive().find((p) => p.role === "cadi"),
+            "poisonVamp",
+          );
+        }
         this.kill(t);
         poisoned = t;
         this.lastNight.died.push({
@@ -1682,6 +1725,11 @@ class Room {
   hang() {
     const p = this.byPid(this.condemned);
     if (p && p.alive) {
+      if (isVamp(p)) {
+        Object.keys(this.votes || {})
+          .filter((v) => this.votes[v] === p.pid)
+          .forEach((v) => this.credit(this.byPid(v), "rightVote"));
+      }
       this.kill(p);
       this.executed = {
         pid: p.pid,

@@ -2,6 +2,7 @@ import Vue from "vue";
 import { speak } from "./voice";
 import { getPushSubscription, onPushSubscription } from "./push";
 import { play } from "./sfx";
+import { recordGame, penaltyDone, titleFor } from "./progress";
 import {
   bindVoice,
   voiceState,
@@ -200,6 +201,40 @@ function onState(next) {
     next.me.seated
   ) {
     rememberFriends(next);
+    const result = recordGame(next);
+    if (result && result.xp) {
+      setTimeout(() => {
+        toast(`+${result.xp} XP kazandın ⭐`, "success", 5000);
+        if (result.levelUp) {
+          toast(
+            `🎉 Seviye atladın: ${result.levelUp}. seviye · ${titleFor(
+              result.levelUp,
+            )}`,
+            "success",
+            7000,
+          );
+        }
+        result.fresh.forEach((b, i) =>
+          setTimeout(
+            () => {
+              toast(`🏅 Yeni rozet: ${b.emoji} ${b.name}`, "success", 6000);
+              play("win");
+            },
+            1200 * (i + 1),
+          ),
+        );
+      }, 9000);
+    }
+  }
+  // my penalty done: a badge
+  if (next.penalties && next.me.pid) {
+    const mine = next.penalties.find((x) => x.pid === next.me.pid);
+    if (mine && mine.done) {
+      const badge = penaltyDone();
+      if (badge) {
+        toast(`🏅 Yeni rozet: ${badge.emoji} ${badge.name}`, "success", 6000);
+      }
+    }
   }
   if (prev && prev.phase === "day" && next.phase === "day") {
     const before = Object.keys(prev.votes).length;

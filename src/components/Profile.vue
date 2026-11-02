@@ -5,12 +5,86 @@
         <button :class="{ active: tab === 'me' }" @click="tab = 'me'">
           👤 Profilim
         </button>
+        <button :class="{ active: tab === 'badges' }" @click="tab = 'badges'">
+          🏅 Rozetler
+        </button>
+        <button :class="{ active: tab === 'history' }" @click="tab = 'history'">
+          📼 Geçmiş
+        </button>
         <button :class="{ active: tab === 'top' }" @click="openTop">
           🏆 Sıralama
         </button>
       </div>
 
-      <div v-if="loading" class="muted center">Yükleniyor…</div>
+      <template v-if="tab === 'badges'">
+        <p class="muted small">
+          {{ badgeCount }}/{{ badges.length }} rozet açıldı.
+        </p>
+        <div class="badges">
+          <div
+            v-for="b in badges"
+            :key="b.id"
+            class="badge"
+            :class="{ on: !!prog.totals.badges[b.id] }"
+          >
+            <span class="be">{{ b.emoji }}</span>
+            <b>{{ b.name }}</b>
+            <small>{{ b.desc }}</small>
+          </div>
+        </div>
+      </template>
+
+      <template v-else-if="tab === 'history'">
+        <p v-if="!prog.history.length" class="muted">
+          Henüz kayıtlı oyun yok. Oynadığın oyunlar burada birikir; hikâyesini
+          tekrar izleyebilirsin.
+        </p>
+        <div class="match" v-for="g in prog.history" :key="g.key">
+          <div class="mh">
+            <span class="res" :class="{ won: g.won }">{{
+              g.won ? "🏆 Kazandın" : "✖ Kaybettin"
+            }}</span>
+            <span class="muted small"
+              >{{ day(g.at) }} · {{ g.players.length }} kişi ·
+              {{ g.rounds }} gece</span
+            >
+          </div>
+          <div class="ml">
+            <span>{{ roleLabel(g.role) }}</span>
+            <span class="muted small">+{{ g.xp }} XP</span>
+            <button
+              class="btn small"
+              v-if="g.events && g.events.length"
+              @click="replay(g)"
+            >
+              ▶ İzle
+            </button>
+          </div>
+        </div>
+      </template>
+
+      <div class="replay" v-if="replaying" @click="replayNext">
+        <div class="rprog">
+          <span
+            class="fill"
+            :key="replayIndex"
+            @animationend="replayNext"
+          ></span>
+        </div>
+        <button class="rclose" @click.stop="replaying = null">✕</button>
+        <StoryScene
+          :key="'r' + replayIndex"
+          :e="replaying.events[replayIndex]"
+          size="full"
+        />
+      </div>
+
+      <div
+        v-if="loading && (tab === 'me' || tab === 'top')"
+        class="muted center"
+      >
+        Yükleniyor…
+      </div>
 
       <template v-else-if="tab === 'me'">
         <div class="head">
@@ -22,9 +96,39 @@
             </small>
           </div>
         </div>
-        <p v-if="!enabled" class="muted">
-          İstatistikler henüz açılmadı (sunucuya veritabanı anahtarı
-          eklenmemiş).
+        <div class="level">
+          <div class="lv">
+            <b>{{ level }}. seviye</b>
+            <span class="title">{{ title }}</span>
+          </div>
+          <div class="xpbar">
+            <span :style="{ width: levelPct + '%' }"></span>
+          </div>
+          <small class="muted"
+            >{{ prog.totals.xp }} XP · sonraki seviyeye
+            {{ nextXp - prog.totals.xp }} XP</small
+          >
+        </div>
+        <div class="stats" v-if="!enabled || !profile || !profile.games">
+          <div>
+            <b>{{ prog.totals.games }}</b
+            ><span>oyun</span>
+          </div>
+          <div>
+            <b>{{ prog.totals.wins }}</b
+            ><span>galibiyet</span>
+          </div>
+          <div>
+            <b>%{{ rate(prog.totals.wins, prog.totals.games) }}</b
+            ><span>kazanma</span>
+          </div>
+          <div>
+            <b>{{ prog.totals.bestStreak }}</b
+            ><span>en iyi seri</span>
+          </div>
+        </div>
+        <p v-if="!enabled" class="muted small">
+          Bu istatistikler bu telefonda tutuluyor.
         </p>
         <p v-else-if="!profile || !profile.games" class="muted">
           Henüz bitmiş bir oyunun yok. İlk oyunundan sonra istatistiklerin
@@ -98,7 +202,7 @@
         </details>
       </template>
 
-      <template v-else>
+      <template v-else-if="tab === 'top'">
         <p class="muted small">
           En az 3 oyun oynamış oyuncular, galibiyete göre.
         </p>
@@ -122,6 +226,8 @@
 
 <script>
 import Avatar from "./Avatar";
+import StoryScene from "./StoryScene";
+import { progress, BADGES, levelFor, xpForLevel, titleFor } from "../progress";
 import {
   game,
   fetchProfile,
@@ -138,7 +244,7 @@ const ROLE_INFO = {
 };
 
 export default {
-  components: { Avatar },
+  components: { Avatar, StoryScene },
   props: { initialTab: { type: String, default: "me" } },
   data() {
     return {
@@ -149,6 +255,10 @@ export default {
       profile: null,
       top: [],
       importCode: "",
+      prog: progress,
+      badges: BADGES,
+      replaying: null,
+      replayIndex: 0,
     };
   },
   computed: {
@@ -157,6 +267,25 @@ export default {
     },
     since() {
       return new Date(this.profile.since).toLocaleDateString("tr-TR");
+    },
+    level() {
+      return levelFor(this.prog.totals.xp);
+    },
+    title() {
+      return titleFor(this.level);
+    },
+    nextXp() {
+      return xpForLevel(this.level + 1);
+    },
+    levelPct() {
+      const a = xpForLevel(this.level);
+      return Math.min(
+        100,
+        (100 * (this.prog.totals.xp - a)) / (this.nextXp - a),
+      );
+    },
+    badgeCount() {
+      return Object.keys(this.prog.totals.badges).length;
     },
     roleRows() {
       const roles = (this.profile && this.profile.roles) || {};
@@ -179,6 +308,16 @@ export default {
     this.loading = false;
   },
   methods: {
+    replay(g) {
+      this.replayIndex = 0;
+      this.replaying = g;
+    },
+    replayNext() {
+      if (!this.replaying) return;
+      if (this.replayIndex < this.replaying.events.length - 1)
+        this.replayIndex++;
+      else this.replaying = null;
+    },
     rate(w, g) {
       return g ? Math.round((100 * w) / g) : 0;
     },
@@ -230,7 +369,7 @@ export default {
 @import "../vars";
 .tabs {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 14px;
   button {
     flex: 1;
@@ -239,13 +378,143 @@ export default {
     border: 1px solid rgba(255, 255, 255, 0.16);
     background: rgba(255, 255, 255, 0.05);
     color: $text;
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 600;
+    padding: 0 4px;
     &.active {
       border-color: $gold;
       background: rgba(233, 180, 76, 0.18);
     }
   }
+}
+.level {
+  margin: 12px 0;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(233, 180, 76, 0.1);
+  border: 1px solid rgba(233, 180, 76, 0.3);
+  .lv {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    b {
+      font-size: 20px;
+      color: $gold;
+    }
+    .title {
+      font-family: "Cinzel", Georgia, serif;
+      font-weight: 700;
+    }
+  }
+  .xpbar {
+    height: 10px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.12);
+    margin: 8px 0 4px;
+    overflow: hidden;
+    span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, $gold, #ffdf8a);
+    }
+  }
+}
+.badges {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+}
+.badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+  padding: 10px 6px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  filter: grayscale(1);
+  opacity: 0.45;
+  .be {
+    font-size: 30px;
+  }
+  b {
+    font-size: 13px;
+  }
+  small {
+    font-size: 11px;
+    color: $muted;
+  }
+  &.on {
+    filter: none;
+    opacity: 1;
+    border-color: rgba(233, 180, 76, 0.5);
+    background: rgba(233, 180, 76, 0.1);
+  }
+}
+.match {
+  padding: 10px 0;
+  border-bottom: 1px solid $line;
+  .mh,
+  .ml {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .ml {
+    margin-top: 4px;
+  }
+  .res {
+    font-weight: 700;
+    &.won {
+      color: $gold;
+    }
+  }
+  .btn {
+    margin: 0;
+  }
+}
+.replay {
+  position: fixed;
+  inset: 0;
+  z-index: 390;
+  background: black;
+}
+.rprog {
+  position: absolute;
+  z-index: 5;
+  left: 10px;
+  right: 60px;
+  top: calc(14px + env(safe-area-inset-top));
+  height: 3px;
+  background: rgba(255, 255, 255, 0.3);
+  .fill {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: white;
+    animation: rp 4200ms linear forwards;
+  }
+}
+@keyframes rp {
+  to {
+    width: 100%;
+  }
+}
+.rclose {
+  position: absolute;
+  z-index: 6;
+  right: 12px;
+  top: calc(8px + env(safe-area-inset-top));
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(0, 0, 0, 0.4);
+  color: white;
+  font-size: 18px;
 }
 .center {
   text-align: center;
