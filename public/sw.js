@@ -5,7 +5,7 @@
  * - hashed build assets (js/css/img/fonts/media): cache first, they never change
  * - live game traffic (WebSocket) and server endpoints are never cached
  */
-const SHELL = "km-shell-v8";
+const SHELL = "km-shell-v10";
 const ASSETS = "km-assets-v5";
 const MAX_ASSETS = 400;
 
@@ -66,7 +66,10 @@ self.addEventListener("push", (event) => {
       badge: "/static/android-icon-96x96.png",
       tag: data.tag || "kasaba-meydani",
       renotify: true,
-      vibrate: [120, 60, 120],
+      // "your turn" buzzes longer and stays until it is tapped
+      requireInteraction: data.tag === "turn",
+      vibrate:
+        data.tag === "turn" ? [250, 100, 250, 100, 400] : [120, 60, 120],
       data: { url: data.url || "/" },
     }),
   );
@@ -92,6 +95,8 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (/^\/(vk|api|healthz|push|version\.json)/.test(url.pathname)) return;
+  // separate pages (privacy, terms) are not the app: plain network
+  if (/\.html$/.test(url.pathname) && url.pathname !== "/index.html") return;
 
   // app pages: always try the network so updates arrive immediately
   if (request.mode === "navigate") {

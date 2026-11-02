@@ -301,4 +301,15 @@ export default {
     "You can turn blocked permissions back on in your phone settings (Safari/Chrome → this site).",
   "Başla 🎉": "Let's go 🎉",
   "← Geri": "← Back",
+
+  "🤖 Botlar sesli konuşsun": "🤖 Bots talk out loud",
+  "Mikrofon geri alınamadı, sesliden çıkıp tekrar gir.":
+    "Couldn't get the microphone back, leave voice and join again.",
+
+  Gizlilik: "Privacy",
+  "Kullanım şartları": "Terms of use",
+  İletişim: "Contact",
+  "Verilerimi sil": "Delete my data",
+  "Profilin, istatistiklerin, fotoğrafın ve bu telefondaki tüm oyun verilerin silinsin mi? Bu geri alınamaz.":
+    "Delete your profile, stats, photo and all game data on this phone? This cannot be undone.",
 };

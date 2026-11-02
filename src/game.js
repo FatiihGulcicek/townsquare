@@ -1,8 +1,9 @@
 import Vue from "vue";
-import { speak } from "./voice";
+import { speak, speakAs } from "./voice";
 import { getPushSubscription, onPushSubscription } from "./push";
 import { play } from "./sfx";
 import { getItem, setItem, getJSON, setJSON } from "./storage";
+import { keepAwake } from "./wakelock";
 import {
   onCosmeticsChange,
   recordGame,
@@ -155,10 +156,26 @@ function url(code) {
   );
 }
 
+// moves and chat typed while the connection is down are sent on reconnect
+const QUEUED = ["act", "chat"];
+let outbox = [];
+let attempts = 0;
+let openTimer = null;
+
+function flushOutbox() {
+  const fresh = outbox.filter((m) => Date.now() - m.at < 120000);
+  outbox = [];
+  fresh.forEach((m) => send(m.command, m.params));
+}
+
 export function send(command, params) {
-  if (socket && socket.readyState === 1) {
-    socket.send(JSON.stringify([command, params]));
+  if (!socket || socket.readyState !== 1) {
+    if (QUEUED.includes(command) && outbox.length < 30) {
+      outbox.push({ command, params, at: Date.now() });
+    }
+    return;
   }
+  socket.send(JSON.stringify([command, params]));
 }
 
 export function act(type, params = {}) {
@@ -189,6 +206,7 @@ function queueStory(prev, next) {
 }
 
 function onState(next) {
+  keepAwake(!["lobby", "over"].includes(next.phase));
   const prev = game.state;
   game.state = next;
   game.receivedAt = Date.now();
@@ -268,6 +286,10 @@ function onState(next) {
   if (prev && lastChat(next) > lastChat(prev)) {
     const m = next.chat.town[next.chat.town.length - 1];
     if (!m.sys && m.from !== next.me.pid) play("pop");
+    // bots speak their lines out loud
+    next.chat.town
+      .filter((c) => c.bot && c.n > lastChat(prev))
+      .forEach((c) => speakAs(c.from, c.text));
   }
   // a new character: show the card once per game
   voiceState(next.voice);
@@ -307,7 +329,14 @@ function open(code) {
   game.status = "connecting";
   const ws = new WebSocket(url(code));
   socket = ws;
+  // slow mobile networks can hang while connecting: give up and try again
+  clearTimeout(openTimer);
+  openTimer = setTimeout(() => {
+    if (socket === ws && ws.readyState === 0) ws.close();
+  }, 10000);
   ws.onopen = () => {
+    clearTimeout(openTimer);
+    attempts = 0;
     game.status = "online";
     lastMessage = Date.now();
     if (game.name) send("join", { name: game.name });
@@ -318,6 +347,7 @@ function open(code) {
     send("cosmetics", progress.totals.equipped || {});
     presence();
     voiceReconnected();
+    flushOutbox();
   };
   ws.onmessage = (event) => {
     lastMessage = Date.now();
@@ -374,11 +404,17 @@ function open(code) {
     }
     if (!wanted) return;
     game.status = event.code === 1012 ? "connecting" : "offline";
-    // server restart: come back quickly, the room is restored from the database
-    retry = setTimeout(
-      () => wanted && open(game.code),
-      event.code === 1012 ? 1500 : 2000,
-    );
+    // server restart: come back quickly, the room is restored from the database.
+    // Otherwise wait a little longer after each failure (1s, 2s, 4s … 15s).
+    const delay =
+      event.code === 1012
+        ? 1500
+        : Math.min(15000, 1000 * 2 ** attempts++) + Math.random() * 500;
+    retry = setTimeout(() => {
+      if (!wanted) return;
+      if (navigator.onLine === false) return; // "online" event reconnects
+      open(game.code);
+    }, delay);
   };
 }
 
@@ -404,6 +440,7 @@ export function join(code, pass) {
 }
 
 export function leave(silent = false) {
+  keepAwake(false);
   if (!silent && game.state && game.state.phase === "lobby") act("leave");
   if (voiceChat.on) leaveVoice();
   wanted = false;
@@ -413,6 +450,7 @@ export function leave(silent = false) {
     socket.close(1000);
     socket = null;
   }
+  outbox = [];
   game.code = "";
   game.state = null;
   game.status = "idle";
@@ -449,6 +487,7 @@ export async function createRoom(mode, wanted, tutorial, password) {
 
 /** resume after the phone wakes up */
 function resume() {
+  attempts = 0;
   presence();
   if (wanted && (!socket || socket.readyState > 1)) open(game.code);
 }

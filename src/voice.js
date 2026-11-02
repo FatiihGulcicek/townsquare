@@ -15,6 +15,8 @@ const synth =
 export const voiceState = Vue.observable({
   supported: !!synth,
   enabled: getFlag("voice", false) && !!synth,
+  bots: getFlag("vkBotVoice", true) && !!synth,
+  queued: 0,
   unlocked: false,
 });
 
@@ -39,7 +41,7 @@ if (synth) {
 
 function utter(text) {
   const english = lang === "en";
-  const u = new SpeechSynthesisUtterance(english ? t(text) : text);
+  const u = new SpeechSynthesisUtterance(sayable(english ? t(text) : text));
   u.lang = english ? "en-US" : "tr-TR";
   if (!english && (voice || pickVoice())) u.voice = voice;
   u.rate = 0.95;
@@ -58,6 +60,58 @@ export function speak(text) {
   } catch (e) {
     // speech is optional
   }
+}
+
+/*
+ * Bots talk out loud. Each bot gets its own voice: a different installed
+ * voice when the phone has several, otherwise its own pitch and speed.
+ */
+/** speech engines read emoji out loud ("robot face"): leave them out */
+const sayable = (text) =>
+  String(text)
+    .replace(/[\p{Extended_Pictographic}\uFE0F\u200D]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+function hash(text) {
+  let h = 0;
+  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+export function speakAs(who, text) {
+  if (!synth || !voiceState.bots || !text) return;
+  const english = lang === "en";
+  const said = sayable(english ? t(text) : text);
+  if (!said) return;
+  const all = synth.getVoices() || [];
+  const mine = all.filter((v) =>
+    english ? /^en(-|_|$)/i.test(v.lang) : /^tr(-|_|$)/i.test(v.lang),
+  );
+  const h = hash(who);
+  try {
+    if (synth.paused) synth.resume();
+    // do not let bot chatter pile up behind the narrator
+    if (synth.pending && voiceState.queued > 2) return;
+    const u = new SpeechSynthesisUtterance(said);
+    u.lang = english ? "en-US" : "tr-TR";
+    if (mine.length) u.voice = mine[h % mine.length];
+    u.pitch = 0.7 + (h % 7) * 0.1; // 0.7 … 1.3
+    u.rate = 0.95 + ((h >> 3) % 4) * 0.07; // 0.95 … 1.16
+    voiceState.queued++;
+    u.onend = u.onerror = () => {
+      voiceState.queued = Math.max(0, voiceState.queued - 1);
+    };
+    synth.speak(u);
+  } catch (e) {
+    // speech is optional
+  }
+}
+
+export function setBotVoices(on) {
+  voiceState.bots = !!on && !!synth;
+  setFlag("vkBotVoice", voiceState.bots);
+  if (voiceState.bots) unlockVoice();
 }
 
 /** Call from a tap handler: unlocks speech on iOS. */

@@ -8,6 +8,10 @@
           voice.enabled ? "Açık" : "Kapalı"
         }}</b>
       </div>
+      <div class="row" @click="toggleBots" v-if="voice.supported">
+        <span>🤖 Botlar sesli konuşsun</span>
+        <b :class="{ on: voice.bots }">{{ voice.bots ? "Açık" : "Kapalı" }}</b>
+      </div>
       <div class="row" @click="toggleMusic">
         <span>🎼 Atmosfer müziği</span>
         <b :class="{ on: music.enabled }">{{
@@ -57,6 +61,15 @@
         🚪 Odadan çık
       </button>
       <button class="btn ghost" @click="$emit('close')">Kapat</button>
+      <p class="links">
+        <a href="/gizlilik.html" target="_blank" rel="noopener">Gizlilik</a> ·
+        <a href="/kosullar.html" target="_blank" rel="noopener"
+          >Kullanım şartları</a
+        >
+        ·
+        <a href="mailto:destek@darkspire.co">İletişim</a> ·
+        <a href="#" @click.prevent="deleteData">Verilerimi sil</a>
+      </p>
       <p class="credit muted">Görseller ve logo: Vampir Köylü · darkspire.co</p>
     </div>
     <Profile v-if="profile" @close="profile = false" />
@@ -65,7 +78,8 @@
 
 <script>
 import { game, leave, toast } from "../game";
-import { voiceState, setVoice } from "../voice";
+import { storedKeys, setItem } from "../storage";
+import { voiceState, setVoice, setBotVoices } from "../voice";
 import { pwaState, install } from "../pwa";
 import { enableNotifications, notificationState } from "../notifications";
 import { sfxState, setSfx } from "../sfx";
@@ -120,6 +134,9 @@ export default {
     toggleVoice() {
       setVoice(!this.voice.enabled);
     },
+    toggleBots() {
+      setBotVoices(!this.voice.bots);
+    },
     async notifications() {
       if (this.notif.permission === "denied") {
         toast(
@@ -143,6 +160,34 @@ export default {
           "Bildirimler açık: oyun kapalıyken de haber vereceğim.",
           "success",
         );
+    },
+    async deleteData() {
+      if (
+        !confirm(
+          "Profilin, istatistiklerin, fotoğrafın ve bu telefondaki tüm oyun verilerin silinsin mi? Bu geri alınamaz.",
+        )
+      )
+        return;
+      try {
+        await fetch("/api/me/delete", {
+          method: "POST",
+          headers: { "X-Player-Id": game.playerId },
+        });
+      } catch (e) {
+        // the phone's copy is removed anyway
+      }
+      leave(true);
+      storedKeys()
+        .filter((k) => k.startsWith("vk") || k === "voice")
+        .forEach((k) => setItem(k, null));
+      try {
+        const reg = await navigator.serviceWorker.getRegistration();
+        const sub = reg && (await reg.pushManager.getSubscription());
+        if (sub) await sub.unsubscribe();
+      } catch (e) {
+        // no push
+      }
+      location.replace("/");
     },
     async installApp() {
       if (pwaState.canInstall) await install();
@@ -196,6 +241,14 @@ h3 {
     &.on {
       color: $gold;
     }
+  }
+}
+.links {
+  text-align: center;
+  font-size: 13px;
+  margin: 10px 0 0;
+  a {
+    color: $muted;
   }
 }
 .credit {

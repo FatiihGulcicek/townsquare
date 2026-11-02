@@ -11,7 +11,7 @@ sıralama, Türkçe/İngilizce arayüz. Canlı: **https://darkspire.co**
 
 Geliştirme: `npm install`, `npm run build`, `node server/index.js`
 (http://localhost:8080). Yayınlama ve sunucu ayarları: `CPANEL.md`.
-Play Store: `PLAY_STORE.md`.
+Mağazalar: `MAGAZA.md`.
 
 Bu proje [bra1n/townsquare](https://github.com/bra1n/townsquare) üzerinden
 geliştirilmiştir ve GPL-3.0 lisanslıdır (bkz. `LICENSE`).

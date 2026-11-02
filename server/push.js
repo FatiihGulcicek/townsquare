@@ -115,6 +115,13 @@ function unregister(channel, playerId) {
   subscriptions.delete(channel + "/" + playerId);
 }
 
+/** forget every subscription of a player (all rooms and the lobby) */
+function unregisterEverywhere(playerId) {
+  [...subscriptions.keys()]
+    .filter((k) => k.endsWith("/" + playerId))
+    .forEach((k) => subscriptions.delete(k));
+}
+
 /**
  * Send a push message to one player.
  * payload: {title, body, tag, url}
@@ -177,6 +184,7 @@ module.exports = {
   publicKey: () => publicKey,
   register,
   unregister,
+  unregisterEverywhere,
   send,
   subscribedPlayers,
   stats: () => ({ ...stats, subscriptions: subscriptions.size }),

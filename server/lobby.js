@@ -8,6 +8,7 @@
  */
 "use strict";
 const crypto = require("crypto");
+const { clean } = require("./filter");
 
 const CHAT_KEEP = 60;
 const CHAT_MAX = 200;
@@ -127,7 +128,7 @@ class Lobby {
         const hadName = !!m.name;
         const name =
           params && typeof params.name === "string"
-            ? params.name.replace(/\s+/g, " ").trim().slice(0, 24)
+            ? clean(params.name.replace(/\s+/g, " ").trim().slice(0, 24))
             : "";
         const level = parseInt(params && params.level, 10);
         m.name = name;
@@ -199,7 +200,7 @@ class Lobby {
       from: m.pub,
       name: m.name,
       level: m.level,
-      text: text.slice(0, CHAT_MAX),
+      text: clean(text.slice(0, CHAT_MAX)),
       at: now,
     };
     this.chat.push(msg);

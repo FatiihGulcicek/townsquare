@@ -110,6 +110,7 @@ export async function joinVoice() {
       video: false,
     });
     localTrack = localStream.getAudioTracks()[0];
+    localTrack.onended = () => voiceChat.on && setTimeout(recoverMic, 500);
     localMeter = meter(localStream);
     await loadIce();
     context();
@@ -126,6 +127,48 @@ export async function joinVoice() {
   }
   voiceChat.joining = false;
 }
+
+/*
+ * A phone call, Siri or another app can take the microphone/camera away.
+ * When the game comes back to the front, get them again and resume audio.
+ */
+async function recoverMic() {
+  if (!voiceChat.on || document.visibilityState !== "visible") return;
+  if (localTrack && localTrack.readyState === "live") return;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+      video: false,
+    });
+    stopLocal();
+    localStream = stream;
+    localTrack = stream.getAudioTracks()[0];
+    localTrack.onended = () => voiceChat.on && setTimeout(recoverMic, 500);
+    localMeter = meter(stream);
+    applyPolicy();
+  } catch (e) {
+    voiceChat.error = "Mikrofon geri alınamadı, sesliden çıkıp tekrar gir.";
+  }
+}
+
+async function recoverCamera() {
+  if (!voiceChat.on || !voiceChat.camOn) return;
+  if (videoTrack && videoTrack.readyState === "live") return;
+  stopCamera();
+  await toggleCamera();
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible" || !voiceChat.on) return;
+  context(); // resumes the audio engine iOS paused
+  peers.forEach((peer) => peer.audio && peer.audio.play().catch(() => {}));
+  recoverMic();
+  recoverCamera();
+});
 
 function stopLocal() {
   if (localStream) localStream.getTracks().forEach((t) => t.stop());
@@ -205,6 +248,7 @@ function closePeer(pid) {
     peer.audio.srcObject = null;
     peer.audio.remove();
   }
+  clearTimeout(peer.restartTimer);
   peers.delete(pid);
   Vue.delete(voiceChat.connected, pid);
   Vue.delete(voiceChat.videos, pid);
@@ -234,6 +278,8 @@ function createPeer(pid) {
     videoSender: null,
     audio: null,
     meter: null,
+    pending: [], // ICE candidates that arrived before the offer/answer
+    restartTimer: null,
   };
   peers.set(pid, peer);
   if (initiator) {
@@ -268,13 +314,36 @@ function createPeer(pid) {
   };
   pc.onconnectionstatechange = () => {
     const state = pc.connectionState;
-    if (state === "connected") Vue.set(voiceChat.connected, pid, true);
-    if (state === "failed" || state === "closed") {
+    clearTimeout(peer.restartTimer);
+    if (state === "connected") {
+      Vue.set(voiceChat.connected, pid, true);
+      peer.restarts = 0;
+      return;
+    }
+    if (state === "closed") {
       Vue.delete(voiceChat.connected, pid);
-      if (state === "failed" && voiceChat.on) {
-        closePeer(pid);
-        setTimeout(() => sync(lastPolicy), 2000);
-      }
+      return;
+    }
+    if (state === "disconnected" || state === "failed") {
+      Vue.delete(voiceChat.connected, pid);
+      if (!voiceChat.on) return;
+      // a network switch (Wi-Fi <-> mobile) often heals with an ICE restart;
+      // if that does not help, the link is rebuilt from scratch
+      peer.restartTimer = setTimeout(
+        () => {
+          if (peers.get(pid) !== peer || pc.connectionState === "connected")
+            return;
+          if (peer.initiator && (peer.restarts || 0) < 2 && pc.restartIce) {
+            peer.restarts = (peer.restarts || 0) + 1;
+            pc.restartIce();
+          } else {
+            closePeer(pid);
+            setTimeout(() => sync(lastPolicy), 1500);
+          }
+        },
+        // the answering side gives the other one time to restart first
+        !peer.initiator ? 12000 : state === "failed" ? 500 : 4000,
+      );
     }
   };
   if (initiator) {
@@ -365,6 +434,11 @@ export function visibleVideos() {
   return out;
 }
 
+async function flushCandidates(peer) {
+  const list = peer.pending.splice(0);
+  for (const c of list) await peer.pc.addIceCandidate(c).catch(() => {});
+}
+
 /** WebRTC signalling message from another player */
 export async function voiceSignal({ from, data }) {
   if (!voiceChat.on || !data) return;
@@ -378,15 +452,18 @@ export async function voiceSignal({ from, data }) {
           await pc.setLocalDescription({ type: "rollback" }).catch(() => {});
         }
         await pc.setRemoteDescription(data.sdp);
+        await flushCandidates(peer);
         bindTransceivers(peer);
         await pc.setLocalDescription(await pc.createAnswer());
         send("rtc", { to: from, data: { sdp: pc.localDescription } });
         applyPeer(from, peer);
       } else if (data.sdp.type === "answer") {
         await pc.setRemoteDescription(data.sdp);
+        await flushCandidates(peer);
       }
     } else if (data.candidate) {
-      await pc.addIceCandidate(data.candidate).catch(() => {});
+      if (!pc.remoteDescription) peer.pending.push(data.candidate);
+      else await pc.addIceCandidate(data.candidate).catch(() => {});
     }
   } catch (e) {
     // a broken negotiation is retried when the connection fails
@@ -396,7 +473,10 @@ export async function voiceSignal({ from, data }) {
 /** after the socket reconnects every link is rebuilt */
 export function voiceReconnected() {
   if (!voiceChat.on) return;
-  peers.forEach((_, pid) => closePeer(pid));
+  // links that still work survive a game-server reconnect
+  peers.forEach((peer, pid) => {
+    if (peer.pc.connectionState !== "connected") closePeer(pid);
+  });
   send("voice", true);
   if (voiceChat.camOn) send("cam", true);
 }

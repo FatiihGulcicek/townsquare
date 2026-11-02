@@ -1,4 +1,20 @@
-# Vampir Köylü'yü Google Play'e koymak
+# Vampir Köylü'yü mağazalara koymak (Google Play ve App Store)
+
+## Mağaza kurallarına uyum: hazır olanlar
+
+| Kural | Durum |
+| --- | --- |
+| Gizlilik politikası (Apple 5.1.1, Google Kullanıcı Verileri) | `https://darkspire.co/gizlilik.html` |
+| Kullanım şartları / topluluk kuralları | `https://darkspire.co/kosullar.html` |
+| Uygulama içinden veri silme (Apple 5.1.1(v), Google hesap silme) | Ayarlar → Verilerimi sil |
+| Kullanıcı içeriği: filtre, şikâyet, engelleme, iletişim (Apple 1.2, Google UGC) | otomatik kelime maskesi, meydanda şikâyet/engelle, oda sahibi susturma/çıkarma, destek@darkspire.co |
+| İzinler yalnızca gerektiğinde ve açıklamalı | karşılama ekranında tek tek, dokunarak |
+| Reklam / takip yok | Veri güvenliği formunda "toplanan veri: ad, fotoğraf, oyun kayıtları, sohbet; paylaşılmıyor; silinebilir" |
+| Yaş derecelendirmesi | 13+ (Apple) / Teen (Google): oyuncular arası sohbet var, şiddet çizgi film düzeyinde |
+
+**Yapman gereken:** cPanel → E-posta Hesapları → `destek@darkspire.co` adresini oluştur (sayfalarda bu adres yazıyor).
+
+# Google Play
 
 Oyun zaten bir PWA (ana ekrana eklenebilen web uygulaması). Play Store için
 bunu **TWA** (Trusted Web Activity) denen ince bir Android kabuğuna sararız:
@@ -86,3 +102,27 @@ Toplam süre: kabaca 3 hafta.
 Oyunun kendisi web'de olduğu için her güncelleme GitHub'a gönderilince
 otomatik gelir. Play'e yeni paket yalnızca simge, ad veya paket ayarları
 değişirse gerekir (aynı `signing.keystore` ile, sürüm numarasını artırarak).
+
+
+# App Store (iPhone)
+
+Apple, sadece bir web sitesini saran uygulamaları genelde reddeder
+(Kural 4.2 "Asgari işlevsellik"). Bu yüzden iPhone sürümü için oyunu
+**Capacitor** ile gerçek bir iOS uygulaması olarak paketlemek ve en az şu
+yerel özellikleri eklemek gerekiyor:
+
+1. **Yerel bildirimler (APNs):** "Sıra sende" bildirimleri uygulama kapalıyken
+   de gelir; ana ekrana ekleme gerekmez.
+2. **Titreşim ve ses oturumu:** Sesli sohbet arka planda kesilmesin diye
+   iOS ses oturumu ayarı.
+3. **Oyun dosyaları uygulamanın içinde:** Açılış internet beklemez; sadece
+   oyun bağlantısı sunucuya gider.
+
+Gerekenler:
+- Apple Developer Programı: yıllık **99 USD** (https://developer.apple.com/programs/)
+- Derleme için bir Mac (Xcode) ya da bulut derleme servisi (ör. Codemagic,
+  ayda 500 dakika ücretsiz).
+- TestFlight ile 1–2 hafta test, sonra incelemeye gönderme (genelde 1–3 gün).
+
+Hesap açılınca Capacitor projesini ve bildirim altyapısını hazırlarım; Google
+Play paketi de aynı projeden üretilebilir.

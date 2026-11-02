@@ -11,5 +11,8 @@
 - New environment variables (cPanel → Setup Node.js App) only apply after the
   running copy stops: cPanel → Setup Node.js App → Run JS script → `restart`.
 - Database: `server/db.js` (tables `vk_*`, created on start).
+- Store/compliance notes: `MAGAZA.md`; privacy and terms pages are
+  `public/gizlilik.html` and `public/kosullar.html` (keep them in sync with
+  what the app stores).
 - UI language: Turkish source text, English via `src/i18n/en*.js`; add new
   strings there.

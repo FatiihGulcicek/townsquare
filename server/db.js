@@ -273,6 +273,33 @@ module.exports = {
       };
     }),
 
+  /** "delete my data": profile, game rows and the name inside old games */
+  deleteProfile: (playerId) =>
+    run("deleteProfile", async (db) => {
+      const key = profileKey(playerId);
+      await db.query("DELETE FROM vk_game_players WHERE profile_key = ?", [
+        key,
+      ]);
+      await db.query("DELETE FROM vk_profiles WHERE profile_key = ?", [key]);
+      const [games] = await db.query(
+        "SELECT id, players FROM vk_games WHERE players LIKE ?",
+        ["%" + key + "%"],
+      );
+      for (const g of games) {
+        let players = [];
+        try {
+          players = JSON.parse(g.players) || [];
+        } catch (e) {
+          players = [];
+        }
+        await db.query("UPDATE vk_games SET players = ? WHERE id = ?", [
+          JSON.stringify(players.filter((p) => p.key !== key)),
+          g.id,
+        ]);
+      }
+      return true;
+    }),
+
   leaderboard: () =>
     run("leaderboard", async (db) => {
       const [rows] = await db.query(

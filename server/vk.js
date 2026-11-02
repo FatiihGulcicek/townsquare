@@ -12,6 +12,7 @@
  * over someone else's seat or read their role.
  */
 "use strict";
+const { clean } = require("./filter");
 const crypto = require("crypto");
 const { CATEGORIES, MODES, pickPenalties } = require("./penalties");
 const { line } = require("./lines");
@@ -302,6 +303,7 @@ class Room {
 
   reset() {
     clearTimeout(this.timer);
+    clearTimeout(this.reminder);
     this.phase = "lobby";
     this.round = 0;
     this.deadline = 0;
@@ -346,6 +348,7 @@ class Room {
   /** auto mode: run next() when the phase deadline passes */
   schedule() {
     clearTimeout(this.timer);
+    clearTimeout(this.reminder);
     if (!this.isAuto() || !this.deadline) return;
     if (["lobby", "over"].includes(this.phase)) return;
     const phase = this.phase;
@@ -369,6 +372,64 @@ class Room {
   setDeadline(ms) {
     this.deadline = this.isAuto() && ms ? Date.now() + ms : 0;
     this.schedule();
+    this.remindLater();
+  }
+
+  /** people whose choice the game is still waiting for */
+  waitingOn() {
+    const humans = (list) => list.filter((p) => !p.bot);
+    if (this.phase === "night" && this.night) {
+      const n = this.night;
+      return humans(this.alive()).filter((p) => {
+        if (isVamp(p)) return !n.vamp[p.pid];
+        if (p.role === "doktor") return !n.doktor;
+        if (p.role === "gozcu") return !n.gozcu;
+        if (p.role === "cadi") return !(n.cadi && n.cadi.done);
+        return !n.suspects[p.pid];
+      });
+    }
+    if (this.phase === "day" || this.phase === "runoff") {
+      return humans(this.voters()).filter((p) => !this.votes[p.pid]);
+    }
+    return [];
+  }
+
+  /** 20 seconds before time runs out, nudge whoever has not chosen yet */
+  remindLater() {
+    clearTimeout(this.reminder);
+    if (!this.deadline) return;
+    const wait = this.deadline - Date.now() - 20000;
+    if (wait < 5000) return;
+    const phase = this.phase;
+    this.reminder = setTimeout(() => {
+      if (this.phase !== phase) return;
+      const ids = this.waitingOn().map((p) => p.id);
+      if (!ids.length) return;
+      this.io.push(ids, {
+        title: "⏰ Süren bitiyor",
+        body:
+          phase === "night"
+            ? "Gece seçimini yapmadın, 20 saniye kaldı!"
+            : "Oyunu vermedin, 20 saniye kaldı!",
+        tag: "turn",
+      });
+    }, wait);
+    if (this.reminder.unref) this.reminder.unref();
+  }
+
+  /** "your turn" notification for one player at night, by role */
+  nightPush(p) {
+    const text = {
+      vampir: ["🧛 Av zamanı", "Diğer vampirlerle bu gecenin kurbanını seç."],
+      kurtadam: ["🐺 Av zamanı", "Vampirlerle bu gecenin kurbanını seç."],
+      doktor: ["🩺 Sıra sende", "Bu gece kimi koruyacaksın?"],
+      gozcu: ["👁️ Sıra sende", "Bu gece kimi araştıracaksın?"],
+      cadi: ["🧙‍♀️ Sıra sende", "İksirlerini kullanacak mısın?"],
+    }[p.role] || [
+      "🌙 Gece çöktü",
+      "Şüphelendiğin birini seç, sonra gözlerini kapat.",
+    ];
+    return { title: text[0], body: text[1], tag: "turn" };
   }
 
   player(id) {
@@ -498,7 +559,7 @@ class Room {
   say(id, channel, text) {
     text = typeof text === "string" ? text.replace(/\s+/g, " ").trim() : "";
     if (!text) return;
-    text = text.slice(0, CHAT_MAX);
+    text = clean(text.slice(0, CHAT_MAX));
     if (!this.chat[channel] || !this.canWrite(id).includes(channel)) return;
     const now = Date.now();
     if (now - (this.lastChat[id] || 0) < 700) return;
@@ -1273,7 +1334,7 @@ class Room {
   uniqueName(raw, except) {
     const name =
       typeof raw === "string"
-        ? raw.replace(/\s+/g, " ").trim().slice(0, 24)
+        ? clean(raw.replace(/\s+/g, " ").trim().slice(0, 24))
         : "";
     if (!name) return "";
     const norm = (v) => v.toLocaleLowerCase("tr");
@@ -1456,14 +1517,14 @@ class Room {
     this.nightStarted = Date.now();
     this.story("night", {});
     this.narrate(line("night", { r: this.round }));
-    this.pushAll(
-      {
+    this.alive().forEach((p) => this.io.push([p.id], this.nightPush(p)));
+    if (this.stId) {
+      this.io.push([this.stId], {
         title: "Gece çöktü 🌙",
-        body: "Telefonuna bak ve gece seçimini yap.",
+        body: "Oyuncular seçimlerini yapıyor.",
         tag: "phase",
-      },
-      true,
-    );
+      });
+    }
     this.setDeadline(this.settings.nightSeconds * 1000);
     this.botsAct();
     this.update();
@@ -1485,6 +1546,7 @@ class Room {
       n: ++this.chatSeq,
       from: bot.pid,
       name: bot.name,
+      bot: true,
       text,
       at: Date.now(),
     });
@@ -1695,7 +1757,11 @@ class Room {
     void poisoned;
     this.story("day", {});
     this.narrate(text);
-    this.pushAll({ title: "Gün doğdu ☀️", body: text, tag: "phase" });
+    this.pushAll({
+      title: "Gün doğdu ☀️ · Oylama başladı",
+      body: text + " Tartışın ve oyunu ver.",
+      tag: "phase",
+    });
     if (this.checkWin()) return;
     this.setDeadline(this.settings.dayMinutes * 60000);
     this.botsAct();
@@ -1787,6 +1853,13 @@ class Room {
         `${summary}En çok oyu ${names[0]} ve ${names[1]} aldı. Şimdi ikisi savunma yapacak, sonra aralarında son oylama olacak.`,
       );
       this.setDeadline(DEFENSE_MS);
+      candidates.forEach((pid) =>
+        this.io.push([this.byPid(pid).id], {
+          title: "🗣️ Savunma sırası sende",
+          body: "En çok oyu aldın. Kendini savun, köy son kararı verecek.",
+          tag: "turn",
+        }),
+      );
       this.update();
       return;
     }
@@ -1801,6 +1874,11 @@ class Room {
           `${summary}Köy kararını verdi: ${p.name} asılacak. Son sözlerini söylesin.`,
         );
         this.setDeadline(LAST_WORDS_MS);
+        this.io.push([p.id], {
+          title: "⚖️ Son sözlerin",
+          body: "Köy seni asmaya karar verdi. Son sözlerini yaz.",
+          tag: "turn",
+        });
         this.update();
         return;
       }
@@ -1823,6 +1901,14 @@ class Room {
     const names = this.runoff.candidates.map((pid) => this.byPid(pid).name);
     this.narrate(`Son oylama: ${names[0]} mı, ${names[1]} mı?`);
     this.setDeadline(RUNOFF_MS);
+    this.pushAll(
+      {
+        title: "⚖️ Son oylama",
+        body: `${names[0]} mı, ${names[1]} mı? Oyunu ver.`,
+        tag: "turn",
+      },
+      true,
+    );
     this.botsAct();
     this.update();
   }
@@ -1880,6 +1966,7 @@ class Room {
     }
     if (!winner) return false;
     clearTimeout(this.timer);
+    clearTimeout(this.reminder);
     this.phase = "over";
     this.winner = winner;
     this.deadline = 0;
@@ -2074,6 +2161,7 @@ class Room {
 
   destroy() {
     clearTimeout(this.timer);
+    clearTimeout(this.reminder);
     clearTimeout(this.saveTimer);
     this.io.destroy();
   }
