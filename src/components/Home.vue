@@ -71,6 +71,13 @@
       <p class="hint muted">
         Kendi kodunu seçersen her hafta aynı linkle toplanabilirsiniz.
       </p>
+      <input
+        class="field"
+        v-model="roomPass"
+        maxlength="20"
+        placeholder="🔒 Şifre (isteğe bağlı)"
+        autocomplete="off"
+      />
       <button class="btn primary" :disabled="busy" @click="create('auto')">
         🤖 Uygulama anlatsın
       </button>
@@ -179,6 +186,7 @@ export default {
       profileTab: null,
       game,
       wanted: "",
+      roomPass: "",
       champion: null,
       rooms: savedRooms(),
       name: game.name,
@@ -241,7 +249,12 @@ export default {
       }
       this.busy = true;
       try {
-        await createRoom(mode, wanted || undefined);
+        await createRoom(
+          mode,
+          wanted || undefined,
+          false,
+          this.roomPass.trim() || undefined,
+        );
       } catch (e) {
         toast(
           e.message === "code"

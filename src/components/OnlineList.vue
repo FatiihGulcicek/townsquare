@@ -48,7 +48,12 @@
 <script>
 import Avatar from "./Avatar";
 import { game } from "../game";
-import { lobby, inviteToRoom, setArrivalNotifications } from "../lobby";
+import {
+  lobby,
+  inviteToRoom,
+  setArrivalNotifications,
+  isBlocked,
+} from "../lobby";
 import { enableNotifications, notificationState } from "../notifications";
 
 export default {
@@ -61,7 +66,9 @@ export default {
       return this.notif.supported && this.notif.permission === "default";
     },
     others() {
-      return this.lobby.online.filter((p) => p.pub !== this.lobby.me);
+      return this.lobby.online.filter(
+        (p) => p.pub !== this.lobby.me && !isBlocked(p.pub),
+      );
     },
   },
   mounted() {

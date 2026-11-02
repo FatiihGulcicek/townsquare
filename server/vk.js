@@ -202,6 +202,9 @@ class Room {
     this.io = io;
     this.players = [];
     this.kicked = new Set();
+    this.password = ""; // empty = open room
+    this.allowed = []; // private ids that already gave the password
+    this.fails = {};
     this.settings = { ...DEFAULT_SETTINGS };
     this.log = [];
     this.timer = null;
@@ -228,6 +231,8 @@ class Room {
       ownerId: this.ownerId,
       players: this.players,
       kicked: [...this.kicked],
+      password: this.password,
+      allowed: this.allowed.slice(-100),
       settings: this.settings,
       log: this.log,
       phase: this.phase,
@@ -271,6 +276,9 @@ class Room {
       voice: new Set(),
       cams: new Set(),
       photos: data.photos || {},
+      password: data.password || "",
+      allowed: data.allowed || [],
+      fails: {},
       io,
     });
     room.settings = { ...DEFAULT_SETTINGS, ...(data.settings || {}) };
@@ -373,6 +381,39 @@ class Room {
 
   alive() {
     return this.players.filter((p) => p.alive);
+  }
+
+  /** password rooms: members, the storyteller and invited people walk in */
+  mayEnter(id, pass) {
+    if (!this.password) return true;
+    if (id === this.ownerId || id === this.stId || this.player(id)) return true;
+    if (this.allowed.includes(id)) return true;
+    if ((this.fails[id] || 0) >= 8) return false; // stop guessing
+    if (typeof pass === "string" && pass.trim() === this.password) {
+      this.allow(id);
+      return true;
+    }
+    if (pass) this.fails[id] = (this.fails[id] || 0) + 1;
+    return false;
+  }
+
+  allow(id) {
+    if (!this.allowed.includes(id)) this.allowed.push(id);
+    if (this.allowed.length > 100) this.allowed.shift();
+    this.save();
+  }
+
+  setPassword(id, value) {
+    if (this.owner() !== id) return;
+    const pass =
+      typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
+    this.password = pass.slice(0, 20);
+    // everyone inside keeps their place
+    this.players.forEach(
+      (p) => this.allowed.includes(p.id) || this.allow(p.id),
+    );
+    this.save();
+    this.update();
   }
 
   owner() {
@@ -832,12 +873,14 @@ class Room {
         alive: me ? me.alive : false,
         seated: !!me,
         isOwner: this.owner() === id,
+        password: this.owner() === id ? this.password : null,
         isStoryteller: isSt,
         muted: !!(me && me.muted),
         noVote: !!(me && me.noVote),
         idle: me ? me.idle || 0 : 0,
       },
       penalties: this.phase === "over" ? this.penalties : null,
+      locked: !!this.password,
       tutorial: !!this.tutorial,
       tour: this.tour || null,
       myGuesses: me ? (this.guesses || {})[me.pid] || [] : [],
@@ -976,6 +1019,7 @@ class Room {
       return this.update();
     }
     if (command === "photo") return this.setPhoto(id, params);
+    if (command === "password") return this.setPassword(id, params);
     if (command === "react") return this.react(id, params);
     if (command === "cosmetics") {
       const me = this.player(id);

@@ -13,15 +13,22 @@ const CHAT_KEEP = 60;
 const CHAT_MAX = 200;
 const ARRIVAL_COOLDOWN = 30 * 60 * 1000; // announce the same person at most every 30 min
 const RECIPIENT_COOLDOWN = 20 * 60 * 1000; // notify the same person at most every 20 min
+const REPORT_WINDOW = 24 * 3600 * 1000;
+const REPORTS_TO_MUTE = 3; // different people
+const MUTE_FOR = 60 * 60 * 1000;
 
 class Lobby {
   /**
    * @param push {register(channel, id, sub), unregister, send(channel, id, payload)}
    * @param roomExists (code) => boolean
    */
-  constructor(push, roomExists) {
+  constructor(push, roomExists, grant) {
     this.push = push;
     this.roomExists = roomExists;
+    this.grant = grant || (() => true);
+    this.reports = {}; // reported pub -> [{ by, at, text }]
+    this.mutedUntil = {}; // pub -> time
+    this.reportLog = []; // last reports, for the owner of the server
     this.members = new Map(); // private id -> { sockets:Set, name, level, room, pub, visible }
     this.chat = [];
     this.seq = 0;
@@ -132,6 +139,13 @@ class Lobby {
             ? params.room
             : null;
         m.room = room;
+        if (params && Array.isArray(params.blocks)) {
+          m.blocks = new Set(
+            params.blocks
+              .filter((b) => typeof b === "string" && /^[0-9a-f]{12}$/.test(b))
+              .slice(0, 200),
+          );
+        }
         if (params && params.notify === false) this.notifyOff.add(id);
         else if (params && params.notify === true) this.notifyOff.delete(id);
         if (name) this.known.set(id, name);
@@ -151,6 +165,15 @@ class Lobby {
         return this.say(id, m, params && params.text);
       case "invite":
         return this.invite(id, m, params);
+      case "block":
+        m.blocks = m.blocks || new Set();
+        if (params && typeof params.pub === "string") {
+          if (params.on === false) m.blocks.delete(params.pub);
+          else if (m.blocks.size < 200) m.blocks.add(params.pub);
+        }
+        return;
+      case "report":
+        return this.report(id, m, params);
     }
   }
 
@@ -158,6 +181,17 @@ class Lobby {
     text = typeof text === "string" ? text.replace(/\s+/g, " ").trim() : "";
     if (!text || !m.name) return;
     const now = Date.now();
+    if ((this.mutedUntil[m.pub] || 0) > now) {
+      const minutes = Math.ceil((this.mutedUntil[m.pub] - now) / 60000);
+      this.send(
+        id,
+        JSON.stringify([
+          "lnotice",
+          `Birkaç kişi seni şikâyet etti. ${minutes} dk meydanda yazamazsın.`,
+        ]),
+      );
+      return;
+    }
     if (now - (this.lastChat[id] || 0) < 800) return;
     this.lastChat[id] = now;
     const msg = {
@@ -185,6 +219,13 @@ class Lobby {
     m.invites = m.invites || {};
     if (now - (m.invites[params.to] || 0) < 15000) return; // no spamming
     m.invites[params.to] = now;
+    const t0 = this.members.get(target);
+    if (t0 && t0.blocks && t0.blocks.has(m.pub)) {
+      // blocked: the sender sees nothing unusual
+      this.send(id, JSON.stringify(["invited", { to: params.to }]));
+      return;
+    }
+    if (!this.grant(code, id, target)) return;
     this.send(
       target,
       JSON.stringify(["invite", { from: m.name, pub: m.pub, code }]),
@@ -198,6 +239,45 @@ class Lobby {
         tag: "invite",
         url: "/#" + code,
       });
+    }
+  }
+
+  /** a report from 3 different people silences someone for an hour */
+  report(id, m, params) {
+    if (!params || typeof params.pub !== "string" || !m.name) return;
+    const pub = params.pub;
+    if (pub === m.pub) return;
+    const now = Date.now();
+    const list = (this.reports[pub] || []).filter(
+      (r) => now - r.at < REPORT_WINDOW,
+    );
+    if (list.some((r) => r.by === m.pub)) {
+      this.send(
+        id,
+        JSON.stringify(["lnotice", "Bu kişiyi zaten şikâyet ettin."]),
+      );
+      return;
+    }
+    const msg = this.chat.find((c) => c.n === params.n && c.from === pub);
+    const entry = { by: m.pub, at: now, text: msg ? msg.text : "" };
+    list.push(entry);
+    this.reports[pub] = list;
+    this.reportLog.push({ pub, ...entry });
+    if (this.reportLog.length > 100) this.reportLog.shift();
+    console.log("lobby report", pub, "by", m.pub, JSON.stringify(entry.text));
+    this.send(
+      id,
+      JSON.stringify(["lnotice", "Şikâyetin alındı, teşekkürler. 🙏"]),
+    );
+    if (
+      list.length >= REPORTS_TO_MUTE &&
+      !((this.mutedUntil[pub] || 0) > now)
+    ) {
+      this.mutedUntil[pub] = now + MUTE_FOR;
+      // take their messages off the square
+      this.chat = this.chat.filter((c) => c.from !== pub);
+      const data = JSON.stringify(["lchat-del", { from: pub }]);
+      this.members.forEach((_, other) => this.send(other, data));
     }
   }
 
@@ -226,7 +306,13 @@ class Lobby {
   }
 
   stats() {
-    return { online: this.members.size, chat: this.chat.length };
+    return {
+      online: this.members.size,
+      chat: this.chat.length,
+      reports: this.reportLog.length,
+      muted: Object.values(this.mutedUntil).filter((t) => t > Date.now())
+        .length,
+    };
   }
 }
 

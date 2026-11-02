@@ -9,6 +9,12 @@ import { play } from "./sfx";
  * invitations. Stays open the whole time the app is open.
  */
 let notifyStored = "on";
+let blockedStored = [];
+try {
+  blockedStored = JSON.parse(localStorage.getItem("vkBlocked") || "[]");
+} catch (e) {
+  // ignore
+}
 try {
   notifyStored = localStorage.getItem("vkArrivals") || "on";
 } catch (e) {
@@ -23,7 +29,39 @@ export const lobby = Vue.observable({
   invite: null, // { from, code }
   invited: {}, // pub -> time I invited them
   notifyArrivals: notifyStored === "on",
+  blocked: Array.isArray(blockedStored) ? blockedStored : [], // [{ pub, name }]
 });
+
+export function isBlocked(pub) {
+  return lobby.blocked.some((b) => b.pub === pub);
+}
+
+function saveBlocked() {
+  try {
+    localStorage.setItem("vkBlocked", JSON.stringify(lobby.blocked));
+  } catch (e) {
+    // ignore
+  }
+}
+
+/** hide someone's messages and invitations, on this phone and on the server */
+export function blockUser(pub, name) {
+  if (!pub || pub === lobby.me || isBlocked(pub)) return;
+  lobby.blocked.push({ pub, name: name || "?" });
+  saveBlocked();
+  send("block", { pub, on: true });
+  toast(`🚫 ${name} engellendi. Mesajlarını ve davetlerini görmeyeceksin.`);
+}
+
+export function unblockUser(pub) {
+  lobby.blocked = lobby.blocked.filter((b) => b.pub !== pub);
+  saveBlocked();
+  send("block", { pub, on: false });
+}
+
+export function reportUser(pub, n) {
+  send("report", { pub, n });
+}
 
 let socket = null;
 let retry = null;
@@ -41,6 +79,7 @@ export function lobbyHello() {
     level: levelFor(progress.totals.xp),
     room: game.code || null,
     notify: lobby.notifyArrivals,
+    blocks: lobby.blocked.map((b) => b.pub),
   });
 }
 
@@ -76,7 +115,12 @@ function open() {
       lobby.chat.push(params);
       if (lobby.chat.length > 60) lobby.chat.shift();
       if (params.from !== lobby.me && !game.code) play("pop");
+    } else if (command === "lchat-del") {
+      lobby.chat = lobby.chat.filter((m) => m.from !== params.from);
+    } else if (command === "lnotice") {
+      toast(params, "info", 5000);
     } else if (command === "invite") {
+      if (isBlocked(params.pub)) return;
       // don't interrupt a game that is running
       const busy =
         game.state &&

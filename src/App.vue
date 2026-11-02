@@ -23,6 +23,30 @@
         <button class="btn ghost" @click="declineInvite">Şimdi değil</button>
       </div>
     </div>
+    <div class="sheet-bg invite-bg" v-if="game.passPrompt">
+      <form class="sheet center" @submit.prevent="enterPass">
+        <div class="inv-emoji">🔒</div>
+        <h3>{{ game.passPrompt.code }} şifreli bir oda</h3>
+        <p class="muted" v-if="game.passPrompt.wrong">
+          Şifre yanlış, tekrar dene.
+        </p>
+        <p class="muted" v-else>Girmek için oda şifresini yaz.</p>
+        <input
+          class="field"
+          v-model="pass"
+          maxlength="20"
+          placeholder="Oda şifresi"
+          autocomplete="off"
+          ref="pass"
+        />
+        <button class="btn primary" type="submit" :disabled="!pass.trim()">
+          Gir
+        </button>
+        <button class="btn ghost" type="button" @click="game.passPrompt = null">
+          Vazgeç
+        </button>
+      </form>
+    </div>
     <transition name="toast">
       <div class="update" v-if="pwa.updateReady">
         <span>✨ Yeni sürüm hazır</span>
@@ -56,12 +80,12 @@ import LiveStory from "./components/LiveStory";
 import { setMood, setTheme } from "./music";
 import { pwaState, applyUpdate } from "./pwa";
 import { lobby, startLobby, acceptInvite, declineInvite } from "./lobby";
-import { game, restore } from "./game";
+import { game, restore, join } from "./game";
 
 export default {
   components: { Home, Room, RoleCard, Settings, LiveStory },
   data() {
-    return { game, settingsOpen: false, pwa: pwaState, lobby };
+    return { game, settingsOpen: false, pwa: pwaState, lobby, pass: "" };
   },
   computed: {
     theme() {
@@ -122,6 +146,12 @@ export default {
   methods: {
     acceptInvite() {
       acceptInvite();
+    },
+    enterPass() {
+      const { code } = game.passPrompt;
+      game.passPrompt = null;
+      join(code, this.pass);
+      this.pass = "";
     },
     declineInvite() {
       declineInvite();

@@ -132,7 +132,7 @@ function roomIo(code, entry) {
   };
 }
 
-function createRoom(mode, creatorId, wanted, tutorial) {
+function createRoom(mode, creatorId, wanted, tutorial, password) {
   if (rooms.size >= MAX_ROOMS) return null;
   const code = wanted || newCode();
   if (!code) return null;
@@ -148,6 +148,7 @@ function createRoom(mode, creatorId, wanted, tutorial) {
       idlePenalty: false,
     });
   }
+  if (password) entry.room.password = password;
   rooms.set(code, entry);
   entry.room.save();
   return code;
@@ -195,7 +196,20 @@ setInterval(() => {
 }, 60 * 1000).unref();
 
 // the square outside the games: who's online, chat, invitations
-const lobby = new Lobby(push, (code) => rooms.has(code));
+const lobby = new Lobby(
+  push,
+  (code) => rooms.has(code),
+  // an invitation from someone inside a password room lets the guest in
+  (code, inviterId, guestId) => {
+    const entry = rooms.get(code);
+    if (!entry) return false;
+    const room = entry.room;
+    if (!room.password) return true;
+    if (!room.mayEnter(inviterId)) return false;
+    room.allow(guestId);
+    return true;
+  },
+);
 
 // ---------- websocket ----------
 
@@ -287,6 +301,10 @@ wss.on("connection", (ws, req) => {
   findRoom(code).then((found) => {
     if (ws.readyState !== WebSocket.OPEN) return;
     if (!found) return ws.close(4004, "Oda bulunamadı");
+    const pass = new URLSearchParams(req.url.split("?")[1] || "").get("k");
+    if (!found.room.mayEnter(playerId, pass)) {
+      return ws.close(pass ? 4013 : 4003, "Şifre gerekli");
+    }
     if (found.sockets.size >= MAX_PER_ROOM) return ws.close(1000, "Oda dolu");
     entry = found;
     entry.sockets.add(ws);
@@ -512,6 +530,9 @@ server.on("request", async (req, res) => {
       body.playerId,
       body.tutorial ? null : wanted,
       !!body.tutorial,
+      typeof body.password === "string" && !body.tutorial
+        ? body.password.replace(/\s+/g, " ").trim().slice(0, 20)
+        : "",
     );
     if (!code) return json(res, 503, { error: "busy" });
     return json(res, 200, { code });
@@ -556,7 +577,10 @@ server.on("request", async (req, res) => {
   if (url.pathname.startsWith("/api/room/")) {
     const code = url.pathname.split("/").pop().toUpperCase();
     const found = await findRoom(code);
-    return json(res, found ? 200 : 404, { exists: !!found });
+    return json(res, found ? 200 : 404, {
+      exists: !!found,
+      locked: !!(found && found.room.password),
+    });
   }
   if (req.method !== "GET" && req.method !== "HEAD") {
     res.statusCode = 405;

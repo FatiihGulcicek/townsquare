@@ -34,6 +34,13 @@
           lobby.notifyArrivals ? "Açık" : "Kapalı"
         }}</b>
       </div>
+      <div class="blocked" v-if="lobby.blocked.length">
+        <span>🚫 Engellediklerin</span>
+        <div v-for="b in lobby.blocked" :key="b.pub" class="brow">
+          {{ b.name }}
+          <button class="btn small" @click="unblock(b.pub)">Kaldır</button>
+        </div>
+      </div>
       <p class="muted small" v-if="pwa.isIOS && !pwa.isStandalone">
         iPhone'da oyun kapalıyken bildirim gelmesi için önce Safari'de Paylaş →
         “Ana Ekrana Ekle” ile uygulamayı ekle ve oradan aç.
@@ -61,7 +68,7 @@ import { pwaState, install } from "../pwa";
 import { enableNotifications, notificationState } from "../notifications";
 import { sfxState, setSfx } from "../sfx";
 import { musicState, setMusic } from "../music";
-import { lobby, setArrivalNotifications } from "../lobby";
+import { lobby, setArrivalNotifications, unblockUser } from "../lobby";
 import Profile from "./Profile";
 
 export default {
@@ -89,6 +96,9 @@ export default {
     },
   },
   methods: {
+    unblock(pub) {
+      unblockUser(pub);
+    },
     async toggleArrivals() {
       const on = !this.lobby.notifyArrivals;
       setArrivalNotifications(on);
@@ -150,6 +160,20 @@ export default {
 @import "../vars";
 h3 {
   margin: 0 0 10px;
+}
+.blocked {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  .brow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 6px;
+    .btn {
+      margin: 0;
+      width: auto;
+    }
+  }
 }
 .row {
   display: flex;

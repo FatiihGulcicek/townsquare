@@ -58,6 +58,7 @@ export const game = Vue.observable({
   roleCardOpen: false,
   lastStory: 0,
   photos: {}, // pid -> profile photo of the people in the room
+  passPrompt: null, // { code, wrong } when a locked room asks for its password
   myPhoto: store("vkPhoto") || "",
   liveQueue: [], // story events to play full screen as they happen
   reactions: [], // flying emoji {id, to, emoji}
@@ -146,6 +147,7 @@ let socket = null;
 let retry = null;
 let wanted = false;
 let lastMessage = 0;
+let roomPass = ""; // password typed for a locked room
 
 // phones drop sockets silently: ping regularly, reconnect if nothing comes back
 setInterval(() => {
@@ -160,7 +162,13 @@ setInterval(() => {
 function url(code) {
   const proto = location.protocol === "https:" ? "wss://" : "ws://";
   const base = process.env.VUE_APP_WSS || proto + location.host + "/vk/";
-  return base + code + "/" + game.playerId;
+  return (
+    base +
+    code +
+    "/" +
+    game.playerId +
+    (roomPass ? "?k=" + encodeURIComponent(roomPass) : "")
+  );
 }
 
 export function send(command, params) {
@@ -373,6 +381,13 @@ function open(code) {
       leave(true);
       return;
     }
+    if (event.code === 4003 || event.code === 4013) {
+      // locked room: ask for the password, then try again
+      const locked = game.code;
+      leave(true);
+      game.passPrompt = { code: locked, wrong: event.code === 4013 };
+      return;
+    }
     if (!wanted) return;
     game.status = event.code === 1012 ? "connecting" : "offline";
     // server restart: come back quickly, the room is restored from the database
@@ -383,7 +398,10 @@ function open(code) {
   };
 }
 
-export function join(code) {
+export function join(code, pass) {
+  const sameRoom = (code || "").toUpperCase() === game.code;
+  if (typeof pass === "string") roomPass = pass.trim();
+  else if (!sameRoom) roomPass = "";
   code = (code || "")
     .toUpperCase()
     .replace(/[^A-Z]/g, "")
@@ -424,7 +442,7 @@ export function setName(name) {
   if (game.name && game.code) send("join", { name: game.name });
 }
 
-export async function createRoom(mode, wanted, tutorial) {
+export async function createRoom(mode, wanted, tutorial, password) {
   const response = await fetch("/api/room", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -433,6 +451,7 @@ export async function createRoom(mode, wanted, tutorial) {
       playerId: game.playerId,
       code: wanted || undefined,
       tutorial: tutorial || undefined,
+      password: password || undefined,
     }),
   });
   if (!response.ok) {
@@ -440,7 +459,7 @@ export async function createRoom(mode, wanted, tutorial) {
   }
   const { code, existing } = await response.json();
   if (!existing && !tutorial) rememberRoom(code, mode);
-  join(code);
+  join(code, existing ? undefined : password || "");
   return code;
 }
 
@@ -460,13 +479,21 @@ onCosmeticsChange((equipped) => send("cosmetics", equipped));
 /** room from the link (#ABCD) or the last one we were in */
 export function restore() {
   const fromHash = (location.hash || "").replace("#", "");
-  if (/^[A-Za-z]{4}$/.test(fromHash)) return join(fromHash);
+  // #ABCD or #ABCD~password (link shared from a locked room)
+  const match = /^([A-Za-z]{4})(?:~(.+))?$/.exec(fromHash);
+  if (match) {
+    return join(match[1], match[2] ? decodeURIComponent(match[2]) : undefined);
+  }
   const last = store("vkRoom");
   if (last) return join(last);
   return false;
 }
 
 /** set (or clear with "") the profile photo */
+export function setRoomPassword(value) {
+  send("password", value || "");
+}
+
 export function setMyPhoto(data) {
   game.myPhoto = data || "";
   store("vkPhoto", data ? data : null);
@@ -511,5 +538,11 @@ export function useProfileCode(code) {
 }
 
 export function shareLink() {
-  return location.origin + "/#" + game.code;
+  const pass = game.state && game.state.me && game.state.me.password;
+  return (
+    location.origin +
+    "/#" +
+    game.code +
+    (pass ? "~" + encodeURIComponent(pass) : "")
+  );
 }

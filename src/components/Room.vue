@@ -108,6 +108,12 @@
         <div class="card center">
           <div class="muted">Oda kodu</div>
           <div class="big-code">{{ game.code }}</div>
+          <div class="lock-note muted" v-if="s.locked">
+            🔒 Şifreli oda<template v-if="s.me.password">
+              · şifre: <b>{{ s.me.password }}</b> (paylaşılan link şifreyi
+              içerir)</template
+            >
+          </div>
           <div class="inline-btns">
             <button class="btn" @click="share">📨 Linki paylaş</button>
             <button class="btn" @click="showQr = true">📱 QR kod</button>
@@ -133,6 +139,12 @@
             <h3>Okut ve katıl</h3>
             <img class="qr" :src="qrData" alt="QR kod" />
             <div class="big-code">{{ game.code }}</div>
+            <div class="lock-note muted" v-if="s.locked">
+              🔒 Şifreli oda<template v-if="s.me.password">
+                · şifre: <b>{{ s.me.password }}</b> (paylaşılan link şifreyi
+                içerir)</template
+              >
+            </div>
             <button class="btn ghost" @click="showQr = false">Kapat</button>
           </div>
         </div>
@@ -199,6 +211,26 @@
 
         <div class="card" v-if="s.me.isOwner">
           <h3>Oda ayarları</h3>
+          <form class="pass-row" @submit.prevent="savePass">
+            <input
+              class="field"
+              v-model="passDraft"
+              maxlength="20"
+              :placeholder="
+                s.locked ? 'Yeni şifre' : '🔒 Oda şifresi koy (isteğe bağlı)'
+              "
+              autocomplete="off"
+            />
+            <button class="btn small" type="submit">
+              {{
+                passDraft.trim()
+                  ? "Kaydet"
+                  : s.locked
+                  ? "Şifreyi kaldır"
+                  : "Kaydet"
+              }}
+            </button>
+          </form>
           <div class="settings">
             <label>
               🎨 Tema
@@ -1022,6 +1054,7 @@ import {
   setMyPhoto,
   react,
   friends,
+  setRoomPassword,
 } from "../game";
 import qrcode from "qrcode-generator";
 import { pickPhoto } from "../photo";
@@ -1148,6 +1181,7 @@ export default {
     return {
       game,
       vc: voiceChat,
+      passDraft: "",
       now: Date.now(),
       nameInput: game.name,
       toggles: TOGGLES,
@@ -1520,6 +1554,17 @@ export default {
       setName(this.nameInput);
       if (!game.name) toast("Önce adını yaz.", "warning");
     },
+    savePass() {
+      const value = this.passDraft.trim();
+      setRoomPassword(value);
+      toast(
+        value
+          ? "🔒 Oda şifrelendi. Odadakiler kalmaya devam eder."
+          : "🔓 Şifre kaldırıldı.",
+        "success",
+      );
+      this.passDraft = "";
+    },
     async share() {
       const url = shareLink();
       const text = `Vampir Köylü oynuyoruz! Oda kodu: ${game.code}`;
@@ -1703,6 +1748,27 @@ h3 {
   .btn {
     width: auto;
     margin: 0;
+  }
+}
+.lock-note {
+  font-size: 13px;
+  margin: -4px 0 8px;
+  b {
+    color: $gold;
+  }
+}
+.pass-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  .field {
+    flex: 1;
+    margin: 0;
+  }
+  .btn {
+    margin: 0;
+    width: auto;
+    white-space: nowrap;
   }
 }
 .big-code {
