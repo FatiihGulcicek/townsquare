@@ -40,6 +40,14 @@
     #boot .bar small { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #f6ecd8; font-size: clamp(10px, 2.6vw, 14px); font-weight: 700; letter-spacing: .06em; text-shadow: 0 1px 3px #000, 0 0 6px #000; white-space: nowrap; }
     #boot .logo { position: absolute; left: 50%; top: calc(env(safe-area-inset-top) + 12vh); transform: translateX(-50%); width: min(90vw, 540px); height: auto; filter: drop-shadow(0 10px 24px rgba(0,0,0,.75)); animation: boot-logo 1s cubic-bezier(.2,1.3,.4,1) both; }
     @keyframes boot-logo { from { opacity: 0; transform: translateX(-50%) scale(.85); } }
+    /* phones (taller than the picture): a taller version of the same picture
+       (the wet ground reflects the scene), full width, no blur, no cropping */
+    @media (max-aspect-ratio: 941/1672) {
+      #boot { background: #06060c; }
+      #boot::before { display: none; }
+      #boot .stage { top: 0; bottom: auto; width: 100vw; aspect-ratio: 941 / 2042; background-image: url("static/loading-bg-tall.webp"); -webkit-mask-image: none; mask-image: none; }
+      #boot .bar { top: 63.57%; height: 2.55%; }
+    }
   </style>
 </head>
 <body>
