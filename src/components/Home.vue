@@ -27,11 +27,15 @@
     <!-- ========== PLAY ========== -->
     <section v-if="tab === 'play'" class="play">
       <header>
-        <img src="static/logo.webp" alt="Vampir Köylü" class="logo" />
+        <img
+          src="static/darkspire-logo.webp"
+          alt="Darkspire · Vampir Köylü"
+          class="logo"
+        />
         <h1 class="sr-only">Vampir Köylü</h1>
       </header>
 
-      <button class="btn primary play-btn" :disabled="busy" @click="newRoom">
+      <button class="btn gold play-btn" :disabled="busy" @click="newRoom">
         ▶ Oyun kur
       </button>
 
@@ -380,9 +384,9 @@ export default {
 header {
   text-align: center;
   .logo {
-    width: min(70vw, 280px);
+    width: min(94vw, 440px);
     height: auto;
-    filter: drop-shadow(0 12px 30px rgba(200, 30, 80, 0.35));
+    filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.6));
     animation: logo-in 0.8s cubic-bezier(0.2, 1.3, 0.4, 1) both;
   }
 }
@@ -393,15 +397,7 @@ header {
   }
 }
 .play-btn {
-  min-height: 64px;
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  border-radius: 20px;
-  margin: 10px 0 12px;
-  box-shadow:
-    0 12px 30px rgba(233, 180, 76, 0.25),
-    inset 0 -4px 0 rgba(0, 0, 0, 0.2);
+  margin: 6px auto 12px;
   animation: breathe 2.6s ease-in-out infinite;
 }
 @keyframes breathe {

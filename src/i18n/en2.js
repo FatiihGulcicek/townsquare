@@ -326,4 +326,6 @@ export default {
   Sil: "Delete",
 
   "Öğretici oyun": "Tutorial game",
+
+  Başla: "Let's go",
 };

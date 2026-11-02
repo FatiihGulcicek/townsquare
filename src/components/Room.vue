@@ -419,7 +419,7 @@
         </div>
         <div class="start-dock" v-if="s.me.isOwner">
           <button
-            class="btn primary big-start"
+            class="btn gold big-start"
             :class="{ dim: s.players.length < s.min }"
             @click="start"
           >
@@ -2730,10 +2730,7 @@ small.gozcu {
   z-index: 20;
   margin: 6px 0 14px;
   .big-start {
-    margin: 0;
-    min-height: 56px;
-    font-size: 18px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    margin: 0 auto;
   }
 }
 .room {

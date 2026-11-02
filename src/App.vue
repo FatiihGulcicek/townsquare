@@ -388,6 +388,29 @@ h3,
     opacity: 0.4;
     pointer-events: none;
   }
+  /* the ornate golden button from the game's artwork */
+  &.gold {
+    max-width: 380px;
+    margin: 10px auto;
+    aspect-ratio: 1064 / 268;
+    min-height: 0;
+    height: auto;
+    padding: 0 18%;
+    border: 0;
+    border-radius: 0;
+    background: url("assets/btn-gold.webp") center / 100% 100% no-repeat;
+    color: #2b1204;
+    font-size: clamp(17px, 5vw, 22px);
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    text-shadow: 0 1px 0 rgba(255, 236, 170, 0.7);
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.55));
+    &:disabled,
+    &.disabled {
+      opacity: 1;
+      filter: grayscale(0.7) brightness(0.6);
+    }
+  }
 }
 
 input.field {

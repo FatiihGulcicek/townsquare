@@ -6,7 +6,11 @@
 
     <!-- 1. profile -->
     <div class="step" v-if="step === 1">
-      <img src="static/logo.webp" alt="Vampir Köylü" class="logo" />
+      <img
+        src="static/darkspire-logo.webp"
+        alt="Darkspire · Vampir Köylü"
+        class="logo"
+      />
       <h1 class="sr-only">Vampir Köylü</h1>
       <p class="muted">Hoş geldin! Önce profilini oluşturalım.</p>
       <button
@@ -33,14 +37,14 @@
         enterkeyhint="next"
         @keyup.enter="saveProfile"
       />
-      <button class="btn primary" :disabled="!name.trim()" @click="saveProfile">
+      <button class="btn gold" :disabled="!name.trim()" @click="saveProfile">
         Devam
       </button>
       <div class="dots"><i class="on"></i><i></i></div>
     </div>
 
     <!-- 2. permissions -->
-    <div class="step" v-else>
+    <div class="step perms" v-else>
       <h2>İzinler</h2>
       <p class="muted">
         Oyunun tam çalışması için şunlara izin ver. Hepsi isteğe bağlı; sonra
@@ -121,7 +125,7 @@
         Engellenen izinleri telefonunun ayarlarından (Safari/Chrome → bu site)
         açabilirsin.
       </p>
-      <button class="btn primary" @click="finish">Başla 🎉</button>
+      <button class="btn gold" @click="finish">Başla</button>
       <button class="btn ghost" v-if="firstTime" @click="step = 1">
         ← Geri
       </button>
@@ -244,14 +248,8 @@ export default {
   inset: 0;
   z-index: 500;
   overflow-y: auto;
-  background: radial-gradient(
-      circle at 50% 0%,
-      rgba(70, 50, 120, 0.55),
-      rgba(5, 6, 14, 0.96) 70%
-    ),
-    rgba(5, 6, 14, 0.9);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: #120b2a url("../assets/welcome-bg.webp") center top / cover
+    no-repeat;
   padding: calc(20px + env(safe-area-inset-top)) 20px
     calc(24px + env(safe-area-inset-bottom));
 }
@@ -283,10 +281,15 @@ export default {
     transform: translateY(12px);
   }
 }
+/* permissions: start below the village so the artwork stays visible */
+.perms {
+  padding-top: 26vh;
+}
 .logo {
-  width: min(62vw, 240px);
+  width: min(92vw, 420px);
   height: auto;
-  filter: drop-shadow(0 12px 30px rgba(200, 30, 80, 0.35));
+  margin-top: 4vh;
+  filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.6));
 }
 h1 {
   margin: 0;
