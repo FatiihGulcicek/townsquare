@@ -350,8 +350,18 @@ export default {
   z-index: -1;
 }
 .town {
-  background: url("../assets/background.jpg") center 30% / cover no-repeat;
+  overflow: hidden;
   animation: kenburns 9s ease-out both;
+  /* larger than the scene so the artist's credit corner stays hidden */
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: -25%;
+    bottom: -25%;
+    background: url("../assets/background.jpg") 40% 30% / cover no-repeat;
+  }
   &::after {
     content: "";
     position: absolute;

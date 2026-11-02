@@ -34,6 +34,9 @@
         🚪 Odadan çık
       </button>
       <button class="btn ghost" @click="$emit('close')">Kapat</button>
+      <p class="credit muted">
+        Arka plan görseli: Ryan Maloney (3D Artist) · Topluluk yapımı, ücretsiz.
+      </p>
     </div>
     <Profile v-if="profile" @close="profile = false" />
   </div>
@@ -139,6 +142,11 @@ h3 {
       color: $gold;
     }
   }
+}
+.credit {
+  text-align: center;
+  font-size: 12px;
+  margin: 6px 0 0;
 }
 .small {
   font-size: 14px;

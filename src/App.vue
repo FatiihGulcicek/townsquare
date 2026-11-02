@@ -122,7 +122,20 @@ body {
   position: fixed;
   inset: 0;
   z-index: -3;
-  background: #05060c url("assets/background.jpg") center top / cover no-repeat;
+  overflow: hidden;
+  background: #05060c;
+  /* the picture is drawn a bit larger so its bottom-right corner (where the
+     artist's credit is printed) stays off screen; the credit is shown in
+     Settings instead */
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: -22%;
+    bottom: -22%;
+    background: url("assets/background.jpg") 40% top / cover no-repeat;
+  }
 }
 .night-sky {
   position: fixed;
