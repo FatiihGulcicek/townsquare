@@ -6,7 +6,7 @@
       </button>
     </div>
     <header>
-      <img src="static/apple-icon.png" alt="" class="logo" />
+      <img src="static/logo.svg" alt="Vampir Köylü" class="logo" />
       <h1>Vampir Köylü</h1>
       <p class="muted">Kasaba Meydanı · arkadaşlarınla telefondan oyna</p>
     </header>
@@ -273,10 +273,16 @@ header {
   text-align: center;
   margin: 0 0 6px;
   .logo {
-    width: 92px;
-    height: 92px;
-    border-radius: 22px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+    width: 108px;
+    height: 108px;
+    filter: drop-shadow(0 10px 30px rgba(233, 180, 76, 0.35));
+    animation: logo-in 0.8s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+  }
+  @keyframes logo-in {
+    from {
+      transform: scale(0.6) rotate(-8deg);
+      opacity: 0;
+    }
   }
   h1 {
     margin: 10px 0 2px;

@@ -1,7 +1,7 @@
 <template>
   <div class="card online">
     <div class="head">
-      <h3><span class="dot"></span> Sitede {{ others.length }} kişi</h3>
+      <h3><span class="dot"></span> Sitede {{ others.length + 1 }} kişi</h3>
       <small class="muted" v-if="!lobby.connected">bağlanıyor…</small>
     </div>
     <p class="muted small" v-if="!others.length">
