@@ -14,6 +14,7 @@
 "use strict";
 const crypto = require("crypto");
 const { CATEGORIES, MODES, pickPenalties } = require("./penalties");
+const { line } = require("./lines");
 
 const ROLES = {
   vampir: {
@@ -831,6 +832,7 @@ class Room {
         online: !!p.bot || online.includes(p.id),
         bot: !!p.bot,
         muted: !!p.muted,
+        level: p.level || 1,
         noVote: !!p.noVote,
         kicked: !!p.kicked,
         role: this.visibleRole(viewer, p),
@@ -943,6 +945,15 @@ class Room {
     }
     if (command === "photo") return this.setPhoto(id, params);
     if (command === "react") return this.react(id, params);
+    if (command === "level") {
+      const me = this.player(id);
+      const level = parseInt(params, 10);
+      if (me && level >= 1 && level <= 99 && me.level !== level) {
+        me.level = level;
+        this.update();
+      }
+      return;
+    }
     if (command === "photos") return this.sendPhotos(id);
     if (command === "rtc") return this.signal(id, params);
     if (command === "chat") {
@@ -1324,9 +1335,7 @@ class Room {
     this.condemned = null;
     this.nightStarted = Date.now();
     this.story("night", {});
-    this.narrate(
-      `${this.round}. gece. Köy uyusun, herkes gözlerini kapatsın ve telefonuna baksın.`,
-    );
+    this.narrate(line("night", { r: this.round }));
     this.pushAll(
       {
         title: "Gece çöktü 🌙",
@@ -1557,20 +1566,20 @@ class Room {
     this.phase = "day";
     this.votes = {};
     this.settleAt = 0;
-    let text = `Günaydın köy! ${this.round}. gün başladı. `;
+    let text = line("dawn", { r: this.round }) + " ";
     const was = (d) =>
       this.settings.reveal ? ` O bir ${ROLES[d.role].was}.` : "";
     this.lastNight.died.forEach((d) => {
       text += d.poison
         ? `${d.name} gece zehirlenmiş olarak bulundu.${was(d)} `
-        : `Bu gece ${d.name} vampirlerin kurbanı oldu.${was(d)} `;
+        : `${line("kill", { name: d.name })}${was(d)} `;
     });
     if (saved) {
       text += witchSaved
         ? "Vampirler saldırdı ama gizemli bir iksir kurbanı kurtardı! "
-        : "Vampirler saldırdı ama Doktor kurbanı kurtardı! ";
+        : line("saved") + " ";
     }
-    if (!this.lastNight.died.length && !saved) text += "Bu gece kimse ölmedi.";
+    if (!this.lastNight.died.length && !saved) text += line("quiet");
     text = text.trim();
     this.lastNight.died.forEach((d) =>
       this.story(d.poison ? "poison" : "kill", {
@@ -1701,10 +1710,7 @@ class Room {
     }
     this.story(max > 0 && top.length > 1 ? "tie" : "nohang", {});
     this.narrate(
-      summary +
-        (max > 0 && top.length > 1
-          ? "Oylar eşit çıktı, bugün kimse asılmadı."
-          : "Bugün kimse asılmadı."),
+      summary + (max > 0 && top.length > 1 ? line("tie") : line("nohang")),
     );
     this.toDusk();
   }
@@ -1737,7 +1743,7 @@ class Room {
         role: this.settings.reveal ? p.role : null,
       };
       this.story("hang", { name: p.name, role: this.executed.role });
-      this.narrate(this.deathText(p, "asıldı"));
+      this.narrate(this.deathText(p, line("hangVerb")));
       if (p.role === "deli") {
         // the Jester wanted exactly this
         this.condemned = null;

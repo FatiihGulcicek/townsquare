@@ -8,6 +8,12 @@
           voice.enabled ? "Açık" : "Kapalı"
         }}</b>
       </div>
+      <div class="row" @click="toggleMusic">
+        <span>🎼 Atmosfer müziği</span>
+        <b :class="{ on: music.enabled }">{{
+          music.enabled ? "Açık" : "Kapalı"
+        }}</b>
+      </div>
       <div class="row" @click="toggleSfx">
         <span>🎵 Ses efektleri</span>
         <b :class="{ on: sfx.enabled }">{{
@@ -48,6 +54,7 @@ import { voiceState, setVoice } from "../voice";
 import { pwaState, install } from "../pwa";
 import { enableNotifications, notificationState } from "../notifications";
 import { sfxState, setSfx } from "../sfx";
+import { musicState, setMusic } from "../music";
 import Profile from "./Profile";
 
 export default {
@@ -59,6 +66,7 @@ export default {
       pwa: pwaState,
       notif: notificationState,
       sfx: sfxState,
+      music: musicState,
       profile: false,
     };
   },
@@ -73,6 +81,9 @@ export default {
     },
   },
   methods: {
+    toggleMusic() {
+      setMusic(!this.music.enabled);
+    },
     toggleSfx() {
       setSfx(!this.sfx.enabled);
     },

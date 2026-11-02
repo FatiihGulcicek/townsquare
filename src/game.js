@@ -2,7 +2,13 @@ import Vue from "vue";
 import { speak } from "./voice";
 import { getPushSubscription, onPushSubscription } from "./push";
 import { play } from "./sfx";
-import { recordGame, penaltyDone, titleFor } from "./progress";
+import {
+  recordGame,
+  penaltyDone,
+  titleFor,
+  levelFor,
+  progress,
+} from "./progress";
 import {
   bindVoice,
   voiceState,
@@ -202,6 +208,7 @@ function onState(next) {
   ) {
     rememberFriends(next);
     const result = recordGame(next);
+    send("level", levelFor(progress.totals.xp));
     if (result && result.xp) {
       setTimeout(() => {
         toast(`+${result.xp} XP kazandın ⭐`, "success", 5000);
@@ -294,6 +301,7 @@ function open(code) {
     else send("hello");
     send("photos");
     if (game.myPhoto) send("photo", game.myPhoto);
+    send("level", levelFor(progress.totals.xp));
     presence();
     voiceReconnected();
   };

@@ -1,7 +1,7 @@
 <template>
   <span
     class="avatar"
-    :class="{ dead, offline: online === false, speaking }"
+    :class="[{ dead, offline: online === false, speaking }, frame]"
     :style="{
       width: size + 'px',
       height: size + 'px',
@@ -14,11 +14,13 @@
     <span class="badge" v-if="badge">{{ badge }}</span>
     <span class="skull" v-if="dead">💀</span>
     <span class="mic" v-if="mic">🎙️</span>
+    <span class="lvl" v-if="lvl >= 3 && size >= 44">{{ lvl }}</span>
   </span>
 </template>
 
 <script>
 import { game } from "../game";
+import { progress, levelFor } from "../progress";
 
 const PALETTE = [
   ["#7b2cbf", "#3c096c"],
@@ -52,6 +54,27 @@ export default {
     mic: Boolean,
   },
   computed: {
+    player() {
+      if (!game.state) return null;
+      return (
+        game.state.players.find(
+          (x) => x.pid === this.pid || (!this.pid && x.name === this.name),
+        ) || null
+      );
+    },
+    lvl() {
+      if (this.src) return levelFor(progress.totals.xp); // own avatar
+      return this.player ? this.player.level || 1 : 1;
+    },
+    frame() {
+      const l = this.lvl;
+      if (l >= 16) return "f-legend";
+      if (l >= 12) return "f-ruby";
+      if (l >= 8) return "f-gold";
+      if (l >= 5) return "f-silver";
+      if (l >= 3) return "f-bronze";
+      return "";
+    },
     photo() {
       if (this.src) return this.src;
       let pid = this.pid;
@@ -99,6 +122,61 @@ export default {
   border-radius: 50%;
   object-fit: cover;
 }
+.avatar.f-bronze {
+  box-shadow:
+    0 0 0 3px #b0763b,
+    0 4px 12px rgba(0, 0, 0, 0.45);
+}
+.avatar.f-silver {
+  box-shadow:
+    0 0 0 3px #cfd6df,
+    0 0 10px rgba(220, 230, 240, 0.4);
+}
+.avatar.f-gold {
+  box-shadow:
+    0 0 0 3px #e9b44c,
+    0 0 14px rgba(233, 180, 76, 0.6);
+}
+.avatar.f-ruby {
+  box-shadow:
+    0 0 0 3px #c4122f,
+    0 0 16px rgba(220, 20, 50, 0.7);
+}
+.avatar.f-legend {
+  box-shadow:
+    0 0 0 3px #b47bff,
+    0 0 18px rgba(180, 123, 255, 0.9);
+  animation: legend 3s linear infinite;
+}
+@keyframes legend {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px #b47bff,
+      0 0 18px rgba(180, 123, 255, 0.9);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px #e9b44c,
+      0 0 22px rgba(233, 180, 76, 0.9);
+  }
+}
+.lvl {
+  position: absolute;
+  right: -8%;
+  bottom: -8%;
+  min-width: 34%;
+  height: 34%;
+  border-radius: 999px;
+  background: #0b0d18;
+  border: 1.5px solid #e9b44c;
+  color: #e9b44c;
+  font-size: 0.45em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}
 .avatar.dead {
   filter: grayscale(1) brightness(0.55);
 }
@@ -137,5 +215,10 @@ export default {
   bottom: -8%;
   left: -6%;
   filter: none;
+}
+.avatar.speaking {
+  box-shadow:
+    0 0 0 3px #3ddc84,
+    0 0 18px rgba(61, 220, 132, 0.8) !important;
 }
 </style>

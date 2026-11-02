@@ -30,6 +30,7 @@ import Room from "./components/Room";
 import RoleCard from "./components/RoleCard";
 import Settings from "./components/Settings";
 import LiveStory from "./components/LiveStory";
+import { setMood } from "./music";
 import { game, restore } from "./game";
 
 export default {
@@ -38,6 +39,14 @@ export default {
     return { game, settingsOpen: false };
   },
   computed: {
+    mood() {
+      const s = game.state;
+      if (!game.code || !s) return null;
+      if (["night", "roles"].includes(s.phase)) return "night";
+      if (s.phase === "over") return "over";
+      if (s.phase === "lobby") return "lobby";
+      return "day";
+    },
     tint() {
       const s = game.state;
       if (!game.code || !s) return "tint-home";
@@ -48,6 +57,12 @@ export default {
     },
   },
   watch: {
+    mood: {
+      immediate: true,
+      handler(value) {
+        setMood(value);
+      },
+    },
     tint: {
       immediate: true,
       handler(value, old) {
