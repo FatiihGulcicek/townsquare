@@ -25,27 +25,28 @@
   <style>
     /* loading screen while the app starts (and updates itself) */
     html { background: #05060d; } body { margin: 0; }
-    #boot { position: fixed; inset: 0; z-index: 9999; overflow: hidden; background: #05060d; transition: opacity .5s ease; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    #boot { position: fixed; inset: 0; z-index: 9999; overflow: hidden; background: linear-gradient(#1d2233, #10131f 60%, #05060d); transition: opacity .5s ease; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     #boot.out { opacity: 0; pointer-events: none; }
-    #boot .bg { position: absolute; inset: 0; background: url("static/splash.webp") center 30% / cover no-repeat; animation: boot-zoom 14s ease-out both; }
-    #boot .bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5,6,13,0) 55%, rgba(5,6,13,.92) 88%); }
-    #boot .bottom { position: absolute; left: 0; right: 0; bottom: calc(34px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 12px; }
-    #boot .logo { width: 150px; height: auto; filter: drop-shadow(0 8px 20px rgba(0,0,0,.7)); }
-    #boot .bar { width: min(70vw, 320px); height: 6px; border-radius: 3px; background: rgba(255,255,255,.12); overflow: hidden; box-shadow: 0 0 0 1px rgba(255,60,60,.25); }
-    #boot .bar i { display: block; height: 100%; width: 0; border-radius: 3px; background: linear-gradient(90deg, #8b0d1a, #ff3b4d, #e9b44c); box-shadow: 0 0 12px rgba(255,60,80,.8); transition: width .4s ease; }
-    #boot small { color: rgba(243,238,228,.75); font-size: 13px; letter-spacing: .08em; text-shadow: 0 1px 4px #000; }
-    @keyframes boot-zoom { from { transform: scale(1.08); } to { transform: scale(1); } }
+    /* wide screens: a blurred copy of the artwork fills the sides */
+    #boot::before { content: ""; position: absolute; inset: -40px; background: url("static/loading-bg.webp") center 70% / cover no-repeat; filter: blur(24px) brightness(.55); }
+    /* the artwork keeps its shape and sits on the bottom edge, so the frame
+       of the loading bar is always visible; the bar sits inside the frame */
+    #boot .stage { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: min(100vw, 75vh); aspect-ratio: 941 / 1672; background: url("static/loading-bg.webp") center / 100% 100% no-repeat; }
+    #boot .stage { -webkit-mask-image: linear-gradient(transparent, #000 10%); mask-image: linear-gradient(transparent, #000 10%); }
+    #boot .bar { position: absolute; left: 9.6%; width: 80.8%; top: 77.6%; height: 3.1%; border-radius: 999px; overflow: hidden; }
+    #boot .bar i { display: block; height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #6b0a14, #d01c33 55%, #e9b44c); box-shadow: 0 0 14px rgba(255, 70, 90, .85), inset 0 2px 3px rgba(255,255,255,.35); transition: width .4s ease; }
+    #boot .bar small { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #f6ecd8; font-size: clamp(10px, 2.6vw, 14px); font-weight: 700; letter-spacing: .06em; text-shadow: 0 1px 3px #000, 0 0 6px #000; white-space: nowrap; }
+    #boot .logo { position: absolute; left: 50%; top: calc(env(safe-area-inset-top) + 3.5vh); transform: translateX(-50%); width: min(94vw, 560px); height: auto; filter: drop-shadow(0 10px 24px rgba(0,0,0,.75)); animation: boot-logo 1s cubic-bezier(.2,1.3,.4,1) both; }
+    @keyframes boot-logo { from { opacity: 0; transform: translateX(-50%) scale(.85); } }
   </style>
 </head>
 <body>
 <noscript>Vampir Köylü için JavaScript gereklidir.</noscript>
 <div id="boot">
-  <div class="bg"></div>
-  <div class="bottom">
-    <img class="logo" src="static/logo.webp" alt="Vampir Köylü">
-    <div class="bar"><i id="boot-bar"></i></div>
-    <small id="boot-text">Köy uyanıyor…</small>
+  <div class="stage">
+    <div class="bar"><i id="boot-bar"></i><small id="boot-text">Köy uyanıyor…</small></div>
   </div>
+  <img class="logo" src="static/darkspire-logo.webp" alt="Darkspire · Vampir Köylü">
 </div>
 <script>
 /*
