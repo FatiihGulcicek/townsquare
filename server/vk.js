@@ -172,6 +172,7 @@ class Room {
     room.settings = { ...DEFAULT_SETTINGS, ...(data.settings || {}) };
     room.lastActivity = Date.now();
     room.schedule();
+    room.botsAct();
     return room;
   }
 
@@ -392,13 +393,16 @@ class Room {
         isOwner: this.owner() === id,
         isStoryteller: isSt,
       },
-      players: this.players.map((p) => ({
-        pid: p.pid,
-        name: p.name,
-        alive: p.alive,
-        online: online.includes(p.id),
-        role: this.visibleRole(viewer, p),
-      })),
+      players: this.players
+        .filter((p) => !p.bot)
+        .map((p) => ({
+          pid: p.pid,
+          name: p.name,
+          alive: p.alive,
+          online: !!p.bot || online.includes(p.id),
+          bot: !!p.bot,
+          role: this.visibleRole(viewer, p),
+        })),
       votes: ["day", "lastwords", "dusk"].includes(this.phase)
         ? this.votes
         : {},
@@ -490,6 +494,26 @@ class Room {
         this.io.sendTo(p.id, JSON.stringify(["kicked", true]));
         return this.update();
       }
+      case "addBot": {
+        if (!isBoss || this.phase !== "lobby") return;
+        if (this.players.length >= MAX_PLAYERS) return;
+        const used = new Set(this.players.map((p) => p.name));
+        let k = 1;
+        while (used.has(`Bot ${k}`)) k++;
+        this.players.push({
+          id: "bot-" + newPid(),
+          pid: newPid(),
+          name: `Bot ${k}`,
+          role: null,
+          alive: true,
+          bot: true,
+        });
+        return this.update();
+      }
+      case "removeBots":
+        if (!isBoss || this.phase !== "lobby") return;
+        this.players = this.players.filter((p) => !p.bot);
+        return this.update();
       case "leave":
         if (this.phase === "lobby") {
           this.players = this.players.filter((p) => p.id !== id);
@@ -658,7 +682,47 @@ class Room {
       true,
     );
     this.setDeadline(this.settings.nightSeconds * 1000);
+    this.botsAct();
     this.update();
+  }
+
+  /** practice bots make random (valid) choices after a short delay */
+  botsAct() {
+    const phase = this.phase;
+    const round = this.round;
+    this.alive()
+      .filter((p) => p.bot)
+      .forEach((bot) => {
+        const wait = 2500 + rnd(6000);
+        setTimeout(
+          () => {
+            if (this.phase !== phase || this.round !== round || !bot.alive)
+              return;
+            const others = this.alive().filter((p) => p !== bot);
+            if (phase === "night") {
+              let options = others;
+              if (bot.role === "vampir")
+                options = others.filter((p) => p.role !== "vampir");
+              if (bot.role === "doktor") {
+                options = this.alive().filter(
+                  (p) => p.pid !== this.lastProtected,
+                );
+              }
+              const t = pick(options);
+              if (t) this.nightAction(bot.id, t.pid);
+            } else if (phase === "day") {
+              if (rnd(6) === 0) return this.dayVote(bot.id, "pass");
+              const options =
+                bot.role === "vampir"
+                  ? others.filter((p) => p.role !== "vampir")
+                  : others;
+              const t = pick(options.length ? options : others);
+              if (t) this.dayVote(bot.id, t.pid);
+            }
+          },
+          phase === "day" ? wait * 3 : wait,
+        );
+      });
   }
 
   nightReady() {
@@ -756,6 +820,7 @@ class Room {
     this.pushAll({ title: "Gün doğdu ☀️", body: text, tag: "phase" });
     if (this.checkWin()) return;
     this.setDeadline(this.settings.dayMinutes * 60000);
+    this.botsAct();
     this.update();
   }
 
@@ -884,13 +949,15 @@ class Room {
       winner,
       rounds: this.round,
       startedAt: this.startedAt || Date.now(),
-      players: this.players.map((p) => ({
-        id: p.id,
-        name: p.name,
-        role: p.role,
-        won: ROLES[p.role].team === winner,
-        alive: p.alive,
-      })),
+      players: this.players
+        .filter((p) => !p.bot)
+        .map((p) => ({
+          id: p.id,
+          name: p.name,
+          role: p.role,
+          won: ROLES[p.role].team === winner,
+          alive: p.alive,
+        })),
     });
     this.update();
     return true;

@@ -153,9 +153,23 @@
               />
             </label>
           </div>
+          <p class="need" v-if="s.players.length < s.min">
+            Başlamak için en az {{ s.min }} oyuncu lazım, şu an
+            {{ s.players.length }} kişi var<template v-if="isSt">
+              (anlatıcı oyuncu sayılmaz)</template
+            >. Davet linkini paylaş ya da denemek için bot ekle.
+          </p>
+          <div class="bot-row">
+            <button class="btn small" @click="act('addBot')">
+              🤖 Bot ekle
+            </button>
+            <button class="btn small" v-if="hasBots" @click="act('removeBots')">
+              Botları çıkar
+            </button>
+          </div>
           <button
             class="btn primary"
-            :class="{ disabled: s.players.length < s.min }"
+            :class="{ dim: s.players.length < s.min }"
             @click="start"
           >
             ▶️ Oyunu başlat
@@ -509,6 +523,9 @@ export default {
         }[this.phase] || ""
       );
     },
+    hasBots() {
+      return this.s.players.some((p) => p.bot);
+    },
     alivePlayers() {
       return this.s ? this.s.players.filter((p) => p.alive) : [];
     },
@@ -660,7 +677,11 @@ export default {
     },
     start() {
       if (this.s.players.length < this.s.min) {
-        toast(`En az ${this.s.min} oyuncu gerekiyor.`, "warning");
+        toast(
+          `En az ${this.s.min} oyuncu gerekiyor, şu an ${this.s.players.length} kişi var. Arkadaşlarını davet et ya da 🤖 Bot ekle.`,
+          "warning",
+          6000,
+        );
         return;
       }
       if (confirm(`Oyun ${this.s.players.length} oyuncuyla başlasın mı?`)) {
@@ -935,6 +956,21 @@ h3 {
     color: $text;
     font-weight: 600;
   }
+}
+.need {
+  color: #ffb3b6;
+  font-size: 15px;
+  line-height: 1.4;
+}
+.bot-row {
+  display: flex;
+  gap: 8px;
+  .btn {
+    flex: 1;
+  }
+}
+.btn.dim {
+  opacity: 0.55;
 }
 .chips {
   display: flex;
