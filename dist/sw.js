@@ -6,7 +6,7 @@
  * - live game traffic (WebSocket) and server endpoints are never cached
  */
 const SHELL = "km-shell-v13";
-const ASSETS = "km-assets-v11";
+const ASSETS = "km-assets-v12";
 const MAX_ASSETS = 400;
 
 self.addEventListener("install", (event) => {
