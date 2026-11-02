@@ -234,7 +234,10 @@ function open(code) {
     }
     if (command === "state") onState(params);
     else if (command === "rtc") voiceSignal(params);
-    else if (command === "narrate") {
+    else if (command === "notice") {
+      toast(params, "warning", 8000);
+      vibrate([300, 100, 300]);
+    } else if (command === "narrate") {
       toast(params, "story", 7000);
       speak(params);
     } else if (command === "kicked") {

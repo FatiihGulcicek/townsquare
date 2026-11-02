@@ -13,6 +13,7 @@
  */
 "use strict";
 const crypto = require("crypto");
+const { CATEGORIES, MODES, pickPenalties } = require("./penalties");
 
 const ROLES = {
   vampir: {
@@ -64,7 +65,13 @@ const DEFAULT_SETTINGS = {
   gozcu: true,
   reveal: true,
   lastWords: true,
+  idlePenalty: true,
+  penalty: "losers", // off | losers | team | firstDead | everyone
+  penaltyCats: ["hafif", "komik", "muzik", "oyun"],
+  customPenalties: [],
 };
+const IDLE_WARN = 2;
+const IDLE_PUNISH = 3;
 const ROLES_MS = 45000; // time to draw a card
 const READ_CARD_MS = 6000;
 const MIN_NIGHT_MS = 8000;
@@ -161,6 +168,8 @@ class Room {
       winner: this.winner,
       seerLog: this.seerLog,
       cards: this.cards,
+      penalties: this.penalties,
+      deathOrder: this.deathOrder,
       gameId: this.gameId,
       startedAt: this.startedAt,
       chat: this.chat,
@@ -212,10 +221,14 @@ class Room {
     this.seerLog = {};
     this.startedAt = 0;
     this.cards = null;
+    this.penalties = null;
+    this.deathOrder = [];
     this.chat = { town: [], vampir: [], dead: [] };
     this.players.forEach((p) => {
       p.role = null;
       p.alive = true;
+      p.idle = 0;
+      p.noVote = false;
     });
   }
 
@@ -316,7 +329,7 @@ class Room {
     const out = [];
     if (id === this.stId) return ["town"];
     const me = this.player(id);
-    if (!me) return out;
+    if (!me || me.muted) return out;
     if (this.phase === "lobby" || this.phase === "over") return ["town"];
     if (!me.alive) return ["dead"];
     if (this.phase === "lastwords") {
@@ -358,6 +371,48 @@ class Room {
     this.update();
   }
 
+  // ---------- discipline ----------
+
+  kill(p) {
+    p.alive = false;
+    if (!this.deathOrder) this.deathOrder = [];
+    this.deathOrder.push(p.pid);
+  }
+
+  notice(id, text) {
+    this.io.sendTo(id, JSON.stringify(["notice", text]));
+  }
+
+  /** players who did nothing for several phases lose their vote */
+  trackIdle(acted) {
+    if (!this.settings.idlePenalty) return;
+    this.alive()
+      .filter((p) => !p.bot && !p.noVote && acted(p) !== null)
+      .forEach((p) => {
+        if (acted(p)) {
+          p.idle = 0;
+          return;
+        }
+        p.idle = (p.idle || 0) + 1;
+        if (p.idle === IDLE_WARN) {
+          this.notice(
+            p.id,
+            "⚠️ Uyarı: art arda hiçbir şey yapmadın. Bir kez daha pasif kalırsan oy hakkını kaybedeceksin.",
+          );
+          this.io.push([p.id], {
+            title: "Uyarı ⚠️",
+            body: "Oyunda pasif kalıyorsun, sıradaki seçimini kaçırma!",
+            tag: "idle",
+          });
+        } else if (p.idle >= IDLE_PUNISH) {
+          p.noVote = true;
+          this.narrate(
+            `${p.name} uzun süre pasif kaldığı için oy hakkını kaybetti. 🚫`,
+          );
+        }
+      });
+  }
+
   // ---------- voice chat ----------
 
   /** public id of a participant ("st" for the storyteller) */
@@ -376,8 +431,10 @@ class Room {
   /** may a's voice reach b right now? (enforced by a's own phone) */
   canHear(aId, bId) {
     if (aId === bId) return false;
-    if (aId === this.stId || bId === this.stId) return true;
+    if (aId === this.stId) return true;
     const a = this.player(aId);
+    if (a && a.muted) return false;
+    if (bId === this.stId) return true;
     const b = this.player(bId);
     if (!a) return false; // spectators only listen
     if (this.phase === "lobby" || this.phase === "over") return true;
@@ -481,13 +538,21 @@ class Room {
         seated: !!me,
         isOwner: this.owner() === id,
         isStoryteller: isSt,
+        muted: !!(me && me.muted),
+        noVote: !!(me && me.noVote),
+        idle: me ? me.idle || 0 : 0,
       },
+      penalties: this.phase === "over" ? this.penalties : null,
+      penaltyCategories: CATEGORIES,
       players: this.players.map((p) => ({
         pid: p.pid,
         name: p.name,
         alive: p.alive,
         online: !!p.bot || online.includes(p.id),
         bot: !!p.bot,
+        muted: !!p.muted,
+        noVote: !!p.noVote,
+        kicked: !!p.kicked,
         role: this.visibleRole(viewer, p),
       })),
       votes: ["day", "lastwords", "dusk"].includes(this.phase)
@@ -583,18 +648,100 @@ class Room {
           const v = parseInt(params[key], 10);
           if (SETTINGS[key].includes(v)) this.settings[key] = v;
         });
-        ["doktor", "gozcu", "reveal", "lastWords"].forEach((key) => {
-          if (typeof params[key] === "boolean")
-            this.settings[key] = params[key];
-        });
+        ["doktor", "gozcu", "reveal", "lastWords", "idlePenalty"].forEach(
+          (key) => {
+            if (typeof params[key] === "boolean") {
+              this.settings[key] = params[key];
+            }
+          },
+        );
+        if (MODES.includes(params.penalty))
+          this.settings.penalty = params.penalty;
+        if (Array.isArray(params.penaltyCats)) {
+          this.settings.penaltyCats = params.penaltyCats.filter(
+            (c) => CATEGORIES[c],
+          );
+        }
+        if (Array.isArray(params.customPenalties)) {
+          this.settings.customPenalties = params.customPenalties
+            .filter((t) => typeof t === "string")
+            .map((t) => t.replace(/\s+/g, " ").trim().slice(0, 140))
+            .filter(Boolean)
+            .slice(0, 50);
+        }
         return this.update();
       case "kick": {
-        if (!isBoss || this.phase !== "lobby") return;
+        if (!isBoss) return;
         const p = this.byPid(params.target);
         if (!p || p.id === id) return;
         this.kicked.add(p.id);
-        this.players = this.players.filter((x) => x !== p);
+        this.voice.delete(p.id);
         this.io.sendTo(p.id, JSON.stringify(["kicked", true]));
+        if (this.phase === "lobby" || this.phase === "over") {
+          this.players = this.players.filter((x) => x !== p);
+          return this.update();
+        }
+        // during a game the seat stays, the player is out
+        p.kicked = true;
+        if (p.alive) {
+          this.kill(p);
+          this.narrate(this.deathText(p, "oyunu bozduğu için köyden kovuldu"));
+        } else {
+          this.narrate(`${p.name} odadan çıkarıldı.`);
+        }
+        if (!this.checkWin()) this.update();
+        return;
+      }
+      case "mute": {
+        if (!isBoss) return;
+        const p = this.byPid(params.target);
+        if (!p || p.id === id) return;
+        p.muted = !p.muted;
+        this.notice(
+          p.id,
+          p.muted
+            ? "Oda yöneticisi seni susturdu: sohbete yazamaz ve sesli konuşamazsın."
+            : "Susturman kaldırıldı, tekrar konuşabilirsin.",
+        );
+        this.narrate(
+          p.muted ? `${p.name} susturuldu. 🔇` : `${p.name} artık konuşabilir.`,
+        );
+        return this.update();
+      }
+      case "punish": {
+        // breaking the rules (e.g. showing your role): out of the game
+        if (!isBoss || ["lobby", "over"].includes(this.phase)) return;
+        const p = this.byPid(params.target);
+        if (!p || !p.alive || p.id === id) return;
+        this.kill(p);
+        this.narrate(
+          this.deathText(p, "kuralları çiğnediği için köyden kovuldu ⚖️"),
+        );
+        if (!this.checkWin()) this.update();
+        return;
+      }
+      case "penaltyDone":
+      case "reroll": {
+        if (this.phase !== "over" || !this.penalties) return;
+        const entry = this.penalties.find((x) => x.pid === params.target);
+        const me = this.player(id);
+        if (!entry || !(isBoss || (me && me.pid === entry.pid))) return;
+        if (params.type === "penaltyDone") {
+          entry.done = !entry.done;
+          if (entry.done)
+            this.narrate(`${entry.name} cezasını yerine getirdi! 👏`);
+        } else {
+          if (entry.rerolled) return;
+          entry.rerolled = true;
+          entry.text =
+            pickPenalties(
+              1,
+              this.settings.penaltyCats,
+              this.settings.customPenalties,
+              rnd,
+            )[0] || entry.text;
+          this.narrate(`${entry.name} cezasını değiştirdi: ${entry.text}`);
+        }
         return this.update();
       }
       case "addBot": {
@@ -662,7 +809,7 @@ class Room {
         const p = this.byPid(params.target);
         if (!p) return;
         if (params.type === "kill" && p.alive) {
-          p.alive = false;
+          this.kill(p);
           this.narrate(this.deathText(p, "öldü"));
         } else if (params.type === "revive" && !p.alive) {
           p.alive = true;
@@ -935,6 +1082,12 @@ class Room {
 
   resolveNight() {
     if (this.phase !== "night") return;
+    this.trackIdle((p) => {
+      if (p.role === "vampir") return !!this.night.vamp[p.pid];
+      if (p.role === "doktor") return !!this.night.doktor;
+      if (p.role === "gozcu") return !!this.night.gozcu;
+      return null; // villagers have nothing that matters to do at night
+    });
     const tally = {};
     Object.entries(this.night.vamp).forEach(([vpid, t]) => {
       const v = this.byPid(vpid);
@@ -947,7 +1100,7 @@ class Room {
     this.lastProtected = this.night.doktor;
     this.lastNight = { round: this.round, died: [], saved };
     if (victim && !saved && victim.alive) {
-      victim.alive = false;
+      this.kill(victim);
       this.lastNight.died.push({
         pid: victim.pid,
         name: victim.name,
@@ -980,13 +1133,15 @@ class Room {
   }
 
   allVoted() {
-    return this.alive().every((p) => this.votes[p.pid]);
+    return this.alive()
+      .filter((p) => !p.noVote)
+      .every((p) => this.votes[p.pid]);
   }
 
   dayVote(id, target) {
     if (this.phase !== "day") return;
     const me = this.player(id);
-    if (!me || !me.alive) return;
+    if (!me || !me.alive || me.noVote) return;
     if (target === null || target === undefined || target === "") {
       delete this.votes[me.pid];
     } else if (target === "pass") {
@@ -1016,11 +1171,14 @@ class Room {
 
   endDay() {
     if (this.phase !== "day") return;
+    this.trackIdle((p) => !!this.votes[p.pid]);
     const tally = {};
-    this.alive().forEach((p) => {
-      const t = this.votes[p.pid];
-      if (t) tally[t] = (tally[t] || 0) + 1;
-    });
+    this.alive()
+      .filter((p) => !p.noVote)
+      .forEach((p) => {
+        const t = this.votes[p.pid];
+        if (t) tally[t] = (tally[t] || 0) + 1;
+      });
     const max = Math.max(0, ...Object.values(tally));
     const top = Object.keys(tally).filter((t) => tally[t] === max);
     const lines = Object.keys(tally)
@@ -1057,7 +1215,7 @@ class Room {
   hang() {
     const p = this.byPid(this.condemned);
     if (p && p.alive) {
-      p.alive = false;
+      this.kill(p);
       this.executed = {
         pid: p.pid,
         name: p.name,
@@ -1097,6 +1255,7 @@ class Room {
     this.deadline = 0;
     this.condemned = null;
     this.narrate(text);
+    this.dealPenalties(winner);
     this.pushAll({ title: "Oyun bitti 🏁", body: text, tag: "phase" });
     this.io.gameOver({
       room: this.code,
@@ -1116,6 +1275,44 @@ class Room {
     });
     this.update();
     return true;
+  }
+
+  /** fun penalties for the losers (or whoever the room chose) */
+  dealPenalties(winner) {
+    const mode = this.settings.penalty;
+    this.penalties = null;
+    if (!mode || mode === "off") return;
+    const humans = this.players.filter((p) => !p.bot && !p.kicked);
+    let targets = [];
+    if (mode === "losers" || mode === "team") {
+      targets = humans.filter((p) => ROLES[p.role].team !== winner);
+    } else if (mode === "firstDead") {
+      const first = (this.deathOrder || [])
+        .map((pid) => this.byPid(pid))
+        .find((p) => p && !p.bot && !p.kicked);
+      targets = first ? [first] : [];
+    } else if (mode === "everyone") {
+      targets = humans;
+    }
+    if (!targets.length) return;
+    const texts = pickPenalties(
+      mode === "team" ? 1 : targets.length,
+      this.settings.penaltyCats,
+      this.settings.customPenalties,
+      rnd,
+    );
+    if (!texts.length) return;
+    this.penalties = targets.map((p, i) => ({
+      pid: p.pid,
+      name: p.name,
+      text: mode === "team" ? texts[0] : texts[i],
+      done: false,
+      rerolled: false,
+    }));
+    this.narrate(
+      "🎲 Ceza zamanı! " +
+        this.penalties.map((x) => `${x.name}: ${x.text}`).join(" · "),
+    );
   }
 
   destroy() {

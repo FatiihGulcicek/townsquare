@@ -47,6 +47,20 @@
         </span>
       </div>
 
+      <div class="card warn" v-if="s.me.muted">
+        🔇 Susturuldun: sohbete yazamaz ve sesli konuşamazsın.
+      </div>
+      <div class="card warn" v-if="s.me.noVote && phase !== 'over'">
+        🚫 Pasif kaldığın için bu oyunda oy hakkını kaybettin.
+      </div>
+      <div
+        class="card warn soft"
+        v-else-if="s.me.idle >= 2 && s.me.alive && phase !== 'over'"
+      >
+        ⚠️ Art arda pasif kaldın. Bir sonraki seçimini kaçırırsan oy hakkını
+        kaybedersin.
+      </div>
+
       <!-- ========== LOBBY ========== -->
       <template v-if="phase === 'lobby'">
         <div class="card" v-if="!s.me.seated && !isSt">
@@ -72,7 +86,13 @@
         <div class="card">
           <h3>Oyuncular ({{ s.players.length }}/{{ s.max }})</h3>
           <div class="grid">
-            <div class="tile" v-for="p in s.players" :key="p.pid">
+            <div
+              class="tile"
+              v-for="p in s.players"
+              :key="p.pid"
+              @click="openMod(p)"
+            >
+              <span class="flags" v-if="p.muted">🔇</span>
               <Avatar
                 :speaking="talk(p.pid)"
                 :mic="inVoice(p.pid)"
@@ -85,7 +105,7 @@
               <button
                 v-if="s.me.isOwner && p.pid !== s.me.pid"
                 class="x"
-                @click="kick(p)"
+                @click.stop="kick(p)"
                 aria-label="Çıkar"
               >
                 ✕
@@ -158,6 +178,44 @@
                 @change="setting(t.key, $event.target.checked)"
               />
             </label>
+          </div>
+          <div class="penalty-settings">
+            <h4>🎲 Eğlence cezası</h4>
+            <select
+              class="full"
+              :value="s.settings.penalty"
+              @change="setting('penalty', $event.target.value)"
+            >
+              <option value="losers">Kaybeden herkese ayrı ceza</option>
+              <option value="team">Kaybeden takıma ortak ceza</option>
+              <option value="firstDead">Sadece ilk ölene</option>
+              <option value="everyone">Herkese (eğlencesine)</option>
+              <option value="off">Ceza yok</option>
+            </select>
+            <template v-if="s.settings.penalty !== 'off'">
+              <div class="cat-chips">
+                <button
+                  v-for="(label, key) in s.penaltyCategories"
+                  :key="key"
+                  class="cat"
+                  :class="{ on: s.settings.penaltyCats.includes(key) }"
+                  @click="toggleCat(key)"
+                >
+                  {{ label }}
+                </button>
+              </div>
+              <details class="custom">
+                <summary>
+                  Kendi cezalarınız ({{ s.settings.customPenalties.length }})
+                </summary>
+                <textarea
+                  v-model="customText"
+                  rows="4"
+                  placeholder="Her satıra bir ceza yaz. Örn: Herkese çay demle."
+                ></textarea>
+                <button class="btn small" @click="saveCustom">Kaydet</button>
+              </details>
+            </template>
           </div>
           <p class="need" v-if="s.players.length < s.min">
             Başlamak için en az {{ s.min }} oyuncu lazım, şu an
@@ -430,6 +488,39 @@
           </h2>
           <p v-if="myResult" class="result">{{ myResult }}</p>
         </div>
+        <div class="card penalties" v-if="s.penalties && s.penalties.length">
+          <h3>🎲 Ceza zamanı!</h3>
+          <div
+            class="penalty"
+            v-for="(x, i) in s.penalties"
+            :key="x.pid"
+            :class="{ done: x.done, mine: x.pid === s.me.pid }"
+            :style="{ animationDelay: i * 0.15 + 's' }"
+          >
+            <div class="who">
+              <Avatar :name="x.name" :size="40" />
+              <b>{{ x.name }}</b>
+              <span v-if="x.done" class="ok">✅ yaptı</span>
+            </div>
+            <p class="text">{{ x.text }}</p>
+            <div class="row" v-if="isBoss || x.pid === s.me.pid">
+              <button
+                class="btn small"
+                v-if="!x.rerolled && !x.done"
+                @click="act('reroll', { target: x.pid })"
+              >
+                🎲 Değiştir (1 hak)
+              </button>
+              <button
+                class="btn small"
+                :class="{ primary: !x.done }"
+                @click="act('penaltyDone', { target: x.pid })"
+              >
+                {{ x.done ? "↩️ Geri al" : "✅ Yaptı" }}
+              </button>
+            </div>
+          </div>
+        </div>
         <div class="card">
           <h3>Roller</h3>
           <div class="grid">
@@ -493,8 +584,15 @@
             <span class="name">{{ p.name }}</span>
             <small v-if="p.role" :class="p.role">{{ roleName(p.role) }}</small>
             <small v-else-if="p.pid === s.me.pid" class="muted">sen</small>
-            <button v-if="isSt" class="mini" @click="stToggle(p)">
-              {{ p.alive ? "Öldür" : "Dirilt" }}
+            <span class="flags" v-if="p.muted || p.noVote">
+              {{ p.muted ? "🔇" : "" }}{{ p.noVote ? "🚫" : "" }}
+            </span>
+            <button
+              v-if="isBoss && p.pid !== s.me.pid && !p.kicked"
+              class="mini"
+              @click="openMod(p)"
+            >
+              ⚙️ Yönet
             </button>
           </div>
         </div>
@@ -507,6 +605,42 @@
       </div>
       <div class="spacer"></div>
     </template>
+    <div class="sheet-bg" v-if="mod" @click.self="mod = null">
+      <div class="sheet">
+        <div class="mod-head">
+          <Avatar :name="mod.name" :size="54" :dead="!mod.alive" />
+          <div>
+            <h3>{{ mod.name }}</h3>
+            <small class="muted">
+              {{ mod.alive ? "hayatta" : "ölü" }}
+              <template v-if="mod.role"> · {{ roleName(mod.role) }}</template>
+            </small>
+          </div>
+        </div>
+        <button class="btn" @click="modAct('mute')">
+          {{ mod.muted ? "🔊 Susturmayı kaldır" : "🔇 Sustur (sohbet + ses)" }}
+        </button>
+        <button
+          class="btn"
+          v-if="inGame && mod.alive"
+          @click="modAct('punish')"
+        >
+          ⚖️ Kural ihlali: köyden kov (ölür)
+        </button>
+        <template v-if="isSt && inGame">
+          <button class="btn" v-if="mod.alive" @click="modAct('kill')">
+            💀 Öldür
+          </button>
+          <button class="btn" v-else @click="modAct('revive')">
+            ✨ Dirilt
+          </button>
+        </template>
+        <button class="btn danger" @click="modAct('kick')">
+          🚪 Odadan at{{ inGame ? " (oyundan çıkar)" : "" }}
+        </button>
+        <button class="btn ghost" @click="mod = null">Vazgeç</button>
+      </div>
+    </div>
     <Chat />
     <VoiceBar />
   </div>
@@ -522,6 +656,11 @@ import { voiceChat } from "../voicechat";
 
 const TOGGLES = [
   { key: "doktor", label: "🩺 Doktor", hint: "5+ oyuncuda" },
+  {
+    key: "idlePenalty",
+    label: "⏰ Pasif oyuncu cezası",
+    hint: "art arda 3 kez bir şey yapmayan oy hakkını kaybeder",
+  },
   { key: "gozcu", label: "👁️ Gözcü", hint: "" },
   { key: "reveal", label: "Ölenin rolü açıklansın", hint: "" },
   { key: "lastWords", label: "Son söz hakkı", hint: "asılmadan önce 20 sn" },
@@ -536,6 +675,8 @@ export default {
       now: Date.now(),
       nameInput: game.name,
       toggles: TOGGLES,
+      mod: null,
+      customText: "",
     };
   },
   computed: {
@@ -586,6 +727,12 @@ export default {
           over: "🏁 Oyun bitti",
         }[this.phase] || ""
       );
+    },
+    isBoss() {
+      return !!this.s && (this.s.me.isOwner || this.isSt);
+    },
+    inGame() {
+      return !["lobby", "over"].includes(this.phase);
     },
     takenCount() {
       return this.s.cards ? this.s.cards.filter((c) => c.taken).length : 0;
@@ -687,6 +834,14 @@ export default {
       return this.s.log.slice().reverse();
     },
   },
+  watch: {
+    "s.settings.customPenalties": {
+      immediate: true,
+      handler(list) {
+        if (list) this.customText = list.join("\n");
+      },
+    },
+  },
   mounted() {
     this.timer = setInterval(() => (this.now = Date.now()), 1000);
   },
@@ -694,6 +849,41 @@ export default {
     clearInterval(this.timer);
   },
   methods: {
+    openMod(p) {
+      if (!this.isBoss || p.pid === this.s.me.pid || p.kicked) return;
+      this.mod = p;
+    },
+    modAct(kind) {
+      const p = this.mod;
+      const ask = {
+        mute: null,
+        punish: `${p.name} kuralları çiğnediği için köyden kovulsun mu? Oyuncu ölür.`,
+        kick: `${p.name} odadan atılsın mı?`,
+        kill: `${p.name} öldürülsün mü?`,
+        revive: `${p.name} diriltilsin mi?`,
+      }[kind];
+      if (ask && !confirm(ask)) return;
+      this.act(kind, { target: p.pid });
+      this.mod = null;
+    },
+    toggleCat(key) {
+      const cats = this.s.settings.penaltyCats.slice();
+      const i = cats.indexOf(key);
+      if (i >= 0) {
+        if (cats.length === 1 && !this.s.settings.customPenalties.length)
+          return;
+        cats.splice(i, 1);
+      } else cats.push(key);
+      this.act("settings", { penaltyCats: cats });
+    },
+    saveCustom() {
+      const list = this.customText
+        .split("\n")
+        .map((t) => t.trim())
+        .filter(Boolean);
+      this.act("settings", { customPenalties: list });
+      toast(`${list.length} özel ceza kaydedildi.`, "success");
+    },
     talk(pid) {
       return !!this.vc.speaking[pid];
     },
@@ -1118,6 +1308,134 @@ h3 {
   }
   &.mine .front {
     box-shadow: 0 0 22px rgba(233, 180, 76, 0.6);
+  }
+}
+.warn {
+  border-color: rgba(179, 18, 29, 0.6);
+  background: rgba(90, 10, 16, 0.55);
+  &.soft {
+    border-color: rgba(233, 180, 76, 0.5);
+    background: rgba(80, 60, 10, 0.45);
+  }
+}
+.flags {
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  font-size: 13px;
+}
+.penalty-settings {
+  margin: 12px 0 6px;
+  h4 {
+    margin: 4px 0 8px;
+  }
+  select.full {
+    width: 100%;
+    min-height: 44px;
+    border-radius: 10px;
+    background: #151826;
+    color: $text;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 16px;
+    padding: 0 8px;
+  }
+  .cat-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0;
+  }
+  .cat {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    color: $muted;
+    border-radius: 18px;
+    padding: 6px 12px;
+    font-size: 14px;
+    &.on {
+      color: #1a1204;
+      background: $gold;
+      border-color: $gold;
+      font-weight: 700;
+    }
+  }
+  .custom summary {
+    cursor: pointer;
+    font-size: 15px;
+  }
+  textarea {
+    width: 100%;
+    margin-top: 8px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.4);
+    color: $text;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px;
+    font-size: 15px;
+    font-family: inherit;
+  }
+}
+.penalties {
+  border-color: rgba(233, 180, 76, 0.6);
+}
+.penalty {
+  margin: 10px 0;
+  padding: 12px;
+  border-radius: 14px;
+  background: linear-gradient(
+    135deg,
+    rgba(110, 40, 140, 0.45),
+    rgba(40, 14, 60, 0.6)
+  );
+  border: 1px solid rgba(233, 180, 76, 0.35);
+  animation: deal 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  .who {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    .ok {
+      margin-left: auto;
+      color: #9be7b4;
+      font-size: 14px;
+    }
+  }
+  .text {
+    font-size: 18px;
+    line-height: 1.4;
+    margin: 10px 0 6px;
+    font-weight: 600;
+  }
+  .row {
+    display: flex;
+    gap: 8px;
+    .btn {
+      flex: 1;
+    }
+  }
+  &.mine {
+    box-shadow: 0 0 0 2px $gold;
+  }
+  &.done {
+    opacity: 0.6;
+  }
+}
+@keyframes deal {
+  from {
+    transform: rotate(-8deg) scale(0.6) translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.mod-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  h3 {
+    margin: 0;
   }
 }
 .need {

@@ -51,6 +51,7 @@ export default {
     },
     hint() {
       const s = this.s;
+      if (this.s.me.muted) return "🔇 Susturuldun, kimse seni duymuyor";
       if (this.vc.muted) return "Mikrofonun kapalı";
       if (!this.canSpeak) {
         if (s.phase === "night")

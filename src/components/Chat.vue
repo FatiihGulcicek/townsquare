@@ -106,6 +106,7 @@ export default {
         : "Herkese yaz…";
     },
     lockedText() {
+      if (this.s.me.muted) return "🔇 Susturuldun, şu an yazamazsın.";
       if (this.channel !== "town") return "Şu an bu kanala yazamazsın.";
       if (this.s.phase === "night") return "Gece köy uyur, konuşmak yasak.";
       if (this.s.phase === "lastwords")
