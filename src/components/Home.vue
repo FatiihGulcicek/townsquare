@@ -34,6 +34,9 @@
       </div>
     </div>
 
+    <OnlineList />
+    <LobbyChat />
+
     <div class="profile-row">
       <button class="btn small" @click="profileTab = 'me'">👤 Profilim</button>
       <button class="btn small" @click="profileTab = 'top'">🏆 Sıralama</button>
@@ -153,10 +156,12 @@ import { pwaState, install } from "../pwa";
 import { unlockVoice } from "../voice";
 import Profile from "./Profile";
 import Avatar from "./Avatar";
+import OnlineList from "./OnlineList";
+import LobbyChat from "./LobbyChat";
 import { pickPhoto } from "../photo";
 
 export default {
-  components: { Profile, Avatar },
+  components: { Profile, Avatar, OnlineList, LobbyChat },
   data() {
     return {
       profileTab: null,

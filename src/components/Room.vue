@@ -184,6 +184,8 @@
           <p v-else class="muted">En az {{ s.min }} oyuncu gerekiyor.</p>
         </div>
 
+        <OnlineList />
+
         <div class="card" v-if="s.me.isOwner">
           <h3>Oda ayarları</h3>
           <div class="settings">
@@ -877,6 +879,7 @@ import Chat from "./Chat";
 import VoiceBar from "./VoiceBar";
 import StoryReel from "./StoryReel";
 import VideoStrip from "./VideoStrip";
+import OnlineList from "./OnlineList";
 import { voiceChat } from "../voicechat";
 
 const PRESETS = [
@@ -977,7 +980,7 @@ const TOGGLES = [
 ];
 
 export default {
-  components: { Avatar, Chat, VoiceBar, StoryReel, VideoStrip },
+  components: { Avatar, Chat, VoiceBar, StoryReel, VideoStrip, OnlineList },
   data() {
     return {
       game,

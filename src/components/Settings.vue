@@ -28,6 +28,12 @@
         <span>🔔 Bildirimler</span>
         <b :class="{ on: notif.permission === 'granted' }">{{ notifLabel }}</b>
       </div>
+      <div class="row" @click="toggleArrivals">
+        <span>🌙 Biri siteye girince haber ver</span>
+        <b :class="{ on: lobby.notifyArrivals }">{{
+          lobby.notifyArrivals ? "Açık" : "Kapalı"
+        }}</b>
+      </div>
       <p class="muted small" v-if="pwa.isIOS && !pwa.isStandalone">
         iPhone'da oyun kapalıyken bildirim gelmesi için önce Safari'de Paylaş →
         “Ana Ekrana Ekle” ile uygulamayı ekle ve oradan aç.
@@ -55,6 +61,7 @@ import { pwaState, install } from "../pwa";
 import { enableNotifications, notificationState } from "../notifications";
 import { sfxState, setSfx } from "../sfx";
 import { musicState, setMusic } from "../music";
+import { lobby, setArrivalNotifications } from "../lobby";
 import Profile from "./Profile";
 
 export default {
@@ -67,6 +74,7 @@ export default {
       notif: notificationState,
       sfx: sfxState,
       music: musicState,
+      lobby,
       profile: false,
     };
   },
@@ -81,6 +89,11 @@ export default {
     },
   },
   methods: {
+    async toggleArrivals() {
+      const on = !this.lobby.notifyArrivals;
+      setArrivalNotifications(on);
+      if (on && this.notif.permission !== "granted") await this.notifications();
+    },
     toggleMusic() {
       setMusic(!this.music.enabled);
     },

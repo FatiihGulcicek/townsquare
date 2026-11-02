@@ -7,6 +7,17 @@
     <Room v-else @settings="settingsOpen = true" />
     <RoleCard />
     <LiveStory />
+    <div class="sheet-bg invite-bg" v-if="lobby.invite">
+      <div class="sheet center">
+        <div class="inv-emoji">📨</div>
+        <h3>{{ lobby.invite.from }} seni oyuna çağırıyor!</h3>
+        <p class="muted">
+          Oda kodu: <b>{{ lobby.invite.code }}</b>
+        </p>
+        <button class="btn primary" @click="acceptInvite">Katıl</button>
+        <button class="btn ghost" @click="declineInvite">Şimdi değil</button>
+      </div>
+    </div>
     <transition name="toast">
       <div class="update" v-if="pwa.updateReady">
         <span>✨ Yeni sürüm hazır</span>
@@ -39,12 +50,13 @@ import Settings from "./components/Settings";
 import LiveStory from "./components/LiveStory";
 import { setMood } from "./music";
 import { pwaState, applyUpdate } from "./pwa";
+import { lobby, startLobby, acceptInvite, declineInvite } from "./lobby";
 import { game, restore } from "./game";
 
 export default {
   components: { Home, Room, RoleCard, Settings, LiveStory },
   data() {
-    return { game, settingsOpen: false, pwa: pwaState };
+    return { game, settingsOpen: false, pwa: pwaState, lobby };
   },
   computed: {
     mood() {
@@ -83,14 +95,22 @@ export default {
     const boot = document.getElementById("boot");
     if (boot) boot.remove();
     restore();
+    startLobby();
     window.addEventListener("hashchange", () => {
       const code = location.hash.replace("#", "");
       if (/^[A-Za-z]{4}$/.test(code) && code.toUpperCase() !== game.code) {
         restore();
+        startLobby();
       }
     });
   },
   methods: {
+    acceptInvite() {
+      acceptInvite();
+    },
+    declineInvite() {
+      declineInvite();
+    },
     update() {
       applyUpdate();
     },
@@ -400,6 +420,19 @@ input.field {
   opacity: 0;
 }
 
+.invite-bg {
+  z-index: 420;
+  align-items: center;
+  .sheet {
+    border-radius: 20px;
+    max-width: 380px;
+    margin: 0 16px;
+    text-align: center;
+  }
+  .inv-emoji {
+    font-size: 54px;
+  }
+}
 .update {
   position: fixed;
   z-index: 450;

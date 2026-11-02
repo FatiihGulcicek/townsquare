@@ -13,6 +13,7 @@ const WebSocket = require("ws");
 const push = require("./push");
 const { Room } = require("./vk");
 const db = require("./db");
+const { Lobby } = require("./lobby");
 
 const PORT = parseInt(process.env.PORT || "8080", 10);
 const STATIC_DIR = path.resolve(
@@ -173,6 +174,9 @@ setInterval(() => {
   });
 }, 60 * 1000).unref();
 
+// the square outside the games: who's online, chat, invitations
+const lobby = new Lobby(push, (code) => rooms.has(code));
+
 // ---------- websocket ----------
 
 const server = http.createServer();
@@ -190,6 +194,31 @@ const wss = new WebSocket.Server({
 
 wss.on("connection", (ws, req) => {
   const parts = req.url.split("?")[0].split("/").filter(Boolean);
+  // /lobby/<playerId>
+  if (parts[0] === "lobby" && parts.length === 2 && VALID_ID.test(parts[1])) {
+    const id = parts[1];
+    ws.isAlive = true;
+    ws.counter = 0;
+    ws.on("pong", () => {
+      ws.isAlive = true;
+      ws.counter = 0;
+    });
+    ws.on("error", () => {});
+    lobby.connect(ws, id);
+    ws.on("close", () => lobby.disconnect(ws, id));
+    ws.on("message", (raw, isBinary) => {
+      if (isBinary || ++ws.counter > 120) return;
+      let command, params;
+      try {
+        [command, params] = JSON.parse(raw.toString());
+      } catch (e) {
+        return;
+      }
+      if (command === "ping") return ws.send('["pong"]');
+      lobby.receive(id, command, params);
+    });
+    return;
+  }
   // /vk/<ROOM>/<playerId>
   if (parts[0] !== "vk" || parts.length !== 3) {
     return ws.close(1000, "Geçersiz bağlantı");
@@ -371,6 +400,7 @@ server.on("request", async (req, res) => {
       connections: diagnostics,
       push: push.stats(),
       db: db.stats(),
+      lobby: lobby.stats(),
     });
   }
   if (url.pathname === "/push/key") {
