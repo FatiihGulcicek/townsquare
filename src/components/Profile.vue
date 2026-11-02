@@ -11,12 +11,51 @@
         <button :class="{ active: tab === 'history' }" @click="tab = 'history'">
           📼 Geçmiş
         </button>
+        <button :class="{ active: tab === 'shop' }" @click="tab = 'shop'">
+          🛒 Mağaza
+        </button>
         <button :class="{ active: tab === 'top' }" @click="openTop">
           🏆 Sıralama
         </button>
       </div>
 
-      <template v-if="tab === 'badges'">
+      <template v-if="tab === 'shop'">
+        <p class="coins">
+          🪙 <b>{{ prog.totals.coins || 0 }}</b> altın
+          <small class="muted">(oynadıkça XP kadar altın kazanırsın)</small>
+        </p>
+        <div v-for="group in shopGroups" :key="group.type">
+          <h4>{{ group.title }}</h4>
+          <div class="shop">
+            <div
+              v-for="item in group.items"
+              :key="item.id"
+              class="item"
+              :class="{ on: equipped(item), owned: owned(item) }"
+            >
+              <span class="pv">{{ item.preview }}</span>
+              <b>{{ item.name }}</b>
+              <button
+                v-if="owned(item)"
+                class="btn small"
+                @click="equipItem(item)"
+              >
+                {{ equipped(item) ? "✓ Takılı" : "Tak" }}
+              </button>
+              <button
+                v-else
+                class="btn small primary"
+                :disabled="(prog.totals.coins || 0) < item.price"
+                @click="buyItem(item)"
+              >
+                🪙 {{ item.price }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <template v-else-if="tab === 'badges'">
         <p class="muted small">
           {{ badgeCount }}/{{ badges.length }} rozet açıldı.
         </p>
@@ -240,7 +279,16 @@
 <script>
 import Avatar from "./Avatar";
 import StoryScene from "./StoryScene";
-import { progress, BADGES, levelFor, xpForLevel, titleFor } from "../progress";
+import {
+  progress,
+  SHOP,
+  buy,
+  equip,
+  BADGES,
+  levelFor,
+  xpForLevel,
+  titleFor,
+} from "../progress";
 import {
   game,
   fetchProfile,
@@ -300,6 +348,13 @@ export default {
         (100 * (this.prog.totals.xp - a)) / (this.nextXp - a),
       );
     },
+    shopGroups() {
+      return [
+        { type: "back", title: "🃏 Kart arkaları" },
+        { type: "frame", title: "🖼️ Avatar çerçeveleri" },
+        { type: "chat", title: "💬 Sohbet adı renkleri" },
+      ].map((g) => ({ ...g, items: SHOP.filter((i) => i.type === g.type) }));
+    },
     badgeCount() {
       return Object.keys(this.prog.totals.badges).length;
     },
@@ -324,6 +379,20 @@ export default {
     this.loading = false;
   },
   methods: {
+    owned(item) {
+      return (this.prog.totals.owned || []).includes(item.id);
+    },
+    equipped(item) {
+      return (this.prog.totals.equipped || {})[item.type] === item.id;
+    },
+    buyItem(item) {
+      if (!confirm(`${item.name} ${item.price} altına alınsın mı?`)) return;
+      if (buy(item.id))
+        toast(`${item.preview} ${item.name} alındı ve takıldı!`, "success");
+    },
+    equipItem(item) {
+      equip(item.id);
+    },
     replay(g) {
       this.replayIndex = 0;
       this.replaying = g;
@@ -437,6 +506,48 @@ export default {
       display: block;
       height: 100%;
       background: linear-gradient(90deg, $gold, #ffdf8a);
+    }
+  }
+}
+.coins {
+  font-size: 18px;
+  b {
+    color: $gold;
+  }
+  small {
+    display: block;
+    font-size: 12px;
+  }
+}
+.shop {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+  .item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+    padding: 10px 6px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    .pv {
+      font-size: 28px;
+    }
+    b {
+      font-size: 12px;
+    }
+    .btn {
+      margin: 0;
+      width: 100%;
+      min-height: 34px;
+      font-size: 13px;
+    }
+    &.on {
+      border-color: $gold;
+      background: rgba(233, 180, 76, 0.12);
     }
   }
 }

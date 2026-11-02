@@ -108,6 +108,7 @@ const DEFAULT_SETTINGS = {
   nightSeconds: 60,
   vampires: 0,
   tournament: 0,
+  theme: "classic",
   doktor: true,
   gozcu: true,
   reveal: true,
@@ -862,6 +863,8 @@ class Room {
         bot: !!p.bot,
         muted: !!p.muted,
         level: p.level || 1,
+        frame: p.frame || "",
+        chatColor: p.chatColor || "",
         noVote: !!p.noVote,
         kicked: !!p.kicked,
         role: this.visibleRole(viewer, p),
@@ -974,6 +977,19 @@ class Room {
     }
     if (command === "photo") return this.setPhoto(id, params);
     if (command === "react") return this.react(id, params);
+    if (command === "cosmetics") {
+      const me = this.player(id);
+      if (!me || !params) return;
+      const ok = (v, prefix) =>
+        typeof v === "string" &&
+        (v === "" || new RegExp("^" + prefix + "-[a-z]+$").test(v))
+          ? v
+          : "";
+      me.frame = ok(params.frame, "frame");
+      me.chatColor = ok(params.chat, "chat");
+      this.update();
+      return;
+    }
     if (command === "level") {
       const me = this.player(id);
       const level = parseInt(params, 10);
@@ -1020,6 +1036,8 @@ class Room {
         });
         if (MODES.includes(params.penalty))
           this.settings.penalty = params.penalty;
+        if (["classic", "snow", "swamp", "blood"].includes(params.theme))
+          this.settings.theme = params.theme;
         if (Array.isArray(params.penaltyCats)) {
           this.settings.penaltyCats = params.penaltyCats.filter(
             (c) => CATEGORIES[c],

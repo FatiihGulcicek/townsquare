@@ -201,6 +201,18 @@
           <h3>Oda ayarları</h3>
           <div class="settings">
             <label>
+              🎨 Tema
+              <select
+                :value="s.settings.theme || 'classic'"
+                @change="setting('theme', $event.target.value)"
+              >
+                <option value="classic">Klasik köy</option>
+                <option value="snow">Karlı dağ köyü</option>
+                <option value="swamp">Sisli bataklık</option>
+                <option value="blood">Kızıl ay</option>
+              </select>
+            </label>
+            <label>
               🏆 Turnuva
               <select
                 :value="s.settings.tournament"
@@ -390,7 +402,10 @@
             v-for="c in s.cards"
             :key="c.i"
             class="play-card"
-            :class="{ taken: c.taken, mine: c.mine, flipped: !!c.role }"
+            :class="[
+              { taken: c.taken, mine: c.mine, flipped: !!c.role },
+              cardBack,
+            ]"
             :disabled="c.taken || !!s.me.role || !s.me.seated"
             @click="drawCard(c)"
           >
@@ -1019,6 +1034,7 @@ import VideoStrip from "./VideoStrip";
 import OnlineList from "./OnlineList";
 import Coach from "./Coach";
 import { notes, TAGS, useNotes, setNote } from "../notes";
+import { progress } from "../progress";
 import { voiceChat } from "../voicechat";
 
 const PRESETS = [
@@ -1219,6 +1235,9 @@ export default {
     slowStart() {
       void this.now;
       return !this.s && Date.now() - this.openedAt > 5000;
+    },
+    cardBack() {
+      return (progress.totals.equipped || {}).back || "";
     },
     takenCount() {
       return this.s.cards ? this.s.cards.filter((c) => c.taken).length : 0;
@@ -2246,6 +2265,41 @@ h3 {
   top: 4px;
   right: 6px;
   font-size: 13px;
+}
+.play-card.back-blood .back {
+  background: repeating-linear-gradient(
+      45deg,
+      rgba(255, 60, 60, 0.18) 0 6px,
+      transparent 6px 12px
+    ),
+    radial-gradient(circle at 50% 40%, #6a0b15, #1d0306 80%);
+  border-color: #ff5a5f;
+}
+.play-card.back-gold .back {
+  background: repeating-linear-gradient(
+      45deg,
+      rgba(255, 220, 120, 0.25) 0 6px,
+      transparent 6px 12px
+    ),
+    radial-gradient(circle at 50% 40%, #8a6417, #2b1d04 80%);
+  border-color: #ffd36b;
+}
+.play-card.back-forest .back {
+  background: repeating-linear-gradient(
+      -45deg,
+      rgba(120, 220, 140, 0.15) 0 6px,
+      transparent 6px 12px
+    ),
+    radial-gradient(circle at 50% 40%, #1f5a2e, #07160b 80%);
+  border-color: #6be38b;
+}
+.play-card.back-stars .back {
+  background: radial-gradient(1px 1px at 20% 30%, white, transparent),
+    radial-gradient(1px 1px at 70% 60%, white, transparent),
+    radial-gradient(1.5px 1.5px at 40% 80%, white, transparent),
+    radial-gradient(1px 1px at 85% 20%, white, transparent),
+    radial-gradient(circle at 50% 40%, #1d2a6b, #050818 80%);
+  border-color: #9fb4ff;
 }
 .need {
   color: #ffb3b6;

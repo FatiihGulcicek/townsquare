@@ -295,6 +295,7 @@ export function recordGame(state) {
   t.streak = won ? t.streak + 1 : 0;
   t.bestStreak = Math.max(t.bestStreak, t.streak);
   t.xp += g.xp;
+  t.coins = (t.coins || 0) + g.xp;
   progress.history.unshift(g);
   progress.history.splice(20);
   const fresh = BADGES.filter((b) => b.test(g, t))
@@ -316,6 +317,7 @@ export function awardMvp(key) {
   progress.totals.mvpKeys.push(key);
   progress.totals.mvpKeys.splice(0, progress.totals.mvpKeys.length - 20);
   progress.totals.xp += 15;
+  progress.totals.coins = (progress.totals.coins || 0) + 15;
   const badge = unlock("yildiz");
   save();
   return { badge };
@@ -326,4 +328,128 @@ export function penaltyDone() {
   const badge = unlock("ceza");
   if (badge) save();
   return badge;
+}
+
+/* ---------- XP shop: coins are earned with XP and spent on cosmetics ---------- */
+
+export const SHOP = [
+  {
+    id: "back-blood",
+    type: "back",
+    name: "Kanlı kart arkası",
+    price: 60,
+    preview: "🩸",
+  },
+  {
+    id: "back-gold",
+    type: "back",
+    name: "Altın kart arkası",
+    price: 120,
+    preview: "✨",
+  },
+  {
+    id: "back-forest",
+    type: "back",
+    name: "Orman kart arkası",
+    price: 80,
+    preview: "🌲",
+  },
+  {
+    id: "back-stars",
+    type: "back",
+    name: "Yıldızlı kart arkası",
+    price: 100,
+    preview: "🌌",
+  },
+  {
+    id: "frame-fire",
+    type: "frame",
+    name: "Ateş çerçeve",
+    price: 150,
+    preview: "🔥",
+  },
+  {
+    id: "frame-ice",
+    type: "frame",
+    name: "Buz çerçeve",
+    price: 150,
+    preview: "❄️",
+  },
+  {
+    id: "frame-rose",
+    type: "frame",
+    name: "Gül çerçeve",
+    price: 120,
+    preview: "🌹",
+  },
+  {
+    id: "frame-shadow",
+    type: "frame",
+    name: "Gölge çerçeve",
+    price: 200,
+    preview: "🌑",
+  },
+  {
+    id: "chat-red",
+    type: "chat",
+    name: "Kızıl sohbet adı",
+    price: 40,
+    preview: "🔴",
+  },
+  {
+    id: "chat-blue",
+    type: "chat",
+    name: "Mavi sohbet adı",
+    price: 40,
+    preview: "🔵",
+  },
+  {
+    id: "chat-green",
+    type: "chat",
+    name: "Yeşil sohbet adı",
+    price: 40,
+    preview: "🟢",
+  },
+  {
+    id: "chat-purple",
+    type: "chat",
+    name: "Mor sohbet adı",
+    price: 60,
+    preview: "🟣",
+  },
+];
+
+function ensureShop() {
+  const t = progress.totals;
+  if (t.coins === undefined) Vue.set(t, "coins", t.xp || 0);
+  if (!t.owned) Vue.set(t, "owned", []);
+  if (!t.equipped) Vue.set(t, "equipped", { back: "", frame: "", chat: "" });
+}
+ensureShop();
+
+export function buy(id) {
+  ensureShop();
+  const item = SHOP.find((i) => i.id === id);
+  const t = progress.totals;
+  if (!item || t.owned.includes(id) || t.coins < item.price) return false;
+  t.coins -= item.price;
+  t.owned.push(id);
+  equip(id);
+  return true;
+}
+
+export function equip(id) {
+  ensureShop();
+  const item = SHOP.find((i) => i.id === id);
+  if (!item) return;
+  const t = progress.totals;
+  if (!t.owned.includes(id)) return;
+  t.equipped[item.type] = t.equipped[item.type] === id ? "" : id;
+  save();
+  if (onCosmetics) onCosmetics(t.equipped);
+}
+
+let onCosmetics = null;
+export function onCosmeticsChange(fn) {
+  onCosmetics = fn;
 }

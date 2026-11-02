@@ -67,6 +67,10 @@ export default {
       return this.player ? this.player.level || 1 : 1;
     },
     frame() {
+      const bought = this.src
+        ? (progress.totals.equipped || {}).frame
+        : this.player && this.player.frame;
+      if (bought) return "c-" + bought;
       const l = this.lvl;
       if (l >= 16) return "f-legend";
       if (l >= 12) return "f-ruby";
@@ -196,6 +200,34 @@ export default {
   background: #666;
   box-shadow: 0 0 0 2px #0b0d18;
 }
+.avatar.c-frame-fire {
+  box-shadow:
+    0 0 0 3px #ff7a1a,
+    0 0 18px rgba(255, 90, 0, 0.9);
+  animation: fire 1.2s ease-in-out infinite;
+}
+@keyframes fire {
+  50% {
+    box-shadow:
+      0 0 0 3px #ffc23d,
+      0 0 26px rgba(255, 140, 0, 0.9);
+  }
+}
+.avatar.c-frame-ice {
+  box-shadow:
+    0 0 0 3px #9be7ff,
+    0 0 18px rgba(120, 220, 255, 0.8);
+}
+.avatar.c-frame-rose {
+  box-shadow:
+    0 0 0 3px #ff6fa5,
+    0 0 16px rgba(255, 100, 160, 0.7);
+}
+.avatar.c-frame-shadow {
+  box-shadow:
+    0 0 0 3px #1b1b1b,
+    0 0 22px rgba(120, 0, 200, 0.9);
+}
 .avatar.speaking {
   box-shadow:
     0 0 0 3px #3ddc84,
@@ -220,6 +252,34 @@ export default {
   bottom: -8%;
   left: -6%;
   filter: none;
+}
+.avatar.c-frame-fire {
+  box-shadow:
+    0 0 0 3px #ff7a1a,
+    0 0 18px rgba(255, 90, 0, 0.9);
+  animation: fire 1.2s ease-in-out infinite;
+}
+@keyframes fire {
+  50% {
+    box-shadow:
+      0 0 0 3px #ffc23d,
+      0 0 26px rgba(255, 140, 0, 0.9);
+  }
+}
+.avatar.c-frame-ice {
+  box-shadow:
+    0 0 0 3px #9be7ff,
+    0 0 18px rgba(120, 220, 255, 0.8);
+}
+.avatar.c-frame-rose {
+  box-shadow:
+    0 0 0 3px #ff6fa5,
+    0 0 16px rgba(255, 100, 160, 0.7);
+}
+.avatar.c-frame-shadow {
+  box-shadow:
+    0 0 0 3px #1b1b1b,
+    0 0 22px rgba(120, 0, 200, 0.9);
 }
 .avatar.speaking {
   box-shadow:

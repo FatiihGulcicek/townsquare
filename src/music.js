@@ -114,7 +114,7 @@ function note(mood) {
   if (!c) return;
   const step = mood.scale[Math.floor(Math.random() * mood.scale.length)];
   const freq =
-    mood.root * Math.pow(2, step / 12) * (Math.random() < 0.3 ? 2 : 1);
+    mood.root * shift * Math.pow(2, step / 12) * (Math.random() < 0.3 ? 2 : 1);
   const o = c.createOscillator();
   const g = c.createGain();
   o.type = mood.wave;
@@ -149,11 +149,21 @@ function apply() {
   const c = context();
   if (!c) return;
   master.gain.setTargetAtTime(mood.vol, c.currentTime, 1.2);
-  startDrone(mood.drone);
+  startDrone(mood.drone * shift);
   note(mood);
   timer = setInterval(() => {
     if (Math.random() < 0.8) note(mood);
   }, mood.gap);
+}
+
+// each room theme shifts the music a little
+const THEME_SHIFT = { classic: 1, snow: 1.26, swamp: 0.84, blood: 0.94 };
+let shift = 1;
+export function setTheme(theme) {
+  const next = THEME_SHIFT[theme] || 1;
+  if (next === shift) return;
+  shift = next;
+  apply();
 }
 
 export function setMood(mood) {

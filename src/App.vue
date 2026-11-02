@@ -3,6 +3,11 @@
     <div class="backdrop"></div>
     <div class="night-sky"><div class="clouds"></div></div>
     <div class="readable"></div>
+    <div class="theme-layer" :class="'t-' + theme">
+      <span v-if="theme === 'snow'" class="snow"></span>
+      <span v-if="theme === 'snow'" class="snow s2"></span>
+      <span v-if="theme === 'swamp'" class="fog"></span>
+    </div>
     <Home v-if="!game.code" @settings="settingsOpen = true" />
     <Room v-else @settings="settingsOpen = true" />
     <RoleCard />
@@ -48,7 +53,7 @@ import Room from "./components/Room";
 import RoleCard from "./components/RoleCard";
 import Settings from "./components/Settings";
 import LiveStory from "./components/LiveStory";
-import { setMood } from "./music";
+import { setMood, setTheme } from "./music";
 import { pwaState, applyUpdate } from "./pwa";
 import { lobby, startLobby, acceptInvite, declineInvite } from "./lobby";
 import { game, restore } from "./game";
@@ -59,6 +64,10 @@ export default {
     return { game, settingsOpen: false, pwa: pwaState, lobby };
   },
   computed: {
+    theme() {
+      const s = game.state;
+      return (game.code && s && s.settings && s.settings.theme) || "classic";
+    },
     mood() {
       const s = game.state;
       if (!game.code || !s) return null;
@@ -81,6 +90,12 @@ export default {
       immediate: true,
       handler(value) {
         setMood(value);
+      },
+    },
+    theme: {
+      immediate: true,
+      handler(value) {
+        setTheme(value);
       },
     },
     tint: {
@@ -130,6 +145,11 @@ export default {
   -webkit-tap-highlight-color: transparent;
 }
 
+html.chat-lock,
+html.chat-lock body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
 html {
   background: #05060c;
 }
@@ -420,6 +440,75 @@ input.field {
   opacity: 0;
 }
 
+/* room themes: effects over the town picture */
+.theme-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  transition: background 1.5s;
+  &.t-snow {
+    background: linear-gradient(
+      180deg,
+      rgba(150, 190, 255, 0.18),
+      rgba(220, 235, 255, 0.08)
+    );
+  }
+  &.t-swamp {
+    background: linear-gradient(
+      180deg,
+      rgba(40, 90, 50, 0.3),
+      rgba(10, 40, 20, 0.35)
+    );
+  }
+  &.t-blood {
+    background: radial-gradient(
+      circle at 70% 10%,
+      rgba(200, 0, 30, 0.45),
+      rgba(60, 0, 10, 0.35) 60%
+    );
+  }
+  .snow {
+    position: absolute;
+    inset: -100% 0 0 0;
+    background-image: radial-gradient(2px 2px at 10% 20%, white, transparent),
+      radial-gradient(2px 2px at 30% 60%, white, transparent),
+      radial-gradient(1.5px 1.5px at 50% 30%, white, transparent),
+      radial-gradient(2.5px 2.5px at 70% 80%, white, transparent),
+      radial-gradient(1.5px 1.5px at 90% 40%, white, transparent),
+      radial-gradient(2px 2px at 80% 10%, white, transparent);
+    background-size: 300px 300px;
+    animation: snow 14s linear infinite;
+    opacity: 0.8;
+    &.s2 {
+      background-size: 200px 200px;
+      animation-duration: 9s;
+      opacity: 0.5;
+    }
+  }
+  .fog {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 300%;
+    height: 60%;
+    background: url("assets/clouds.png") repeat-x bottom / auto 100%;
+    filter: hue-rotate(60deg) saturate(0.6);
+    opacity: 0.35;
+    animation: fog 60s linear infinite;
+  }
+}
+@keyframes snow {
+  to {
+    transform: translateY(50%);
+  }
+}
+@keyframes fog {
+  to {
+    transform: translateX(-66%);
+  }
+}
 .invite-bg {
   z-index: 420;
   align-items: center;

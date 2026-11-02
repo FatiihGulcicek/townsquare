@@ -3,6 +3,7 @@ import { speak } from "./voice";
 import { getPushSubscription, onPushSubscription } from "./push";
 import { play } from "./sfx";
 import {
+  onCosmeticsChange,
   recordGame,
   awardMvp,
   penaltyDone,
@@ -322,6 +323,7 @@ function open(code) {
     send("photos");
     if (game.myPhoto) send("photo", game.myPhoto);
     send("level", levelFor(progress.totals.xp));
+    send("cosmetics", progress.totals.equipped || {});
     presence();
     voiceReconnected();
   };
@@ -453,6 +455,7 @@ window.addEventListener("online", resume);
 window.addEventListener("pagehide", () => send("visible", false));
 onPushSubscription(() => presence());
 bindVoice(send);
+onCosmeticsChange((equipped) => send("cosmetics", equipped));
 
 /** room from the link (#ABCD) or the last one we were in */
 export function restore() {

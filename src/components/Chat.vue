@@ -7,7 +7,7 @@
       }}</span>
     </button>
     <transition name="slide">
-      <div class="panel" v-if="open">
+      <div class="panel" v-if="open" :style="panelStyle">
         <div class="tabs">
           <button
             v-for="ch in channels"
@@ -29,7 +29,7 @@
           >
             <template v-if="m.sys">{{ m.text }}</template>
             <template v-else>
-              <b>{{ m.name }}</b>
+              <b :class="colorOf(m.from)">{{ m.name }}</b>
               <span>{{ m.text }}</span>
             </template>
           </div>
@@ -63,6 +63,7 @@ export default {
       text: "",
       seen: 0,
       labels: LABELS,
+      panelStyle: {},
     };
   },
   computed: {
@@ -76,6 +77,10 @@ export default {
     messages() {
       if (!this.s) return [];
       return (this.s.chat[this.channel] || []).slice(-40);
+    },
+    lastN() {
+      const list = this.messages;
+      return this.channel + ":" + (list.length ? list[list.length - 1].n : 0);
     },
     latest() {
       let n = 0;
@@ -120,12 +125,59 @@ export default {
     channels(list) {
       if (list.length && !list.includes(this.channel)) this.channel = "town";
     },
-    messages() {
+    // only react to real new messages, not to every state update
+    lastN() {
       if (this.open) this.markSeen();
+      const el = this.$refs.list;
+      const nearBottom =
+        !el || el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+      if (nearBottom) this.$nextTick(this.scroll);
+    },
+    channel() {
       this.$nextTick(this.scroll);
     },
+    open(value) {
+      const vv = window.visualViewport;
+      document.documentElement.classList.toggle("chat-lock", value);
+      if (!vv) return;
+      if (value) {
+        vv.addEventListener("resize", this.fit);
+        vv.addEventListener("scroll", this.fit);
+        this.fit();
+      } else {
+        vv.removeEventListener("resize", this.fit);
+        vv.removeEventListener("scroll", this.fit);
+      }
+    },
+  },
+  beforeDestroy() {
+    if (this.open) this.open = false;
+    document.documentElement.classList.remove("chat-lock");
+    const vv = window.visualViewport;
+    if (vv) {
+      vv.removeEventListener("resize", this.fit);
+      vv.removeEventListener("scroll", this.fit);
+    }
   },
   methods: {
+    /* iPhone: keep the panel glued to the visible area above the keyboard,
+       so the input does not jump while videos and the page move behind it */
+    fit() {
+      const vv = window.visualViewport;
+      if (!vv) return;
+      const keyboard = vv.height < window.innerHeight * 0.8;
+      const height = keyboard ? vv.height - 6 : Math.min(vv.height * 0.7, 560);
+      this.panelStyle = {
+        top: Math.round(vv.offsetTop + vv.height - height) + "px",
+        bottom: "auto",
+        height: Math.round(height) + "px",
+      };
+      if (keyboard) this.$nextTick(this.scroll);
+    },
+    colorOf(pid) {
+      const p = this.s.players.find((x) => x.pid === pid);
+      return p && p.chatColor ? p.chatColor : "";
+    },
     toggle() {
       this.open = !this.open;
       if (this.open) {
@@ -246,6 +298,18 @@ export default {
     display: block;
     font-size: 12px;
     color: $gold;
+  }
+  b.chat-red {
+    color: #ff6b6b;
+  }
+  b.chat-blue {
+    color: #6fb6ff;
+  }
+  b.chat-green {
+    color: #6be38b;
+  }
+  b.chat-purple {
+    color: #c39bff;
   }
   &.mine {
     margin-left: auto;

@@ -203,7 +203,7 @@ const server = http.createServer();
 const diagnostics = { accepted: 0, rejected: 0 };
 const wss = new WebSocket.Server({
   server,
-  maxPayload: 16 * 1024,
+  maxPayload: 128 * 1024, // profile photos (~58 KB) travel over the socket
   verifyClient: (info) => {
     const ok = isAllowedOrigin(info.origin, info.req);
     if (ok) diagnostics.accepted++;
