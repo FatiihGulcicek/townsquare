@@ -5,8 +5,8 @@
  * - hashed build assets (js/css/img/fonts/media): cache first, they never change
  * - live game traffic (WebSocket) and server endpoints are never cached
  */
-const SHELL = "km-shell-v11";
-const ASSETS = "km-assets-v8";
+const SHELL = "km-shell-v12";
+const ASSETS = "km-assets-v9";
 const MAX_ASSETS = 400;
 
 self.addEventListener("install", (event) => {
@@ -17,7 +17,7 @@ self.addEventListener("install", (event) => {
         cache.addAll([
           "/",
           "/manifest.webmanifest",
-          "/static/android-icon-192x192-v3.png",
+          "/static/android-icon-192x192-v4.png",
         ]),
       )
       .then(() => self.skipWaiting()),
@@ -62,8 +62,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(title, {
       body: data.body || "",
-      icon: "/static/android-icon-192x192-v3.png",
-      badge: "/static/android-icon-96x96-v3.png",
+      icon: "/static/android-icon-192x192-v4.png",
+      badge: "/static/android-icon-96x96-v4.png",
       tag: data.tag || "kasaba-meydani",
       renotify: true,
       // "your turn" buzzes longer and stays until it is tapped
