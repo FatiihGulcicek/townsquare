@@ -312,4 +312,18 @@ export default {
   "Verilerimi sil": "Delete my data",
   "Profilin, istatistiklerin, fotoğrafın ve bu telefondaki tüm oyun verilerin silinsin mi? Bu geri alınamaz.":
     "Delete your profile, stats, photo and all game data on this phone? This cannot be undone.",
+
+  "▶ Oyun kur": "▶ New game",
+  "Yeni oda": "New room",
+  "Kendi kodun ve şifre (isteğe bağlı)":
+    "Your own code and password (optional)",
+  Oyna: "Play",
+  Meydan: "Square",
+  Profil: "Profile",
+  Mağaza: "Shop",
+  "Uygulama anlatsın": "Let the app narrate",
+  "Ben anlatıcıyım": "I'm the storyteller",
+  Sil: "Delete",
+
+  "Öğretici oyun": "Tutorial game",
 };

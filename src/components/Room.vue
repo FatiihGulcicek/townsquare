@@ -111,7 +111,7 @@
           </div>
         </div>
 
-        <div class="card center">
+        <div class="card code-card">
           <div class="muted">Oda kodu</div>
           <div class="big-code">{{ game.code }}</div>
           <div class="lock-note muted" v-if="s.locked">
@@ -213,183 +213,14 @@
           </div>
         </div>
 
-        <OnlineList />
-
-        <div class="card" v-if="s.me.isOwner">
-          <h3>Oda ayarları</h3>
-          <form class="pass-row" @submit.prevent="savePass">
-            <input
-              class="field"
-              v-model="passDraft"
-              maxlength="20"
-              :placeholder="
-                s.locked ? 'Yeni şifre' : '🔒 Oda şifresi koy (isteğe bağlı)'
-              "
-              autocomplete="off"
-            />
-            <button class="btn small" type="submit">
-              {{
-                passDraft.trim()
-                  ? "Kaydet"
-                  : s.locked
-                  ? "Şifreyi kaldır"
-                  : "Kaydet"
-              }}
-            </button>
-          </form>
-          <div class="settings">
-            <label>
-              🎨 Tema
-              <select
-                :value="s.settings.theme || 'classic'"
-                @change="setting('theme', $event.target.value)"
-              >
-                <option value="classic">Klasik köy</option>
-                <option value="snow">Karlı dağ köyü</option>
-                <option value="swamp">Sisli bataklık</option>
-                <option value="blood">Kızıl ay</option>
-              </select>
-            </label>
-            <label>
-              🏆 Turnuva
-              <select
-                :value="s.settings.tournament"
-                @change="setting('tournament', $event.target.value, true)"
-              >
-                <option :value="0">Yok</option>
-                <option v-for="m in [3, 5, 7]" :key="m" :value="m">
-                  {{ m }} oyun
-                </option>
-              </select>
-            </label>
-            <label>
-              Vampir sayısı
-              <select
-                :value="s.settings.vampires"
-                @change="setting('vampires', $event.target.value, true)"
-              >
-                <option :value="0">Otomatik</option>
-                <option v-for="m in [1, 2, 3, 4]" :key="m" :value="m">
-                  {{ m }}
-                </option>
-              </select>
-            </label>
-            <template v-if="s.mode === 'auto'">
-              <label>
-                Gündüz süresi
-                <select
-                  :value="s.settings.dayMinutes"
-                  @change="setting('dayMinutes', $event.target.value, true)"
-                >
-                  <option v-for="m in [2, 3, 5, 8, 12]" :key="m" :value="m">
-                    {{ m }} dk
-                  </option>
-                </select>
-              </label>
-              <label>
-                Gece süresi
-                <select
-                  :value="s.settings.nightSeconds"
-                  @change="setting('nightSeconds', $event.target.value, true)"
-                >
-                  <option
-                    v-for="m in [30, 45, 60, 90, 120]"
-                    :key="m"
-                    :value="m"
-                  >
-                    {{ m }} sn
-                  </option>
-                </select>
-              </label>
-            </template>
-          </div>
-          <h4 class="sub-h">Hazır ayarlar</h4>
-          <div class="presets">
-            <button
-              v-for="p in presets"
-              :key="p.id"
-              class="preset"
-              @click="applyPreset(p)"
-            >
-              <b>{{ p.emoji }} {{ p.name }}</b>
-              <small>{{ p.desc }}</small>
+        <div class="card setup-card" v-if="s.me.isOwner">
+          <div class="setup-head">
+            <h3>Oyun kurulumu</h3>
+            <button class="btn small" @click="showSetup = true">
+              ⚙️ Ayarlar
             </button>
           </div>
-          <h4 class="sub-h">Özel roller</h4>
-          <div class="cat-chips role-chips">
-            <button
-              v-for="r in specialRoles"
-              :key="r"
-              class="cat"
-              :class="{ on: s.settings[r] }"
-              @click="setting(r, !s.settings[r])"
-            >
-              <img class="mini" :src="artOf(r)" alt="" />
-              {{ s.roles[r].name }}
-            </button>
-            <button
-              class="cat"
-              :class="{ on: s.settings.lovers }"
-              @click="setting('lovers', !s.settings.lovers)"
-            >
-              💘 Aşıklar
-            </button>
-          </div>
-          <p class="muted small role-help">
-            Bir role dokununca açılır/kapanır. Ne işe yaradığını rol kartında
-            görürsün.
-          </p>
-          <div class="toggles">
-            <label class="toggle" v-for="t in toggles" :key="t.key">
-              <span>
-                {{ t.label }}
-                <small class="muted">{{ t.hint }}</small>
-              </span>
-              <input
-                type="checkbox"
-                :checked="s.settings[t.key]"
-                @change="setting(t.key, $event.target.checked)"
-              />
-            </label>
-          </div>
-          <div class="penalty-settings">
-            <h4>🎲 Eğlence cezası</h4>
-            <select
-              class="full"
-              :value="s.settings.penalty"
-              @change="setting('penalty', $event.target.value)"
-            >
-              <option value="losers">Kaybeden herkese ayrı ceza</option>
-              <option value="team">Kaybeden takıma ortak ceza</option>
-              <option value="firstDead">Sadece ilk ölene</option>
-              <option value="everyone">Herkese (eğlencesine)</option>
-              <option value="off">Ceza yok</option>
-            </select>
-            <template v-if="s.settings.penalty !== 'off'">
-              <div class="cat-chips">
-                <button
-                  v-for="(label, key) in s.penaltyCategories"
-                  :key="key"
-                  class="cat"
-                  :class="{ on: s.settings.penaltyCats.includes(key) }"
-                  @click="toggleCat(key)"
-                >
-                  {{ label }}
-                </button>
-              </div>
-              <details class="custom">
-                <summary>
-                  Kendi cezalarınız ({{ s.settings.customPenalties.length }})
-                </summary>
-                <textarea
-                  v-model="customText"
-                  rows="4"
-                  placeholder="Her satıra bir ceza yaz. Örn: Herkese çay demle."
-                ></textarea>
-                <button class="btn small" @click="saveCustom">Kaydet</button>
-              </details>
-            </template>
-          </div>
+          <p class="setup-sum muted">{{ setupSummary }}</p>
           <p class="need" v-if="s.players.length < s.min">
             Başlamak için en az {{ s.min }} oyuncu lazım, şu an
             {{ s.players.length }} kişi var<template v-if="isSt">
@@ -404,8 +235,191 @@
               Botları çıkar
             </button>
           </div>
+        </div>
+        <div class="sheet-bg" v-if="showSetup" @click.self="showSetup = false">
+          <div class="sheet setup-sheet">
+            <h3>Oda ayarları</h3>
+            <form class="pass-row" @submit.prevent="savePass">
+              <input
+                class="field"
+                v-model="passDraft"
+                maxlength="20"
+                :placeholder="
+                  s.locked ? 'Yeni şifre' : '🔒 Oda şifresi koy (isteğe bağlı)'
+                "
+                autocomplete="off"
+              />
+              <button class="btn small" type="submit">
+                {{
+                  passDraft.trim()
+                    ? "Kaydet"
+                    : s.locked
+                    ? "Şifreyi kaldır"
+                    : "Kaydet"
+                }}
+              </button>
+            </form>
+            <div class="settings">
+              <label>
+                🎨 Tema
+                <select
+                  :value="s.settings.theme || 'classic'"
+                  @change="setting('theme', $event.target.value)"
+                >
+                  <option value="classic">Klasik köy</option>
+                  <option value="snow">Karlı dağ köyü</option>
+                  <option value="swamp">Sisli bataklık</option>
+                  <option value="blood">Kızıl ay</option>
+                </select>
+              </label>
+              <label>
+                🏆 Turnuva
+                <select
+                  :value="s.settings.tournament"
+                  @change="setting('tournament', $event.target.value, true)"
+                >
+                  <option :value="0">Yok</option>
+                  <option v-for="m in [3, 5, 7]" :key="m" :value="m">
+                    {{ m }} oyun
+                  </option>
+                </select>
+              </label>
+              <label>
+                Vampir sayısı
+                <select
+                  :value="s.settings.vampires"
+                  @change="setting('vampires', $event.target.value, true)"
+                >
+                  <option :value="0">Otomatik</option>
+                  <option v-for="m in [1, 2, 3, 4]" :key="m" :value="m">
+                    {{ m }}
+                  </option>
+                </select>
+              </label>
+              <template v-if="s.mode === 'auto'">
+                <label>
+                  Gündüz süresi
+                  <select
+                    :value="s.settings.dayMinutes"
+                    @change="setting('dayMinutes', $event.target.value, true)"
+                  >
+                    <option v-for="m in [2, 3, 5, 8, 12]" :key="m" :value="m">
+                      {{ m }} dk
+                    </option>
+                  </select>
+                </label>
+                <label>
+                  Gece süresi
+                  <select
+                    :value="s.settings.nightSeconds"
+                    @change="setting('nightSeconds', $event.target.value, true)"
+                  >
+                    <option
+                      v-for="m in [30, 45, 60, 90, 120]"
+                      :key="m"
+                      :value="m"
+                    >
+                      {{ m }} sn
+                    </option>
+                  </select>
+                </label>
+              </template>
+            </div>
+            <h4 class="sub-h">Hazır ayarlar</h4>
+            <div class="presets">
+              <button
+                v-for="p in presets"
+                :key="p.id"
+                class="preset"
+                @click="applyPreset(p)"
+              >
+                <b>{{ p.emoji }} {{ p.name }}</b>
+                <small>{{ p.desc }}</small>
+              </button>
+            </div>
+            <h4 class="sub-h">Özel roller</h4>
+            <div class="cat-chips role-chips">
+              <button
+                v-for="r in specialRoles"
+                :key="r"
+                class="cat"
+                :class="{ on: s.settings[r] }"
+                @click="setting(r, !s.settings[r])"
+              >
+                <img class="mini" :src="artOf(r)" alt="" />
+                {{ s.roles[r].name }}
+              </button>
+              <button
+                class="cat"
+                :class="{ on: s.settings.lovers }"
+                @click="setting('lovers', !s.settings.lovers)"
+              >
+                💘 Aşıklar
+              </button>
+            </div>
+            <p class="muted small role-help">
+              Bir role dokununca açılır/kapanır. Ne işe yaradığını rol kartında
+              görürsün.
+            </p>
+            <div class="toggles">
+              <label class="toggle" v-for="t in toggles" :key="t.key">
+                <span>
+                  {{ t.label }}
+                  <small class="muted">{{ t.hint }}</small>
+                </span>
+                <input
+                  type="checkbox"
+                  :checked="s.settings[t.key]"
+                  @change="setting(t.key, $event.target.checked)"
+                />
+              </label>
+            </div>
+            <div class="penalty-settings">
+              <h4>🎲 Eğlence cezası</h4>
+              <select
+                class="full"
+                :value="s.settings.penalty"
+                @change="setting('penalty', $event.target.value)"
+              >
+                <option value="losers">Kaybeden herkese ayrı ceza</option>
+                <option value="team">Kaybeden takıma ortak ceza</option>
+                <option value="firstDead">Sadece ilk ölene</option>
+                <option value="everyone">Herkese (eğlencesine)</option>
+                <option value="off">Ceza yok</option>
+              </select>
+              <template v-if="s.settings.penalty !== 'off'">
+                <div class="cat-chips">
+                  <button
+                    v-for="(label, key) in s.penaltyCategories"
+                    :key="key"
+                    class="cat"
+                    :class="{ on: s.settings.penaltyCats.includes(key) }"
+                    @click="toggleCat(key)"
+                  >
+                    {{ label }}
+                  </button>
+                </div>
+                <details class="custom">
+                  <summary>
+                    Kendi cezalarınız ({{ s.settings.customPenalties.length }})
+                  </summary>
+                  <textarea
+                    v-model="customText"
+                    rows="4"
+                    placeholder="Her satıra bir ceza yaz. Örn: Herkese çay demle."
+                  ></textarea>
+                  <button class="btn small" @click="saveCustom">Kaydet</button>
+                </details>
+              </template>
+            </div>
+            <button class="btn primary" @click="showSetup = false">
+              Tamam
+            </button>
+          </div>
+        </div>
+        <div class="start-dock" v-if="s.me.isOwner">
           <button
-            class="btn primary"
+            class="btn primary big-start"
             :class="{ dim: s.players.length < s.min }"
             @click="start"
           >
@@ -415,6 +429,7 @@
         <p class="center muted" v-else-if="s.me.seated">
           Oyunu kuran kişi herkes gelince başlatacak.
         </p>
+        <OnlineList />
       </template>
 
       <!-- watching a running game -->
@@ -941,8 +956,15 @@
       </div>
 
       <!-- village (during the game) -->
-      <div class="card" v-if="!['lobby', 'over'].includes(phase)">
-        <h3>Köy · {{ alivePlayers.length }} kişi hayatta</h3>
+      <details
+        class="card village"
+        v-if="!['lobby', 'over'].includes(phase)"
+        :open="villageOpen"
+        @toggle="villageToggled = $event.target.open"
+      >
+        <summary>
+          <h3>Köy · {{ alivePlayers.length }} kişi hayatta</h3>
+        </summary>
         <div class="grid">
           <div
             class="tile"
@@ -983,14 +1005,15 @@
             </span>
             <button
               v-if="isBoss && p.pid !== s.me.pid && !p.kicked"
-              class="mini"
+              class="mini mod-btn"
+              aria-label="Yönet"
               @click.stop="openMod(p)"
             >
-              ⚙️ Yönet
+              ⚙️
             </button>
           </div>
         </div>
-      </div>
+      </details>
 
       <!-- story so far -->
       <StoryReel ref="reel" />
@@ -1220,6 +1243,8 @@ export default {
       tags: TAGS,
       openedAt: Date.now(),
       showQr: false,
+      showSetup: false,
+      villageToggled: null,
       reactionList: [
         "😱",
         "🤔",
@@ -1238,6 +1263,24 @@ export default {
     };
   },
   computed: {
+    // the village list is folded away while another grid asks for a choice
+    villageOpen() {
+      if (this.villageToggled !== null) return this.villageToggled;
+      return !["night", "day", "runoff"].includes(this.phase) || this.isSt;
+    },
+    setupSummary() {
+      const st = this.s.settings;
+      const parts = [];
+      const vamps = this.s.setup && this.s.setup.vampir;
+      if (vamps) parts.push(vamps + " vampir");
+      parts.push("gündüz " + st.dayMinutes + " dk");
+      parts.push("gece " + st.nightSeconds + " sn");
+      if (st.secretVotes) parts.push("gizli oy");
+      if (st.defense) parts.push("savunma");
+      if (st.penalty && st.penalty !== "off") parts.push("ceza açık");
+      if (this.s.locked) parts.push("🔒 şifreli");
+      return parts.join(" · ");
+    },
     s() {
       return game.state;
     },
@@ -1437,6 +1480,9 @@ export default {
     },
   },
   watch: {
+    phase() {
+      this.villageToggled = null;
+    },
     "s.gameId": {
       immediate: true,
       handler() {
@@ -2590,6 +2636,116 @@ small.doktor {
 }
 small.gozcu {
   color: #c9a7ff;
+}
+/* a calmer layout: room code in one row, settings in a sheet, start at the bottom */
+.village {
+  summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    &::-webkit-details-marker {
+      display: none;
+    }
+    &::after {
+      content: "▾";
+      color: $muted;
+      transition: transform 0.2s;
+    }
+    h3 {
+      margin: 0;
+    }
+  }
+  &[open] summary {
+    margin-bottom: 10px;
+    &::after {
+      transform: rotate(180deg);
+    }
+  }
+}
+.code-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px 10px;
+  > .muted {
+    grid-column: 1;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .big-code {
+    grid-column: 1;
+    font-size: 34px;
+    letter-spacing: 0.18em;
+    margin: 0;
+    text-align: left;
+  }
+  .lock-note {
+    grid-column: 1 / -1;
+    margin: 4px 0 0;
+  }
+  .inline-btns {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    .btn {
+      margin: 0;
+      min-height: 38px;
+      padding: 0 12px;
+      font-size: 14px;
+    }
+  }
+  .friends {
+    grid-column: 1 / -1;
+  }
+}
+.setup-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  h3 {
+    margin: 0;
+  }
+  .btn {
+    margin: 0;
+    width: auto;
+  }
+}
+.setup-sum {
+  margin: 8px 0 4px;
+  font-size: 14px;
+}
+.setup-sheet {
+  max-height: 86vh;
+  overflow-y: auto;
+}
+.start-dock {
+  position: sticky;
+  bottom: calc(84px + env(safe-area-inset-bottom));
+  z-index: 20;
+  margin: 6px 0 14px;
+  .big-start {
+    margin: 0;
+    min-height: 56px;
+    font-size: 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  }
+}
+.room {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+.mod-btn {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  padding: 2px 5px;
+  font-size: 13px;
+  opacity: 0.75;
 }
 .mini {
   border: 1px solid rgba(255, 255, 255, 0.2);

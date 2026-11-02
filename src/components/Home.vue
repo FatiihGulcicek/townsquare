@@ -1,111 +1,40 @@
 <template>
   <div class="page home">
-    <div class="top">
-      <button class="icon" @click="$emit('settings')" aria-label="Ayarlar">
-        ⚙️
-      </button>
-    </div>
-    <header>
-      <img src="static/logo.webp" alt="Vampir Köylü" class="logo" />
-      <h1 class="sr-only">Vampir Köylü</h1>
-      <p class="muted">Kasaba Meydanı · arkadaşlarınla telefondan oyna</p>
-    </header>
-
-    <button class="btn tutorial" :disabled="busy" @click="tutorial">
-      🎓 Nasıl oynanır? Botlarla öğretici oyun
-    </button>
-
-    <div class="card me-card">
+    <!-- me: photo, name, settings -->
+    <div class="me-bar">
       <button
         class="photo-btn"
         @click="choosePhoto"
         aria-label="Profil fotoğrafı"
       >
-        <Avatar :name="name || '?'" :size="64" :src="game.myPhoto" />
+        <Avatar :name="name || '?'" :size="46" :src="game.myPhoto" />
         <span class="cam">📷</span>
       </button>
-      <div class="grow">
-        <label class="label" for="name">Adın</label>
-        <input
-          id="name"
-          class="field"
-          v-model="name"
-          maxlength="24"
-          placeholder="Örn. Fatih"
-          autocomplete="nickname"
-          @change="saveName"
-        />
-      </div>
-    </div>
-
-    <p class="champion" v-if="champion" @click="profileTab = 'top'">
-      👑 Geçen haftanın şampiyonu: <b>{{ champion.name }}</b> ({{
-        champion.wins
-      }}
-      galibiyet)
-    </p>
-
-    <OnlineList />
-    <LobbyChat />
-
-    <div class="profile-row">
-      <button class="btn small" @click="profileTab = 'me'">👤 Profilim</button>
-      <button class="btn small" @click="profileTab = 'top'">🏆 Sıralama</button>
-    </div>
-    <Profile
-      v-if="profileTab"
-      :initial-tab="profileTab"
-      @close="profileTab = null"
-    />
-
-    <div class="card">
-      <h3>Oda kur</h3>
       <input
-        class="field code-in"
-        v-model="wanted"
-        maxlength="4"
-        placeholder="Kendi kodun (isteğe bağlı, ör. CUMA)"
-        autocapitalize="characters"
-        autocomplete="off"
+        id="name"
+        class="name-in"
+        v-model="name"
+        maxlength="24"
+        placeholder="Adın"
+        autocomplete="nickname"
+        @change="saveName"
       />
-      <p class="hint muted">
-        Kendi kodunu seçersen her hafta aynı linkle toplanabilirsiniz.
-      </p>
-      <input
-        class="field"
-        v-model="roomPass"
-        maxlength="20"
-        placeholder="🔒 Şifre (isteğe bağlı)"
-        autocomplete="off"
-      />
-      <button class="btn primary" :disabled="busy" @click="create('auto')">
-        🤖 Uygulama anlatsın
+      <button class="icon" @click="$emit('settings')" aria-label="Ayarlar">
+        ⚙️
       </button>
-      <p class="hint muted">
-        Anlatıcıya gerek yok: gece, oylama ve sonuç otomatik.
-      </p>
-      <button class="btn" :disabled="busy" @click="create('human')">
-        🎙️ Ben anlatıcıyım
-      </button>
-      <p class="hint muted">
-        Sen oynamazsın; her şeyi görürsün ve oyunu sen ilerletirsin.
-      </p>
     </div>
 
-    <div class="card" v-if="rooms.length">
-      <h3>Odalarım</h3>
-      <div class="room-row" v-for="r in rooms" :key="r.code">
-        <b class="rc">{{ r.code }}</b>
-        <small class="muted">
-          {{ r.mode === "human" ? "🎙️ anlatıcılı" : "🤖 otomatik" }}
-        </small>
-        <button class="btn small primary" @click="reopen(r)">Aç</button>
-        <button class="x" @click="forget(r)">✕</button>
-      </div>
-    </div>
+    <!-- ========== PLAY ========== -->
+    <section v-if="tab === 'play'" class="play">
+      <header>
+        <img src="static/logo.webp" alt="Vampir Köylü" class="logo" />
+        <h1 class="sr-only">Vampir Köylü</h1>
+      </header>
 
-    <div class="card">
-      <h3>Odaya katıl</h3>
+      <button class="btn primary play-btn" :disabled="busy" @click="newRoom">
+        ▶ Oyun kur
+      </button>
+
       <div class="join">
         <input
           class="field code"
@@ -117,45 +46,137 @@
           @keyup.enter="joinRoom"
         />
         <button
-          class="btn primary"
+          class="btn"
+          :class="{ primary: code.length === 4 }"
           :disabled="code.length !== 4"
           @click="joinRoom"
         >
           Katıl
         </button>
       </div>
+
+      <div class="quick">
+        <button class="tile-btn" :disabled="busy" @click="tutorial">
+          <span>🎓</span>Öğretici oyun
+        </button>
+        <button class="tile-btn" @click="profileTab = 'top'">
+          <span>🏆</span>Sıralama
+        </button>
+      </div>
+
+      <p class="champion" v-if="champion" @click="profileTab = 'top'">
+        👑 Geçen haftanın şampiyonu: <b>{{ champion.name }}</b> ({{
+          champion.wins
+        }}
+        galibiyet)
+      </p>
+
+      <div class="my-rooms" v-if="rooms.length">
+        <h4>Odalarım</h4>
+        <div class="room-row" v-for="r in rooms" :key="r.code">
+          <b class="rc">{{ r.code }}</b>
+          <small class="muted">
+            {{ r.mode === "human" ? "🎙️ anlatıcılı" : "🤖 otomatik" }}
+          </small>
+          <button class="btn small primary" @click="reopen(r)">Aç</button>
+          <button class="x" @click="forget(r)" aria-label="Sil">✕</button>
+        </div>
+      </div>
+
+      <details class="rules">
+        <summary>Nasıl oynanır?</summary>
+        <p>
+          Köyde gizli <b>vampirler</b> var. Herkes rolünü sadece kendi
+          telefonunda görür.
+        </p>
+        <p>
+          🌙 <b>Gece</b> herkes telefonuna bakar. Vampirler birlikte bir kurban
+          seçer, 🩺 Doktor birini korur, 👁️ Gözcü birinin vampir olup olmadığını
+          öğrenir. Diğerleri de (iz bırakmamak için) şüphelendiği birini seçer.
+        </p>
+        <p>
+          ☀️ <b>Gündüz</b> gece ne olduğu açıklanır. Konuşun, tartışın ve
+          şüphelendiğiniz kişiye oy verin. En çok oyu alan asılır; eşitlikte
+          kimse asılmaz. Ölenlerin rolü açıklanır.
+        </p>
+        <p>
+          🏁 Bütün vampirler ölürse <b>köylüler</b>, vampirler köylülerin
+          sayısına ulaşırsa <b>vampirler</b> kazanır.
+        </p>
+        <p class="muted">4–20 oyuncu. Oyunu kuran kişi başlatır.</p>
+      </details>
+    </section>
+
+    <!-- ========== TOWN SQUARE ========== -->
+    <section v-else-if="tab === 'square'">
+      <OnlineList />
+      <LobbyChat />
+    </section>
+
+    <!-- new room sheet -->
+    <div class="sheet-bg" v-if="creating" @click.self="creating = false">
+      <div class="sheet create">
+        <h3>Yeni oda</h3>
+        <button class="mode" :disabled="busy" @click="create('auto')">
+          <span class="ic">🤖</span>
+          <span>
+            <b>Uygulama anlatsın</b>
+            <small>Anlatıcıya gerek yok: gece, oylama ve sonuç otomatik.</small>
+          </span>
+        </button>
+        <button class="mode" :disabled="busy" @click="create('human')">
+          <span class="ic">🎙️</span>
+          <span>
+            <b>Ben anlatıcıyım</b>
+            <small
+              >Sen oynamazsın; her şeyi görürsün ve oyunu sen
+              ilerletirsin.</small
+            >
+          </span>
+        </button>
+        <details class="more">
+          <summary>Kendi kodun ve şifre (isteğe bağlı)</summary>
+          <input
+            class="field code-in"
+            v-model="wanted"
+            maxlength="4"
+            placeholder="Kendi kodun (isteğe bağlı, ör. CUMA)"
+            autocapitalize="characters"
+            autocomplete="off"
+          />
+          <p class="hint muted">
+            Kendi kodunu seçersen her hafta aynı linkle toplanabilirsiniz.
+          </p>
+          <input
+            class="field"
+            v-model="roomPass"
+            maxlength="20"
+            placeholder="🔒 Şifre (isteğe bağlı)"
+            autocomplete="off"
+          />
+        </details>
+        <button class="btn ghost" @click="creating = false">Vazgeç</button>
+      </div>
     </div>
 
-    <details class="card rules">
-      <summary>Nasıl oynanır?</summary>
-      <p>
-        Köyde gizli <b>vampirler</b> var. Herkes rolünü sadece kendi telefonunda
-        görür.
-      </p>
-      <p>
-        🌙 <b>Gece</b> herkes telefonuna bakar. Vampirler birlikte bir kurban
-        seçer, 🩺 Doktor birini korur, 👁️ Gözcü birinin vampir olup olmadığını
-        öğrenir. Diğerleri de (iz bırakmamak için) şüphelendiği birini seçer.
-      </p>
-      <p>
-        ☀️ <b>Gündüz</b> gece ne olduğu açıklanır. Konuşun, tartışın ve
-        şüphelendiğiniz kişiye oy verin. En çok oyu alan asılır; eşitlikte kimse
-        asılmaz. Ölenlerin rolü açıklanır.
-      </p>
-      <p>
-        🏁 Bütün vampirler ölürse <b>köylüler</b>, vampirler köylülerin sayısına
-        ulaşırsa <b>vampirler</b> kazanır.
-      </p>
-      <p class="muted">4–20 oyuncu. Oyunu kuran kişi başlatır.</p>
-    </details>
+    <Profile
+      v-if="profileTab"
+      :initial-tab="profileTab"
+      @close="profileTab = null"
+    />
 
-    <p class="install" v-if="!pwa.isStandalone">
-      <a href="#" @click.prevent="installApp">📲 Ana ekrana ekle</a>
-      <span v-if="showIOS" class="muted">
-        — Safari'de Paylaş düğmesine dokun ve “Ana Ekrana Ekle”yi seç.
-        Bildirimler iPhone'da yalnızca böyle çalışır.
-      </span>
-    </p>
+    <!-- bottom tabs -->
+    <nav class="tabs">
+      <button :class="{ on: tab === 'play' }" @click="tab = 'play'">
+        <span>🎮</span>Oyna
+      </button>
+      <button :class="{ on: tab === 'square' }" @click="tab = 'square'">
+        <span>💬</span>Meydan
+        <i class="badge" v-if="others">{{ others }}</i>
+      </button>
+      <button @click="profileTab = 'me'"><span>👤</span>Profil</button>
+      <button @click="profileTab = 'shop'"><span>🛒</span>Mağaza</button>
+    </nav>
   </div>
 </template>
 
@@ -171,12 +192,12 @@ import {
   forgetRoom,
   fetchLeaderboard,
 } from "../game";
-import { pwaState, install } from "../pwa";
 import { unlockVoice } from "../voice";
 import Profile from "./Profile";
 import Avatar from "./Avatar";
 import OnlineList from "./OnlineList";
 import LobbyChat from "./LobbyChat";
+import { lobby } from "../lobby";
 import { pickPhoto } from "../photo";
 
 export default {
@@ -184,6 +205,9 @@ export default {
   data() {
     return {
       profileTab: null,
+      tab: "play",
+      creating: false,
+      lobby,
       game,
       wanted: "",
       roomPass: "",
@@ -192,9 +216,12 @@ export default {
       name: game.name,
       code: "",
       busy: false,
-      pwa: pwaState,
-      showIOS: false,
     };
+  },
+  computed: {
+    others() {
+      return this.lobby.online.filter((p) => p.pub !== this.lobby.me).length;
+    },
   },
   async mounted() {
     const result = await fetchLeaderboard("week");
@@ -242,6 +269,11 @@ export default {
       }
       return false;
     },
+    newRoom() {
+      unlockVoice();
+      if (this.needName()) return;
+      this.creating = true;
+    },
     async create(mode, code) {
       unlockVoice();
       if (mode === "auto" && this.needName()) return;
@@ -268,6 +300,7 @@ export default {
         );
       }
       this.busy = false;
+      this.creating = false;
     },
     async tutorial() {
       unlockVoice();
@@ -292,10 +325,6 @@ export default {
       if (this.needName()) return;
       join(this.code);
     },
-    async installApp() {
-      if (pwaState.canInstall) await install();
-      else this.showIOS = !this.showIOS;
-    },
   },
 };
 </script>
@@ -303,74 +332,29 @@ export default {
 <style scoped lang="scss">
 @import "../vars";
 
-.top {
-  display: flex;
-  justify-content: flex-end;
+.home {
+  padding-bottom: calc(86px + env(safe-area-inset-bottom));
 }
-.icon {
-  background: none;
-  border: 0;
-  font-size: 24px;
-  padding: 6px;
-  cursor: pointer;
-}
-header {
-  text-align: center;
-  margin: 0 0 6px;
-  .logo {
-    width: min(64vw, 260px);
-    height: auto;
-    margin-bottom: -6px;
-    filter: drop-shadow(0 12px 30px rgba(200, 30, 80, 0.35));
-    animation: logo-in 0.8s cubic-bezier(0.2, 1.3, 0.4, 1) both;
-  }
-  @keyframes logo-in {
-    from {
-      transform: scale(0.6) rotate(-8deg);
-      opacity: 0;
-    }
-  }
-  h1 {
-    margin: 10px 0 2px;
-    font-size: 34px;
-    color: $gold;
-    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
-  }
-  p {
-    margin: 0;
-  }
-}
-h3 {
-  margin: 0 0 6px;
-  font-size: 19px;
-}
-.label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 600;
-}
-.champion {
-  text-align: center;
-  padding: 10px;
-  border-radius: 14px;
-  background: rgba(233, 180, 76, 0.12);
-  border: 1px solid rgba(233, 180, 76, 0.4);
-  cursor: pointer;
-}
-.tutorial {
-  background: linear-gradient(
-    135deg,
-    rgba(123, 108, 255, 0.35),
-    rgba(40, 30, 90, 0.6)
-  );
-  border-color: rgba(180, 169, 255, 0.6);
-}
-.me-card {
+.me-bar {
   display: flex;
   align-items: center;
-  gap: 14px;
-  .grow {
+  gap: 10px;
+  padding: 4px 2px 8px;
+  .name-in {
     flex: 1;
+    min-width: 0;
+    height: 42px;
+    border-radius: 21px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.35);
+    color: $text;
+    padding: 0 14px;
+    font-size: 16px;
+    font-weight: 600;
+    outline: none;
+    &:focus {
+      border-color: $gold;
+    }
   }
 }
 .photo-btn {
@@ -383,26 +367,121 @@ h3 {
     position: absolute;
     right: -4px;
     bottom: -4px;
-    font-size: 18px;
-    background: #1b1f30;
-    border-radius: 50%;
-    padding: 3px;
+    font-size: 14px;
   }
 }
-.code-in {
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  margin-bottom: 4px;
-  font-size: 16px;
+.icon {
+  background: none;
+  border: 0;
+  font-size: 24px;
+  padding: 6px;
+  cursor: pointer;
+}
+header {
+  text-align: center;
+  .logo {
+    width: min(70vw, 280px);
+    height: auto;
+    filter: drop-shadow(0 12px 30px rgba(200, 30, 80, 0.35));
+    animation: logo-in 0.8s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+  }
+}
+@keyframes logo-in {
+  from {
+    transform: scale(0.6) rotate(-8deg);
+    opacity: 0;
+  }
+}
+.play-btn {
+  min-height: 64px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  border-radius: 20px;
+  margin: 10px 0 12px;
+  box-shadow:
+    0 12px 30px rgba(233, 180, 76, 0.25),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.2);
+  animation: breathe 2.6s ease-in-out infinite;
+}
+@keyframes breathe {
+  50% {
+    transform: scale(1.02);
+  }
+}
+.join {
+  display: flex;
+  gap: 8px;
+  .code {
+    flex: 1;
+    margin: 0;
+    text-align: center;
+    letter-spacing: 0.3em;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+  .btn {
+    margin: 0;
+    width: auto;
+    padding: 0 22px;
+  }
+}
+.quick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 14px 0 6px;
+}
+.tile-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(16, 18, 34, 0.75);
+  color: $text;
+  font: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  span {
+    font-size: 26px;
+  }
+  &:active {
+    transform: scale(0.97);
+  }
+}
+.champion {
+  text-align: center;
+  font-size: 14px;
+  color: $muted;
+  cursor: pointer;
+  b {
+    color: $gold;
+  }
+}
+.my-rooms {
+  margin-top: 10px;
+  h4 {
+    margin: 6px 0;
+    color: $muted;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
 }
 .room-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 0;
-  border-bottom: 1px solid $line;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border-radius: 12px;
+  background: rgba(16, 18, 34, 0.7);
   .rc {
-    font-size: 20px;
+    font-size: 18px;
     letter-spacing: 0.15em;
     color: $gold;
   }
@@ -411,57 +490,125 @@ h3 {
   }
   .btn {
     margin: 0;
+    width: auto;
   }
   .x {
     border: 0;
     background: none;
     color: $muted;
     font-size: 16px;
-  }
-}
-.profile-row {
-  display: flex;
-  gap: 8px;
-  .btn {
-    flex: 1;
-    width: auto;
-  }
-}
-.hint {
-  margin: -2px 0 8px;
-  font-size: 14px;
-}
-.join {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  .code {
-    text-transform: uppercase;
-    letter-spacing: 0.3em;
-    text-align: center;
-    font-weight: 700;
-    flex: 1;
-  }
-  .btn {
-    width: auto;
-    margin: 0;
+    cursor: pointer;
   }
 }
 .rules {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(16, 18, 34, 0.7);
   summary {
-    font-weight: 700;
     cursor: pointer;
-    font-size: 17px;
+    font-weight: 700;
   }
   p {
     line-height: 1.45;
   }
 }
-.install {
-  text-align: center;
-  font-size: 15px;
-  a {
-    color: $gold;
+.create {
+  .mode {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    text-align: left;
+    padding: 14px;
+    margin-bottom: 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(233, 180, 76, 0.45);
+    background: rgba(233, 180, 76, 0.08);
+    color: $text;
+    font: inherit;
+    cursor: pointer;
+    .ic {
+      font-size: 34px;
+    }
+    b {
+      display: block;
+      font-size: 17px;
+    }
+    small {
+      color: $muted;
+      font-size: 13px;
+    }
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+  .more {
+    margin: 4px 0 10px;
+    summary {
+      color: $muted;
+      font-size: 14px;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+  }
+  .hint {
+    font-size: 13px;
+    margin: 4px 0 8px;
+  }
+}
+.tabs {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-around;
+  padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+  background: rgba(8, 9, 20, 0.94);
+  border-top: 1px solid rgba(233, 180, 76, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  button {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    border: 0;
+    background: none;
+    color: $muted;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 0;
+    cursor: pointer;
+    span {
+      font-size: 22px;
+      filter: grayscale(0.6);
+    }
+    &.on {
+      color: $gold;
+      span {
+        filter: none;
+      }
+    }
+  }
+  .badge {
+    position: absolute;
+    top: 2px;
+    left: 56%;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    background: #2fbf71;
+    color: white;
+    font-style: normal;
+    font-size: 11px;
+    line-height: 18px;
+    padding: 0 4px;
   }
 }
 </style>
