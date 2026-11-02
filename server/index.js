@@ -470,6 +470,47 @@ async function board(period) {
   return result;
 }
 
+/*
+ * Cloudflare's TURN relay (free up to 1,000 GB a month) lets voice and video
+ * work on mobile networks that block direct phone-to-phone links. The key
+ * stays on the server; browsers get short-lived credentials.
+ */
+let turnCache = { at: 0, servers: null };
+async function cloudflareTurn() {
+  const id = process.env.CF_TURN_KEY_ID;
+  const token = process.env.CF_TURN_API_TOKEN;
+  if (!id || !token) return null;
+  if (turnCache.servers && Date.now() - turnCache.at < 12 * 3600 * 1000) {
+    return turnCache.servers;
+  }
+  try {
+    const response = await fetch(
+      `https://rtc.live.cloudflare.com/v1/turn/keys/${id}/credentials/generate-ice-servers`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ttl: 86400 }),
+        signal: AbortSignal.timeout(5000),
+      },
+    );
+    if (!response.ok) throw new Error("status " + response.status);
+    const data = await response.json();
+    const list = [].concat(data.iceServers || []).map((s) => ({
+      ...s,
+      // port 53 is blocked by browsers and only slows the connection down
+      urls: [].concat(s.urls).filter((u) => !/:53\b/.test(u)),
+    }));
+    turnCache = { at: Date.now(), servers: list };
+    return list;
+  } catch (e) {
+    console.log("turn credentials failed", String(e.message || e));
+    return turnCache.servers;
+  }
+}
+
 function json(res, status, data) {
   res.statusCode = status;
   res.setHeader("Content-Type", "application/json");
@@ -507,6 +548,10 @@ server.on("request", async (req, res) => {
       db: db.stats(),
       lobby: lobby.stats(),
       updater: updater.status(),
+      turn: !!(
+        (process.env.CF_TURN_KEY_ID && process.env.CF_TURN_API_TOKEN) ||
+        process.env.TURN_URL
+      ),
       started: STARTED,
     });
   }
@@ -574,6 +619,8 @@ server.on("request", async (req, res) => {
         ],
       },
     ];
+    const relay = await cloudflareTurn();
+    if (relay) iceServers.push(...relay);
     if (process.env.TURN_URL) {
       iceServers.push({
         urls: process.env.TURN_URL.split(","),
@@ -582,6 +629,22 @@ server.on("request", async (req, res) => {
       });
     }
     return json(res, 200, { iceServers });
+  }
+  if (url.pathname === "/api/me/delete") {
+    if (req.method !== "POST") return json(res, 405, { error: "POST" });
+    if (!isAllowedOrigin(req.headers.origin, req)) {
+      return json(res, 403, { error: "origin" });
+    }
+    const id = req.headers["x-player-id"] || "";
+    if (!VALID_ID.test(id)) return json(res, 400, { error: "id" });
+    const key = db.profileKey(id);
+    for (let i = recentResults.length - 1; i >= 0; i--) {
+      if (recentResults[i].key === key) recentResults.splice(i, 1);
+    }
+    Object.keys(leaderboardCache).forEach((k) => delete leaderboardCache[k]);
+    push.unregisterEverywhere(id);
+    if (db.enabled()) await db.deleteProfile(id);
+    return json(res, 200, { ok: true });
   }
   if (url.pathname === "/api/me") {
     const id = req.headers["x-player-id"] || "";
