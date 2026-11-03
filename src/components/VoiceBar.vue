@@ -117,7 +117,7 @@ export default {
   padding: 0 16px;
   border-radius: 29px;
   border: 1px solid rgba(233, 180, 76, 0.6);
-  background: linear-gradient(160deg, #2a2340, #120f1e);
+  background: linear-gradient(160deg, #701a34, #230713);
   color: $text;
   font-size: 22px;
   display: flex;
@@ -141,7 +141,7 @@ export default {
   gap: 10px;
   padding: 8px 10px;
   border-radius: 30px;
-  background: rgba(14, 16, 30, 0.95);
+  background: rgba(34, 7, 19, 0.97);
   border: 1px solid rgba(233, 180, 76, 0.5);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
 }

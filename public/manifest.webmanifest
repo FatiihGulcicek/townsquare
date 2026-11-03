@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Vampir Köylü · Kasaba Meydanı",
-  "short_name": "Vampir Köylü",
-  "description": "Arkadaşlarınla telefondan Vampir Köylü oyna. Otomatik anlatıcı, bildirimler ve sesli anlatım. Ücretsiz.",
+  "name": "Darkspire · Vampir Köylü",
+  "short_name": "Darkspire",
+  "description": "Darkspire'da arkadaşlarınla ücretsiz Vampir Köylü oyna. Otomatik anlatıcı, sesli sohbet ve bildirimler.",
   "lang": "tr",
   "dir": "ltr",
   "start_url": "/",
@@ -12,8 +12,8 @@
     "standalone"
   ],
   "orientation": "portrait",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#0a0409",
+  "theme_color": "#1a0610",
   "categories": [
     "games",
     "entertainment"

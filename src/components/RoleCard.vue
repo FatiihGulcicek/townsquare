@@ -111,7 +111,7 @@ export default {
   justify-content: center;
   padding: 18px;
   overflow-y: auto;
-  background: radial-gradient(circle at 50% 35%, #1a2348, #03040a 75%);
+  background: radial-gradient(circle at 50% 35%, #5c1832, #080308 75%);
   &.vampir {
     background: radial-gradient(circle at 50% 35%, #4a0910, #03040a 75%);
   }

@@ -33,33 +33,36 @@ const VALID_ID = /^[a-z0-9_-]{4,40}$/i;
 const ROOM_CODE = /^[A-Z]{4}$/;
 const CODE_LETTERS = "ABCDEFGHJKLMNPRSTUVYZ";
 
-const OWN_HOSTS = process.env.PUBLIC_URL
-  ? [new URL(process.env.PUBLIC_URL).hostname.toLowerCase()]
-  : [];
-const hostname = (h) =>
-  (h || "").split(",")[0].trim().toLowerCase().replace(/:\d+$/, "");
+const PUBLIC_ORIGIN = process.env.PUBLIC_URL
+  ? new URL(process.env.PUBLIC_URL).origin.toLowerCase()
+  : null;
 
 function isAllowedOrigin(origin, req) {
   if (!origin) return false;
-  let originHost;
+  let parsed;
   try {
-    originHost = new URL(origin).hostname.toLowerCase();
+    parsed = new URL(origin);
   } catch (e) {
     return false;
   }
+  if (!["http:", "https:"].includes(parsed.protocol)) return false;
+  const exactOrigin = parsed.origin.toLowerCase();
+  if (PUBLIC_ORIGIN && exactOrigin === PUBLIC_ORIGIN) return true;
+  if (
+    EXTRA_ORIGINS.some((allowed) => {
+      try {
+        return new URL(allowed).origin.toLowerCase() === exactOrigin;
+      } catch (e) {
+        return false;
+      }
+    })
+  )
+    return true;
   const headers = (req && req.headers) || {};
-  const candidates = [
-    hostname(headers.host),
-    hostname(headers["x-forwarded-host"]),
-    ...OWN_HOSTS,
-  ].filter(Boolean);
-  if (candidates.includes(originHost)) return true;
-  if (/^(localhost|127\.0\.0\.1)$/i.test(originHost)) return true;
-  return EXTRA_ORIGINS.some((o) =>
-    new RegExp("^https?://" + o.replace(/^https?:\/\//, "") + "$", "i").test(
-      origin,
-    ),
-  );
+  const requestHost = String(headers.host || "").trim().toLowerCase();
+  const local = /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(requestHost);
+  if (local) return parsed.host.toLowerCase() === requestHost;
+  return !PUBLIC_ORIGIN && parsed.host.toLowerCase() === requestHost;
 }
 
 // ---------- rooms ----------
@@ -353,6 +356,7 @@ const MIME = {
   ".woff2": "font/woff2",
   ".ttf": "font/ttf",
   ".txt": "text/plain; charset=utf-8",
+  ".xml": "application/xml; charset=utf-8",
   ".webmanifest": "application/manifest+json",
 };
 const COMPRESSIBLE = new Set([
@@ -362,6 +366,7 @@ const COMPRESSIBLE = new Set([
   ".json",
   ".svg",
   ".txt",
+  ".xml",
   ".map",
   ".webmanifest",
 ]);
@@ -538,6 +543,13 @@ function readBody(req, limit = 4096) {
 }
 
 server.on("request", async (req, res) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader(
+    "Content-Security-Policy",
+    "frame-ancestors 'none'; base-uri 'self'; object-src 'none'",
+  );
   const url = new URL(req.url, "http://localhost");
   if (url.pathname === "/healthz") {
     return json(res, 200, {
@@ -675,10 +687,20 @@ server.on("request", async (req, res) => {
     res.statusCode = 405;
     return res.end();
   }
-  let file = path.normalize(
-    path.join(STATIC_DIR, decodeURIComponent(url.pathname)),
-  );
-  if (!file.startsWith(STATIC_DIR)) {
+  let pathname;
+  try {
+    pathname = decodeURIComponent(url.pathname);
+  } catch (e) {
+    res.statusCode = 400;
+    return res.end();
+  }
+  let file = path.resolve(STATIC_DIR, "." + pathname);
+  const relative = path.relative(STATIC_DIR, file);
+  if (
+    relative === ".." ||
+    relative.startsWith(".." + path.sep) ||
+    path.isAbsolute(relative)
+  ) {
     res.statusCode = 403;
     return res.end();
   }

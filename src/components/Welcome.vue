@@ -248,7 +248,7 @@ export default {
   inset: 0;
   z-index: 500;
   overflow-y: auto;
-  background: #120b2a url("../assets/welcome-bg.webp") center top / cover
+  background: #0a0409 url("../assets/darkspire-castle-v3.webp") center top / cover
     no-repeat;
   padding: calc(20px + env(safe-area-inset-top)) 20px
     calc(24px + env(safe-area-inset-bottom));
@@ -257,8 +257,8 @@ export default {
   position: absolute;
   top: calc(12px + env(safe-area-inset-top));
   right: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid $line;
+  background: rgba(45, 9, 22, 0.9);
   color: $text;
   border-radius: 16px;
   padding: 6px 12px;
@@ -337,8 +337,8 @@ p {
   text-align: left;
   padding: 12px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: $panel;
+  border: 1px solid $line;
   .ico {
     font-size: 28px;
   }

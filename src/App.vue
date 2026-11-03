@@ -216,7 +216,7 @@ html.chat-lock body {
   overscroll-behavior: none;
 }
 html {
-  background: #05060c;
+  background: #0a0409;
 }
 html,
 body {
@@ -236,24 +236,18 @@ body {
   position: relative;
 }
 
-/* the town from the original game; at night a dark sky with drifting clouds */
+/* The same castle and village artwork anchors every game screen. */
 .backdrop {
   position: fixed;
   inset: 0;
   z-index: -3;
   overflow: hidden;
-  background: #05060c;
-  /* the picture is drawn a bit larger so its bottom-right corner (where the
-     artist's credit is printed) stays off screen; the credit is shown in
-     Settings instead */
+  background: #0a0409;
   &::before {
     content: "";
     position: absolute;
-    top: 0;
-    left: 0;
-    right: -22%;
-    bottom: -22%;
-    background: url("assets/background.webp") 40% top / cover no-repeat;
+    inset: 0;
+    background: url("assets/darkspire-castle-v3.webp") center top / cover no-repeat;
   }
 }
 .night-sky {
@@ -277,6 +271,7 @@ body {
     background: url("assets/clouds.png") repeat;
     background-size: 2000px auto;
     animation: move-clouds 120s linear infinite;
+    animation-play-state: paused;
     opacity: 0.3;
   }
 }
@@ -291,11 +286,15 @@ body {
 body.tint-night .night-sky {
   opacity: 0.82;
 }
+body.tint-night .night-sky .clouds,
+body.tint-dusk .night-sky .clouds {
+  animation-play-state: running;
+}
 body.tint-dusk .night-sky {
   opacity: 0.45;
 }
 body.tint-home .night-sky {
-  opacity: 0.35;
+  display: none;
 }
 /* keeps text readable over the picture without hiding the town */
 .readable {
@@ -326,22 +325,24 @@ h3,
 .title-font {
   font-family: "Cinzel", Georgia, serif;
   letter-spacing: 0.02em;
+  color: #f2d49a;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
 }
 
 .page {
-  max-width: 560px;
+  max-width: 640px;
   margin: 0 auto;
   padding: calc(12px + env(safe-area-inset-top)) 14px
     calc(28px + env(safe-area-inset-bottom));
 }
 
 .card {
-  background: $panel;
+  background: linear-gradient(150deg, rgba(48, 11, 23, 0.94), $panel 70%);
   border: 1px solid $line;
-  border-radius: 16px;
-  padding: 14px;
+  border-radius: 18px;
+  padding: 16px;
   margin: 12px 0;
-  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.38), inset 0 1px rgba(255, 228, 165, 0.08);
 }
 
 .btn {
@@ -353,21 +354,22 @@ h3,
   min-height: 50px;
   padding: 10px 16px;
   margin: 8px 0;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(233, 189, 112, 0.65);
+  border-radius: 13px;
+  background: linear-gradient(180deg, #5c1427, #250711);
   color: $text;
   font-size: 17px;
   font-weight: 600;
   cursor: pointer;
   user-select: none;
+  box-shadow: inset 0 1px rgba(255, 227, 169, 0.25), 0 5px 12px rgba(0, 0, 0, 0.35);
   &:active {
     transform: scale(0.98);
   }
   &.primary {
-    background: linear-gradient(180deg, $gold, darken($gold, 14%));
-    border-color: lighten($gold, 10%);
-    color: #1a1204;
+    background: linear-gradient(180deg, #f5d99f, #bd8439);
+    border-color: #f5d99f;
+    color: #270c11;
   }
   &.danger {
     background: linear-gradient(180deg, $blood, darken($blood, 12%));
@@ -375,7 +377,7 @@ h3,
     color: white;
   }
   &.ghost {
-    background: transparent;
+    background: rgba(27, 7, 17, 0.5);
   }
   &.small {
     min-height: 40px;
@@ -423,9 +425,9 @@ input.field {
   width: 100%;
   min-height: 50px;
   padding: 10px 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(0, 0, 0, 0.45);
+  border-radius: 13px;
+  border: 1px solid $line;
+  background: rgba(13, 4, 10, 0.88);
   color: $text;
   font-size: 18px;
   outline: none;
@@ -493,7 +495,7 @@ input.field {
   justify-content: center;
   text-align: center;
   padding: 24px;
-  background: radial-gradient(circle at 50% 40%, #1d1a4d, #03030a 75%);
+  background: radial-gradient(circle at 50% 40%, #53132a, #080308 75%);
   .phase-icon {
     font-size: 96px;
     animation: rise 1.4s ease-out;
@@ -649,7 +651,7 @@ input.field {
   position: fixed;
   inset: 0;
   z-index: 300;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(3, 1, 4, 0.82);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -657,12 +659,30 @@ input.field {
 
 .sheet {
   width: 100%;
-  max-width: 560px;
-  max-height: 92vh;
+  max-width: 640px;
+  max-height: 92dvh;
   overflow-y: auto;
-  background: #0d0f1c;
+  background: linear-gradient(160deg, #3a1022, #13070f 62%);
+  border: 1px solid $line;
   border-top: 3px solid $gold;
-  border-radius: 20px 20px 0 0;
-  padding: 16px 16px calc(18px + env(safe-area-inset-bottom));
+  border-radius: 22px 22px 0 0;
+  padding: 20px 16px calc(18px + env(safe-area-inset-bottom));
+  box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.65);
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #f5d99f;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 </style>
