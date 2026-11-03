@@ -49,11 +49,13 @@
       </div>
 
       <div class="quick">
-        <button class="tile-btn" :disabled="busy" @click="tutorial">
-          <span>🎓</span>Öğretici oyun
+        <button class="art-tile" :disabled="busy" @click="tutorial">
+          <img src="static/tile-tutorial.webp" alt="" />
+          <span class="sr-only">Öğretici oyun</span>
         </button>
-        <button class="tile-btn" @click="profileTab = 'top'">
-          <span>🏆</span>Sıralama
+        <button class="art-tile" @click="profileTab = 'top'">
+          <img src="static/tile-rank.webp" alt="" />
+          <span class="sr-only">Sıralama</span>
         </button>
       </div>
 
@@ -424,6 +426,26 @@ export default {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   margin: 14px 0 6px;
+}
+.art-tile {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  aspect-ratio: 1;
+  transition: transform 0.12s;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.55));
+  }
+  &:active {
+    transform: scale(0.96);
+  }
+  &:disabled {
+    opacity: 0.6;
+  }
 }
 .tile-btn {
   display: flex;
