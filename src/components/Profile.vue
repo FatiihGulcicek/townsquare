@@ -1,23 +1,28 @@
 <template>
-  <div class="sheet-bg" @click.self="$emit('close')">
-    <div class="sheet">
-      <div class="tabs">
+  <div class="sheet-bg profile-overlay" @click.self="$emit('close')">
+    <div class="sheet profile-sheet" role="dialog" aria-modal="true" aria-label="Profil">
+      <div class="profile-topbar">
+        <img src="static/nav-profile-v6.webp" alt="" />
+        <div><h2>Profil</h2><small>Darkspire · Vampir Köylü</small></div>
+        <button class="profile-close" @click="$emit('close')" aria-label="Profili kapat">×</button>
+      </div>
+      <nav class="tabs" aria-label="Profil bölümleri">
         <button :class="{ active: tab === 'me' }" @click="tab = 'me'">
-          👤 Profilim
+          <img src="static/nav-profile-v6.webp" alt="" />Profilim
         </button>
         <button :class="{ active: tab === 'badges' }" @click="tab = 'badges'">
-          🏅 Rozetler
+          <img src="static/nav-collection-v6.webp" alt="" />Rozetler
         </button>
         <button :class="{ active: tab === 'history' }" @click="tab = 'history'">
-          📼 Geçmiş
+          <img src="static/tile-badges-v2.webp" alt="" />Geçmiş
         </button>
         <button :class="{ active: tab === 'shop' }" @click="tab = 'shop'">
-          🛒 Mağaza
+          <img src="static/tile-shop-v2.webp" alt="" />Mağaza
         </button>
         <button :class="{ active: tab === 'top' }" @click="openTop">
-          🏆 Sıralama
+          <img src="static/tile-rank.webp" alt="" />Sıralama
         </button>
-      </div>
+      </nav>
 
       <template v-if="tab === 'shop'">
         <p class="coins">
@@ -127,7 +132,10 @@
 
       <template v-else-if="tab === 'me'">
         <div class="head">
-          <Avatar :name="name" :size="72" :src="game.myPhoto" />
+          <div class="profile-portrait">
+            <Avatar v-if="game.myPhoto" :name="name" :size="72" :src="game.myPhoto" />
+            <img v-else src="static/default-avatar-v4.webp" alt="" />
+          </div>
           <div>
             <h3>{{ name || "İsimsiz" }}</h3>
             <small class="muted" v-if="profile && profile.since">
@@ -271,7 +279,6 @@
         </div>
       </template>
 
-      <button class="btn ghost" @click="$emit('close')">Kapat</button>
     </div>
   </div>
 </template>
@@ -457,35 +464,95 @@ export default {
 
 <style scoped lang="scss">
 @import "../vars";
-.tabs {
+.profile-overlay { align-items: center; }
+.profile-sheet {
+  width: min(100%, 640px);
+  height: 100dvh;
+  max-height: 100dvh;
+  padding: 0 14px calc(20px + env(safe-area-inset-bottom));
+  border: 1px solid #ae713b;
+  border-radius: 0;
+  background:
+    radial-gradient(ellipse at 50% 0, rgba(116, 21, 39, 0.5), transparent 44%),
+    linear-gradient(160deg, #240a16, #09080e 72%);
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.75), inset 0 1px rgba(255, 229, 166, 0.14);
+}
+.profile-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
   display: flex;
-  gap: 6px;
-  margin-bottom: 14px;
-  overflow-x: auto;
-  scrollbar-width: thin;
+  align-items: center;
+  gap: 9px;
+  min-height: 68px;
+  margin: 0 -14px;
+  padding: calc(9px + env(safe-area-inset-top)) 14px 9px;
+  border-bottom: 1px solid rgba(224, 151, 70, 0.56);
+  background: linear-gradient(180deg, #35101d, #160910);
+  img { width: 39px; height: 39px; object-fit: contain; }
+  > div { flex: 1; min-width: 0; }
+  h2 { margin: 0; color: #ffe1a4; font: 700 22px Georgia, "Times New Roman", serif; }
+  small { color: #cfab87; font-size: 11px; }
+}
+.profile-close {
+  width: 35px;
+  height: 35px;
+  border: 1px solid #ce8a4a;
+  border-radius: 50%;
+  background: linear-gradient(#552319, #1b0d11);
+  color: #ffe0a6;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+.tabs {
+  position: sticky;
+  top: calc(68px + env(safe-area-inset-top));
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 3px;
+  margin: 0 -14px 16px;
+  padding: 6px 7px;
+  border-bottom: 1px solid rgba(224, 151, 70, 0.5);
+  background: rgba(13, 8, 13, 0.98);
   button {
-    flex: 0 0 auto;
-    min-height: 44px;
-    border-radius: 12px;
-    border: 1px solid $line;
-    background: linear-gradient(160deg, rgba(54, 11, 26, 0.96), rgba(16, 7, 15, 0.96));
-    color: $text;
-    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    min-width: 0;
+    min-height: 52px;
+    border-radius: 9px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #d4bda0;
+    font-family: inherit;
+    font-size: clamp(9px, 2.7vw, 12px);
     font-weight: 600;
-    padding: 0 4px;
+    white-space: nowrap;
+    padding: 3px 0;
+    cursor: pointer;
+    img { width: 26px; height: 26px; object-fit: contain; }
     &.active {
-      border-color: $gold;
-      color: #ffe0a7;
-      background: linear-gradient(180deg, rgba(125, 19, 39, 0.96), rgba(48, 7, 19, 0.96));
+      border-color: #cf8b49;
+      color: #ffe3ad;
+      background: linear-gradient(180deg, #711423, #260811);
+      box-shadow: inset 0 1px rgba(255, 222, 158, 0.18), 0 0 11px rgba(196, 40, 40, 0.2);
     }
   }
 }
+@media (min-width: 700px) {
+  .profile-sheet { height: min(90dvh, 800px); max-height: 90dvh; border-radius: 18px; }
+}
 .level {
   margin: 12px 0;
-  padding: 12px;
-  border-radius: 14px;
-  background: rgba(233, 180, 76, 0.1);
-  border: 1px solid rgba(233, 180, 76, 0.3);
+  padding: 15px;
+  border-radius: 13px;
+  background: linear-gradient(130deg, rgba(61, 17, 26, 0.95), rgba(14, 10, 16, 0.96));
+  border: 1px solid rgba(225, 153, 76, 0.62);
+  box-shadow: inset 0 1px rgba(255, 226, 163, 0.12), 0 8px 20px rgba(0, 0, 0, 0.3);
   .lv {
     display: flex;
     justify-content: space-between;
@@ -508,11 +575,15 @@ export default {
     span {
       display: block;
       height: 100%;
-      background: linear-gradient(90deg, $gold, #ffdf8a);
+      background: linear-gradient(90deg, #a85324, #ffd077 72%, #fff1bb);
     }
   }
 }
 .coins {
+  padding: 12px 14px;
+  border: 1px solid rgba(225, 153, 76, 0.62);
+  border-radius: 12px;
+  background: linear-gradient(130deg, #3b1720, #110a11);
   font-size: 18px;
   b {
     color: $gold;
@@ -524,7 +595,7 @@ export default {
 }
 .shop {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
   gap: 8px;
   .item {
     display: flex;
@@ -534,8 +605,8 @@ export default {
     text-align: center;
     padding: 10px 6px;
     border-radius: 12px;
-    background: $panel;
-    border: 1px solid $line;
+    background: linear-gradient(145deg, #2e0e1b, #0c0910);
+    border: 1px solid rgba(211, 141, 69, 0.52);
     .pv {
       font-size: 28px;
     }
@@ -567,8 +638,8 @@ export default {
   gap: 2px;
   padding: 10px 6px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(145deg, #29101a, #0e0b11);
+  border: 1px solid rgba(211, 141, 69, 0.42);
   filter: grayscale(1);
   opacity: 0.45;
   .be {
@@ -658,27 +729,41 @@ export default {
   display: flex;
   align-items: center;
   gap: 14px;
+  padding: 14px;
+  border: 1px solid rgba(225, 153, 76, 0.62);
+  border-radius: 14px;
+  background: linear-gradient(115deg, #3f1221, #140a11);
+  box-shadow: inset 0 1px rgba(255, 226, 163, 0.14), 0 8px 22px rgba(0, 0, 0, 0.3);
+  .profile-portrait {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 82px;
+    height: 82px;
+    img { width: 100%; height: 100%; object-fit: contain; }
+  }
   h3 {
     margin: 0;
-    font-size: 22px;
+    color: #ffe0a6;
+    font: 700 22px Georgia, "Times New Roman", serif;
   }
 }
 .stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin: 14px 0;
   div {
-    background: $panel;
-    border: 1px solid $line;
+    background: linear-gradient(150deg, rgba(53, 15, 27, 0.98), rgba(13, 9, 15, 0.98));
+    border: 1px solid rgba(211, 141, 69, 0.49);
     border-radius: 12px;
-    padding: 10px 4px;
+    padding: 13px 4px;
     text-align: center;
   }
   b {
     display: block;
-    font-size: 22px;
-    color: $gold;
+    font-size: 25px;
+    color: #ffda8e;
   }
   span {
     font-size: 12px;
