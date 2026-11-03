@@ -162,6 +162,7 @@ h3 {
   margin-top: 8px;
   input {
     flex: 1;
+    min-width: 0;
     min-height: 44px;
     border-radius: 22px;
     border: 1px solid $line;
@@ -172,11 +173,11 @@ h3 {
     outline: none;
   }
   button {
-    border: 0;
+    border: 1px solid #dba05b;
     border-radius: 22px;
     padding: 0 14px;
-    background: $gold;
-    color: #1a1204;
+    background: linear-gradient(#80501e, #34170e);
+    color: #ffe2a9;
     font-weight: 700;
     &:disabled {
       opacity: 0.4;

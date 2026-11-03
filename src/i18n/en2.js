@@ -327,6 +327,13 @@ export default {
   Meydan: "Square",
   "Ana Menü": "Home",
   Odalar: "Rooms",
+  "Arkadaşlarınla aynı odada buluş.": "Meet your friends in the same room.",
+  "Oda koduyla katıl": "Join with a room code",
+  "Son kurduğun odalar": "Recently created rooms",
+  "Henüz kurduğun bir oda yok. Yeni bir oyun kurabilir veya bir oda koduyla katılabilirsin.":
+    "You haven't created a room yet. Start a game or join with a room code.",
+  Anlatıcılı: "With a narrator",
+  "Odaya gir": "Enter room",
   Klan: "Clan",
   Koleksiyon: "Collection",
   Görevler: "Quests",

@@ -119,18 +119,6 @@
         galibiyet)
       </p>
 
-      <div class="my-rooms" v-if="rooms.length">
-        <h4>Odalarım</h4>
-        <div class="room-row" v-for="r in rooms" :key="r.code">
-          <b class="rc">{{ r.code }}</b>
-          <small class="muted">
-            {{ r.mode === "human" ? "🎙️ anlatıcılı" : "🤖 otomatik" }}
-          </small>
-          <button class="btn small primary" @click="reopen(r)">Aç</button>
-          <button class="x" @click="forget(r)" aria-label="Sil">✕</button>
-        </div>
-      </div>
-
       <details class="rules">
         <summary>Nasıl oynanır?</summary>
         <p>
@@ -156,8 +144,48 @@
 
     </section>
 
-    <!-- ========== TOWN SQUARE ========== -->
-    <section v-else-if="tab === 'square'">
+    <!-- ========== ROOMS ========== -->
+    <section v-else-if="tab === 'square'" class="room-hub">
+      <div class="room-heading">
+        <img src="static/nav-rooms-v6.webp" alt="" />
+        <div>
+          <h2>Odalar</h2>
+          <p>Arkadaşlarınla aynı odada buluş.</p>
+        </div>
+      </div>
+
+      <div class="room-entry">
+        <button class="room-create" :disabled="busy" @click="newRoom">Oyun Kur</button>
+        <div class="room-code">
+          <label for="room-code">Oda koduyla katıl</label>
+          <div>
+            <input
+              id="room-code"
+              v-model="code"
+              maxlength="4"
+              placeholder="ODA KODU"
+              autocapitalize="characters"
+              autocomplete="off"
+              @keyup.enter="joinRoom"
+            />
+            <button :disabled="code.length !== 4" @click="joinRoom">Katıl</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="my-rooms">
+        <h3>Son kurduğun odalar</h3>
+        <div v-if="rooms.length">
+          <div class="room-row" v-for="r in rooms" :key="r.code">
+            <b class="rc">{{ r.code }}</b>
+            <small>{{ r.mode === "human" ? "Anlatıcılı" : "Otomatik" }}</small>
+            <button class="reopen" :disabled="busy" @click="reopen(r)">Odaya gir</button>
+            <button class="x" @click="forget(r)" :aria-label="r.code + ' kodunu listeden sil'">✕</button>
+          </div>
+        </div>
+        <p v-else>Henüz kurduğun bir oda yok. Yeni bir oyun kurabilir veya bir oda koduyla katılabilirsin.</p>
+      </div>
+
       <OnlineList />
       <LobbyChat />
     </section>
@@ -437,6 +465,7 @@ export default {
     joinRoom() {
       unlockVoice();
       if (this.needName()) return;
+      if (this.code.length !== 4) return;
       join(this.code);
     },
   },
@@ -769,43 +798,108 @@ export default {
     color: $gold;
   }
 }
-.my-rooms {
-  margin-top: 10px;
-  h4 {
-    margin: 6px 0;
-    color: $muted;
-    font-size: 13px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+.room-hub {
+  width: min(100%, 560px);
+  margin: 18px auto 0;
+  padding-bottom: 20px;
+}
+.room-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  text-align: left;
+  img { width: 50px; height: 50px; object-fit: contain; }
+  h2 {
+    margin: 0;
+    color: #ffdd9a;
+    font: 700 26px Georgia, "Times New Roman", serif;
+    text-shadow: 0 2px 5px #16040b;
   }
+  p { margin: 2px 0 0; color: #e0bea1; font-size: 13px; }
+}
+.room-entry, .my-rooms {
+  border: 1px solid rgba(221, 154, 74, 0.7);
+  border-radius: 15px;
+  background: linear-gradient(145deg, rgba(42, 9, 18, 0.96), rgba(10, 8, 14, 0.96));
+  box-shadow: inset 0 1px rgba(255, 225, 163, 0.13), 0 10px 28px rgba(0, 0, 0, 0.46);
+}
+.room-entry { padding: 15px; }
+.room-create {
+  display: block;
+  width: min(100%, 340px);
+  height: 57px;
+  margin: 0 auto 14px;
+  border: 0;
+  background: url("../assets/btn-crimson-v4.webp") center / 100% 100% no-repeat;
+  color: #ffe5ac;
+  font: 700 22px Georgia, "Times New Roman", serif;
+  text-shadow: 0 2px 3px #350710;
+  cursor: pointer;
+  &:disabled { opacity: 0.5; }
+}
+.room-code {
+  label {
+    display: block;
+    margin-bottom: 7px;
+    color: #e4c99e;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  > div { display: flex; gap: 7px; }
+  input {
+    flex: 1;
+    min-width: 0;
+    height: 44px;
+    padding: 0 12px;
+    border: 1px solid rgba(218, 156, 87, 0.72);
+    border-radius: 8px;
+    background: rgba(8, 7, 11, 0.95);
+    color: #fff0d4;
+    font: 700 16px Georgia, "Times New Roman", serif;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    outline: none;
+    &:focus { border-color: #ffdc9b; box-shadow: 0 0 0 2px rgba(255, 193, 92, 0.2); }
+  }
+  button {
+    min-width: 82px;
+    border: 1px solid #e0a35a;
+    border-radius: 8px;
+    background: linear-gradient(#76501d, #2e190e);
+    color: #ffe5ae;
+    font: 700 15px Georgia, "Times New Roman", serif;
+    cursor: pointer;
+    &:disabled { opacity: 0.45; cursor: default; }
+  }
+}
+.my-rooms {
+  margin: 12px 0;
+  padding: 12px;
+  h3 { margin: 0 0 9px; color: #ffdc9b; font: 700 17px Georgia, "Times New Roman", serif; }
+  > p { margin: 0; color: #d8bda6; font-size: 13px; line-height: 1.45; }
 }
 .room-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  margin-bottom: 6px;
-  border-radius: 12px;
-  background: rgba(16, 18, 34, 0.7);
-  .rc {
-    font-size: 18px;
-    letter-spacing: 0.15em;
-    color: $gold;
+  gap: 7px;
+  padding: 7px 0;
+  border-top: 1px solid rgba(227, 170, 100, 0.18);
+  .rc { color: #ffdc9b; font-size: 16px; letter-spacing: 0.08em; }
+  small { flex: 1; color: #d8bda6; font-size: 12px; }
+  button { cursor: pointer; }
+  .reopen {
+    min-width: 43px;
+    min-height: 34px;
+    border: 1px solid #c78342;
+    border-radius: 7px;
+    background: #4b2218;
+    color: #ffe0aa;
+    font-weight: 700;
+    &:disabled { opacity: 0.45; }
   }
-  small {
-    flex: 1;
-  }
-  .btn {
-    margin: 0;
-    width: auto;
-  }
-  .x {
-    border: 0;
-    background: none;
-    color: $muted;
-    font-size: 16px;
-    cursor: pointer;
-  }
+  .x { border: 0; background: none; color: #e0b794; font-size: 17px; }
 }
 .rules {
   max-width: 320px;
@@ -843,6 +937,10 @@ export default {
   .quick { margin-top: 24px; }
 }
 .create {
+  border: 1px solid #c88848;
+  background: linear-gradient(145deg, #340c1a, #0c0910 78%);
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.75), inset 0 1px rgba(255, 225, 163, 0.2);
+  h3 { margin: 0 0 15px; text-align: center; color: #ffe1a4; font: 700 23px Georgia, "Times New Roman", serif; }
   .mode {
     display: flex;
     align-items: center;
@@ -851,9 +949,9 @@ export default {
     text-align: left;
     padding: 14px;
     margin-bottom: 10px;
-    border-radius: 16px;
-    border: 1px solid rgba(233, 180, 76, 0.45);
-    background: rgba(233, 180, 76, 0.08);
+    border-radius: 12px;
+    border: 1px solid rgba(233, 180, 76, 0.62);
+    background: linear-gradient(120deg, rgba(98, 20, 34, 0.72), rgba(15, 10, 16, 0.92));
     color: $text;
     font: inherit;
     cursor: pointer;
@@ -871,6 +969,7 @@ export default {
     &:active {
       transform: scale(0.98);
     }
+    &:focus-visible { outline: 2px solid #ffe2a1; outline-offset: 2px; }
   }
   .more {
     margin: 4px 0 10px;
