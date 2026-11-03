@@ -339,9 +339,9 @@ h3,
 .card {
   background: linear-gradient(150deg, rgba(48, 11, 23, 0.94), $panel 70%);
   border: 1px solid $line;
-  border-radius: 18px;
-  padding: 16px;
-  margin: 12px 0;
+  border-radius: 15px;
+  padding: 14px;
+  margin: 10px 0;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.38), inset 0 1px rgba(255, 228, 165, 0.08);
 }
 
@@ -351,14 +351,14 @@ h3,
   justify-content: center;
   gap: 8px;
   width: 100%;
-  min-height: 50px;
-  padding: 10px 16px;
-  margin: 8px 0;
+  min-height: 44px;
+  padding: 8px 14px;
+  margin: 6px 0;
   border: 1px solid rgba(233, 189, 112, 0.65);
   border-radius: 13px;
   background: linear-gradient(180deg, #5c1427, #250711);
   color: $text;
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   user-select: none;
@@ -380,8 +380,8 @@ h3,
     background: rgba(27, 7, 17, 0.5);
   }
   &.small {
-    min-height: 40px;
-    font-size: 15px;
+    min-height: 38px;
+    font-size: 13px;
     width: auto;
     margin: 4px 0;
   }
@@ -392,17 +392,17 @@ h3,
   }
   /* the ornate golden button from the game's artwork */
   &.gold {
-    max-width: 380px;
-    margin: 10px auto;
-    aspect-ratio: 1064 / 268;
-    min-height: 0;
-    height: auto;
-    padding: 0 18%;
+    max-width: 300px;
+    margin: 8px auto;
+    aspect-ratio: auto;
+    min-height: 54px;
+    height: 54px;
+    padding: 0 12%;
     border: 0;
     border-radius: 0;
     background: url("assets/btn-gold.webp") center / 100% 100% no-repeat;
     color: #2b1204;
-    font-size: clamp(17px, 5vw, 22px);
+    font-size: clamp(16px, 4.5vw, 19px);
     font-weight: 900;
     letter-spacing: 0.02em;
     text-shadow: 0 1px 0 rgba(255, 236, 170, 0.7);
@@ -423,8 +423,8 @@ textarea {
 }
 input.field {
   width: 100%;
-  min-height: 50px;
-  padding: 10px 14px;
+  min-height: 44px;
+  padding: 8px 12px;
   border-radius: 13px;
   border: 1px solid $line;
   background: rgba(13, 4, 10, 0.88);

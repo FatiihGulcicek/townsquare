@@ -210,12 +210,12 @@ export default {
   right: 16px;
   bottom: calc(16px + env(safe-area-inset-bottom));
   z-index: 120;
-  width: 58px;
-  height: 58px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   border: 1px solid rgba(233, 180, 76, 0.6);
   background: linear-gradient(160deg, #701a34, #230713);
-  font-size: 26px;
+  font-size: 23px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
   cursor: pointer;
   &.open {

@@ -286,7 +286,7 @@ export default {
   padding-top: 26vh;
 }
 .logo {
-  width: min(92vw, 420px);
+  width: min(82vw, 360px);
   height: auto;
   margin-top: 4vh;
   filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.6));

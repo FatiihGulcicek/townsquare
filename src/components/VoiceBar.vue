@@ -112,14 +112,14 @@ export default {
   left: 16px;
   bottom: calc(16px + env(safe-area-inset-bottom));
   z-index: 120;
-  height: 58px;
-  min-width: 58px;
-  padding: 0 16px;
-  border-radius: 29px;
+  height: 50px;
+  min-width: 50px;
+  padding: 0 12px;
+  border-radius: 25px;
   border: 1px solid rgba(233, 180, 76, 0.6);
   background: linear-gradient(160deg, #701a34, #230713);
   color: $text;
-  font-size: 22px;
+  font-size: 20px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -139,15 +139,15 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
+  padding: 6px 9px;
   border-radius: 30px;
   background: rgba(34, 7, 19, 0.97);
   border: 1px solid rgba(233, 180, 76, 0.5);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
 }
 .mic {
-  width: 46px;
-  height: 46px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   border: 0;
   font-size: 22px;

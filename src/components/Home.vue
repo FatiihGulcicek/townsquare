@@ -411,7 +411,7 @@ export default {
 @import "../vars";
 
 .home {
-  padding-bottom: calc(86px + env(safe-area-inset-bottom));
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
 }
 .me-bar {
   display: flex;
@@ -522,29 +522,29 @@ export default {
 }
 .home-logo {
   display: block;
-  width: min(88vw, 450px);
+  width: min(80vw, 350px);
   height: auto;
   margin: 2px auto 6px;
   filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.8));
 }
 .hero-actions {
   display: grid;
-  gap: 2px;
-  margin-bottom: 4px;
+  gap: 3px;
+  margin-bottom: 8px;
 }
 .panel-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  width: min(84vw, 360px);
-  height: clamp(64px, 18vw, 82px);
+  width: min(82vw, 320px);
+  height: clamp(54px, 15vw, 64px);
   margin: 0 auto;
   border: 0;
   background: url("../assets/btn-crimson-v4.webp") center / 100% 100% no-repeat;
   color: #f3dcae;
   font: inherit;
-  font-size: clamp(20px, 5.5vw, 26px);
+  font-size: clamp(18px, 5vw, 22px);
   font-weight: 800;
   letter-spacing: 0.02em;
   text-shadow: 0 2px 3px rgba(0, 0, 0, 0.85);
@@ -560,8 +560,8 @@ export default {
   }
 }
 .button-icon {
-  width: 25px;
-  height: 25px;
+  width: 21px;
+  height: 21px;
   fill: $gold;
   stroke: $gold;
   stroke-width: 1.4;
@@ -609,14 +609,14 @@ export default {
 }
 .quick {
   display: grid;
-  grid-template-columns: repeat(2, min(39vw, 150px));
+  grid-template-columns: repeat(2, min(37vw, 130px));
   justify-content: center;
-  gap: 8px;
-  margin: 8px 0 6px;
+  gap: 6px;
+  margin: 6px 0;
 }
 @media (min-width: 600px) {
   .quick {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(4, min(21vw, 130px));
   }
 }
 .art-tile {
@@ -645,7 +645,7 @@ export default {
     text-align: center;
     font-family: Georgia, "Times New Roman", serif;
     font-weight: 700;
-    font-size: min(5vw, 20px);
+    font-size: min(4.2vw, 17px);
     line-height: 1.05;
     color: #f6e0b0;
     text-shadow:
@@ -792,7 +792,7 @@ export default {
   z-index: 100;
   display: flex;
   justify-content: space-around;
-  padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+  padding: 4px 6px calc(4px + env(safe-area-inset-bottom));
   background: linear-gradient(180deg, rgba(46, 5, 12, 0.96), rgba(10, 3, 9, 0.98));
   border-top: 1px solid rgba(233, 180, 76, 0.6);
   button {
@@ -808,11 +808,11 @@ export default {
     font: inherit;
     font-size: 12px;
     font-weight: 600;
-    padding: 6px 0;
+    padding: 5px 0;
     cursor: pointer;
     svg {
-      width: 25px;
-      height: 25px;
+      width: 23px;
+      height: 23px;
       fill: none;
       stroke: currentColor;
       stroke-width: 1.6;
