@@ -33,6 +33,11 @@
     <!-- ========== PLAY ========== -->
     <section v-if="tab === 'play'" class="play">
       <h1 class="sr-only">Vampir Köylü</h1>
+      <img
+        class="home-logo"
+        src="static/darkspire-logo.webp"
+        alt="Darkspire · Vampir Köylü"
+      />
 
       <div class="join">
         <input
@@ -45,12 +50,11 @@
           @keyup.enter="joinRoom"
         />
         <button
-          class="btn"
-          :class="{ primary: code.length === 4 }"
+          class="join-btn"
           :disabled="code.length !== 4"
           @click="joinRoom"
         >
-          Katıl
+          Odaya Katıl
         </button>
       </div>
 
@@ -175,14 +179,31 @@
     <!-- bottom tabs -->
     <nav class="tabs">
       <button :class="{ on: tab === 'play' }" @click="tab = 'play'">
-        <span>🎮</span>Oyna
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 3l16 16-2 2L3 5l2-2Zm14 0L3 19l2 2L21 5l-2-2ZM4 15l5 5m6 0 5-5" />
+        </svg>
+        Oyna
       </button>
       <button :class="{ on: tab === 'square' }" @click="tab = 'square'">
-        <span>💬</span>Meydan
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 21V9l3-2 3 2V5l3-2 3 2v4l3-2 3 2v12H3Zm7 0v-6h4v6M3 12h18M7 12v2m10-2v2" />
+        </svg>
+        Meydan
         <i class="badge" v-if="others">{{ others }}</i>
       </button>
-      <button @click="profileTab = 'me'"><span>👤</span>Profil</button>
-      <button @click="profileTab = 'shop'"><span>🛒</span>Mağaza</button>
+      <button @click="profileTab = 'me'">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 21c0-4 3.5-7 8-7s8 3 8 7H4Z" />
+        </svg>
+        Profil
+      </button>
+      <button @click="profileTab = 'shop'">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 9h16l-1 12H5L4 9Zm4 0V7a4 4 0 0 1 8 0v2M3 9l2-5h14l2 5" />
+        </svg>
+        Mağaza
+      </button>
     </nav>
   </div>
 </template>
@@ -407,6 +428,13 @@ export default {
   /* room for the play button docked above the tab bar */
   padding-bottom: 110px;
 }
+.home-logo {
+  display: block;
+  width: min(76vw, 330px);
+  height: auto;
+  margin: 0 auto 18px;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.8));
+}
 .play-dock {
   position: fixed;
   left: 0;
@@ -463,10 +491,23 @@ export default {
     font-weight: 800;
     text-transform: uppercase;
   }
-  .btn {
+  .join-btn {
     margin: 0;
-    width: auto;
-    padding: 0 22px;
+    width: min(39vw, 158px);
+    min-height: 50px;
+    padding: 0 12px;
+    border: 0;
+    background: url("../assets/panel.webp") center / 100% 100% no-repeat;
+    color: #f3dcae;
+    font: inherit;
+    font-size: clamp(13px, 3.5vw, 17px);
+    font-weight: 800;
+    text-shadow: 0 2px 3px rgba(0, 0, 0, 0.9);
+    cursor: pointer;
+    &:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
   }
 }
 .quick {
@@ -650,8 +691,8 @@ export default {
   display: flex;
   justify-content: space-around;
   padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
-  background: rgba(8, 9, 20, 0.94);
-  border-top: 1px solid rgba(233, 180, 76, 0.25);
+  background: linear-gradient(180deg, rgba(46, 5, 12, 0.96), rgba(10, 3, 9, 0.98));
+  border-top: 1px solid rgba(233, 180, 76, 0.6);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   button {
@@ -669,15 +710,19 @@ export default {
     font-weight: 600;
     padding: 6px 0;
     cursor: pointer;
-    span {
-      font-size: 22px;
-      filter: grayscale(0.6);
+    svg {
+      width: 25px;
+      height: 25px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.8));
     }
     &.on {
       color: $gold;
-      span {
-        filter: none;
-      }
+      text-shadow: 0 0 8px rgba(233, 180, 76, 0.6);
     }
   }
   .badge {

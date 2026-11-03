@@ -256,6 +256,12 @@ body {
     background: url("assets/background.webp") 40% top / cover no-repeat;
   }
 }
+body.tint-home .backdrop::before {
+  right: 0;
+  bottom: 0;
+  background-image: url("assets/darkspire-home-v2.webp");
+  background-position: center top;
+}
 .night-sky {
   position: fixed;
   inset: 0;
@@ -295,7 +301,7 @@ body.tint-dusk .night-sky {
   opacity: 0.45;
 }
 body.tint-home .night-sky {
-  opacity: 0.35;
+  opacity: 0;
 }
 /* keeps text readable over the picture without hiding the town */
 .readable {
