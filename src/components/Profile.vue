@@ -38,7 +38,8 @@
               class="item"
               :class="{ on: equipped(item), owned: owned(item) }"
             >
-              <span class="pv">{{ item.preview }}</span>
+              <img v-if="item.image" class="pv card-preview" :src="item.image" :alt="item.name" loading="lazy" />
+              <span v-else class="pv">{{ item.preview }}</span>
               <b>{{ item.name }}</b>
               <button
                 v-if="owned(item)"
@@ -613,6 +614,13 @@ export default {
     border: 1px solid rgba(211, 141, 69, 0.52);
     .pv {
       font-size: 28px;
+    }
+    .card-preview {
+      display: block;
+      width: 42px;
+      height: 63px;
+      object-fit: cover;
+      border-radius: 3px;
     }
     b {
       font-size: 12px;

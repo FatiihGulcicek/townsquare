@@ -1,5 +1,7 @@
 import Vue from "vue";
 import { getJSON, setJSON } from "./storage";
+import castleCardBack from "./assets/card-back-castle-v1.jpg";
+import crescentCardBack from "./assets/card-back-crescent-v1.jpg";
 
 /*
  * Levels, titles, badges and match history. Kept on this phone (and moved
@@ -344,6 +346,7 @@ export const SHOP = [
     name: "Kanlı kart arkası",
     price: 60,
     preview: "🩸",
+    image: castleCardBack,
   },
   {
     id: "back-gold",
@@ -351,6 +354,7 @@ export const SHOP = [
     name: "Altın kart arkası",
     price: 120,
     preview: "✨",
+    image: crescentCardBack,
   },
   {
     id: "back-forest",

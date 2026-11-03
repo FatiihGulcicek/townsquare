@@ -482,7 +482,6 @@
           >
             <span class="inner">
               <span class="back">
-                <span class="moon">🌙</span>
                 <span class="who" v-if="c.taken && !c.role">{{ c.by }}</span>
               </span>
               <span class="front" v-if="c.role">
@@ -2028,16 +2027,11 @@ h3 {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.55);
   }
   .back {
-    border: 2px solid rgba(233, 180, 76, 0.7);
-    background: repeating-linear-gradient(
-        45deg,
-        rgba(233, 180, 76, 0.12) 0 6px,
-        transparent 6px 12px
-      ),
-      radial-gradient(circle at 50% 40%, #3b1b5a, #12081f 80%);
-    .moon {
-      font-size: 28px;
-    }
+    border: 0;
+    border-radius: 7px;
+    background: #190621 url("../assets/card-back-moon-v1.jpg") center / 100% 100% no-repeat;
+    justify-content: flex-end;
+    padding-bottom: 8px;
   }
   .front {
     transform: rotateY(180deg);
@@ -2450,22 +2444,10 @@ h3 {
   font-size: 13px;
 }
 .play-card.back-blood .back {
-  background: repeating-linear-gradient(
-      45deg,
-      rgba(255, 60, 60, 0.18) 0 6px,
-      transparent 6px 12px
-    ),
-    radial-gradient(circle at 50% 40%, #6a0b15, #1d0306 80%);
-  border-color: #ff5a5f;
+  background-image: url("../assets/card-back-castle-v1.jpg");
 }
 .play-card.back-gold .back {
-  background: repeating-linear-gradient(
-      45deg,
-      rgba(255, 220, 120, 0.25) 0 6px,
-      transparent 6px 12px
-    ),
-    radial-gradient(circle at 50% 40%, #8a6417, #2b1d04 80%);
-  border-color: #ffd36b;
+  background-image: url("../assets/card-back-crescent-v1.jpg");
 }
 .play-card.back-forest .back {
   background: repeating-linear-gradient(
@@ -2474,7 +2456,7 @@ h3 {
       transparent 6px 12px
     ),
     radial-gradient(circle at 50% 40%, #1f5a2e, #07160b 80%);
-  border-color: #6be38b;
+  border: 2px solid #6be38b;
 }
 .play-card.back-stars .back {
   background: radial-gradient(1px 1px at 20% 30%, white, transparent),
@@ -2482,7 +2464,7 @@ h3 {
     radial-gradient(1.5px 1.5px at 40% 80%, white, transparent),
     radial-gradient(1px 1px at 85% 20%, white, transparent),
     radial-gradient(circle at 50% 40%, #1d2a6b, #050818 80%);
-  border-color: #9fb4ff;
+  border: 2px solid #9fb4ff;
 }
 .need {
   color: #ffb3b6;
