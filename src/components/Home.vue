@@ -44,23 +44,24 @@
           autocomplete="off"
           @keyup.enter="joinRoom"
         />
+        <button
+          class="btn"
+          :class="{ primary: code.length === 4 }"
+          :disabled="code.length !== 4"
+          @click="joinRoom"
+        >
+          Katıl
+        </button>
       </div>
-      <button
-        class="panel-btn"
-        :disabled="code.length !== 4"
-        @click="joinRoom"
-      >
-        Oyuna gir
-      </button>
 
       <div class="quick">
         <button class="art-tile" :disabled="busy" @click="tutorial">
           <img src="static/tile-tutorial.webp" alt="" />
-          <span class="sr-only">Öğretici oyun</span>
+          <span class="label">Öğretici oyun</span>
         </button>
         <button class="art-tile" @click="profileTab = 'top'">
           <img src="static/tile-rank.webp" alt="" />
-          <span class="sr-only">Sıralama</span>
+          <span class="label">Sıralama</span>
         </button>
       </div>
 
@@ -107,7 +108,7 @@
       </details>
 
       <div class="play-dock">
-        <button class="btn gold play-btn" :disabled="busy" @click="newRoom">
+        <button class="panel-btn play-btn" :disabled="busy" @click="newRoom">
           ▶ Oyun kur
         </button>
       </div>
@@ -429,14 +430,14 @@ export default {
 }
 .panel-btn {
   display: block;
-  width: min(66vw, 270px);
+  width: min(84vw, 360px);
   aspect-ratio: 1000 / 308;
-  margin: 10px auto 0;
+  margin: 0 auto;
   border: 0;
   background: url("../assets/panel.webp") center / 100% 100% no-repeat;
   color: #f3dcae;
   font: inherit;
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 800;
   letter-spacing: 0.02em;
   text-shadow: 0 2px 3px rgba(0, 0, 0, 0.85);
@@ -476,6 +477,7 @@ export default {
   margin: 14px 0 6px;
 }
 .art-tile {
+  position: relative;
   padding: 0;
   border: 0;
   background: none;
@@ -487,6 +489,25 @@ export default {
     height: 100%;
     object-fit: contain;
     filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.55));
+  }
+  .label {
+    position: absolute;
+    left: 11%;
+    right: 11%;
+    top: 60%;
+    bottom: 14%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 700;
+    font-size: min(5vw, 20px);
+    line-height: 1.05;
+    color: #f6e0b0;
+    text-shadow:
+      0 2px 0 #5a2a08,
+      0 3px 6px rgba(0, 0, 0, 0.8);
   }
   &:active {
     transform: scale(0.96);
