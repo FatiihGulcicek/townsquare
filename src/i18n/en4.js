@@ -275,4 +275,7 @@ export default {
     "Retell this game as a fairy tale.",
   "Bir sonraki oyunda ilk gece seçtiğin kişiyi herkese söyle.":
     "Next game, tell everyone who you picked on the first night.",
+  "Bildirimler açık: sıra sana gelince haber vereceğim.":
+    "Notifications are on: I'll tell you when it's your turn.",
+  Dil: "Language",
 };

@@ -19,8 +19,14 @@
         autocomplete="nickname"
         @change="saveName"
       />
+      <button class="icon" @click="switchLang" aria-label="Dil">
+        <img src="static/ic-lang.webp" alt="" />
+      </button>
+      <button class="icon" @click="askNotifications" aria-label="Bildirimler">
+        <img src="static/ic-bell.webp" alt="" />
+      </button>
       <button class="icon" @click="$emit('settings')" aria-label="Ayarlar">
-        ⚙️
+        <img src="static/ic-settings.webp" alt="" />
       </button>
     </div>
 
@@ -194,6 +200,8 @@ import {
   fetchLeaderboard,
 } from "../game";
 import { unlockVoice } from "../voice";
+import { lang, setLang } from "../i18n";
+import { askNotifications } from "../notifications";
 import Profile from "./Profile";
 import Avatar from "./Avatar";
 import OnlineList from "./OnlineList";
@@ -243,6 +251,10 @@ export default {
     },
   },
   methods: {
+    switchLang() {
+      setLang(lang === "en" ? "tr" : "en");
+    },
+    askNotifications,
     async choosePhoto() {
       if (
         game.myPhoto &&
@@ -344,17 +356,22 @@ export default {
   .name-in {
     flex: 1;
     min-width: 0;
-    height: 42px;
-    border-radius: 21px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    background: rgba(0, 0, 0, 0.35);
-    color: $text;
-    padding: 0 14px;
+    height: 50px;
+    border: 0;
+    border-radius: 0;
+    background: url("../assets/panel.webp") center / 100% 100% no-repeat;
+    color: #f3dcae;
+    padding: 0 22px;
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 700;
+    text-align: center;
     outline: none;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    &::placeholder {
+      color: rgba(243, 220, 174, 0.55);
+    }
     &:focus {
-      border-color: $gold;
+      filter: brightness(1.15);
     }
   }
 }
@@ -372,11 +389,23 @@ export default {
   }
 }
 .icon {
+  flex: none;
+  width: 40px;
+  height: 40px;
   background: none;
   border: 0;
-  font-size: 24px;
-  padding: 6px;
+  padding: 2px;
   cursor: pointer;
+  transition: transform 0.12s;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.6));
+  }
+  &:active {
+    transform: scale(0.9);
+  }
 }
 .play {
   padding-top: 8px;

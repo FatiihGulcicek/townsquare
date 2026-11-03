@@ -81,7 +81,7 @@ import { game, leave, toast } from "../game";
 import { storedKeys, setItem } from "../storage";
 import { voiceState, setVoice, setBotVoices } from "../voice";
 import { pwaState, install } from "../pwa";
-import { enableNotifications, notificationState } from "../notifications";
+import { askNotifications, notificationState } from "../notifications";
 import { sfxState, setSfx } from "../sfx";
 import { musicState, setMusic } from "../music";
 import { lobby, setArrivalNotifications, unblockUser } from "../lobby";
@@ -137,30 +137,7 @@ export default {
     toggleBots() {
       setBotVoices(!this.voice.bots);
     },
-    async notifications() {
-      if (this.notif.permission === "denied") {
-        toast(
-          "Bildirimler engellenmiş. Telefonun ayarlarından bu uygulamaya izin ver.",
-          "warning",
-          7000,
-        );
-        return;
-      }
-      if (this.notif.permission === "unsupported") {
-        toast(
-          "Bu tarayıcı bildirim desteklemiyor. iPhone'da uygulamayı ana ekrana ekleyip oradan aç.",
-          "warning",
-          7000,
-        );
-        return;
-      }
-      const ok = await enableNotifications();
-      if (ok)
-        toast(
-          "Bildirimler açık: oyun kapalıyken de haber vereceğim.",
-          "success",
-        );
-    },
+    notifications: askNotifications,
     async deleteData() {
       if (
         !confirm(
