@@ -2,9 +2,15 @@
   <div class="page room" :class="'phase-' + phase">
     <!-- top bar -->
     <div class="bar">
-      <button class="code" @click="share" title="Davet et">
+      <button
+        class="code"
+        v-if="!s || !s.tutorial"
+        @click="share"
+        title="Davet et"
+      >
         {{ game.code }} <span>🔗</span>
       </button>
+      <span class="code" v-else>Öğretici</span>
       <div class="phase-title">{{ phaseTitle }}</div>
       <div class="timer" :class="{ low: lowTime }" v-if="clock">
         {{ clock }}
@@ -13,7 +19,7 @@
         ⚙️
       </button>
     </div>
-    <VideoStrip />
+    <VideoStrip v-if="!s || !s.tutorial" />
     <div class="offline" v-if="game.status !== 'online'">
       {{
         game.status === "connecting"
@@ -111,7 +117,7 @@
           </div>
         </div>
 
-        <div class="card code-card">
+        <div class="card code-card" v-if="!s.tutorial">
           <div class="muted">Oda kodu</div>
           <div class="big-code">{{ game.code }}</div>
           <div class="lock-note muted" v-if="s.locked">
@@ -180,7 +186,7 @@
               >
               <small v-if="p.pid === s.me.pid" class="muted">sen</small>
               <button
-                v-if="s.me.isOwner && p.pid !== s.me.pid"
+                v-if="s.me.isOwner && !s.tutorial && p.pid !== s.me.pid"
                 class="x"
                 @click.stop="kick(p)"
                 aria-label="Çıkar"
@@ -213,7 +219,14 @@
           </div>
         </div>
 
-        <div class="card setup-card" v-if="s.me.isOwner">
+        <div class="card setup-card" v-if="s.me.isOwner && s.tutorial">
+          <h3>Öğretici oyun</h3>
+          <p class="setup-sum muted">
+            Beş bot hazır. Gözcü rolüyle gece araştırmayı ve gündüz oy vermeyi
+            öğreneceksin.
+          </p>
+        </div>
+        <div class="card setup-card" v-else-if="s.me.isOwner">
           <div class="setup-head">
             <h3>Oyun kurulumu</h3>
             <button class="btn small" @click="showSetup = true">
@@ -429,7 +442,7 @@
         <p class="center muted" v-else-if="s.me.seated">
           Oyunu kuran kişi herkes gelince başlatacak.
         </p>
-        <OnlineList />
+        <OnlineList v-if="!s.tutorial" />
       </template>
 
       <!-- watching a running game -->
@@ -1090,7 +1103,7 @@
     </div>
     <Coach v-if="s && s.tutorial" />
     <Chat />
-    <VoiceBar />
+    <VoiceBar v-if="!s || !s.tutorial" />
   </div>
 </template>
 
@@ -1669,7 +1682,10 @@ export default {
         );
         return;
       }
-      if (confirm(`Oyun ${this.s.players.length} oyuncuyla başlasın mı?`)) {
+      if (
+        this.s.tutorial ||
+        confirm(`Oyun ${this.s.players.length} oyuncuyla başlasın mı?`)
+      ) {
         this.act("start");
       }
     },
@@ -1682,6 +1698,7 @@ export default {
       if (!p.allowed) return;
       if (
         this.s.night.action === "gozcu" &&
+        !this.s.tutorial &&
         !confirm(
           `${p.name} araştırılsın mı? Gecede sadece bir kez seçebilirsin.`,
         )

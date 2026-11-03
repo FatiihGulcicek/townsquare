@@ -1,6 +1,11 @@
 <template>
   <transition name="coach">
-    <div class="coach" v-if="step && !hidden[step.key]" :key="step.key">
+    <div
+      class="coach"
+      :class="{ lobby: game.state && game.state.phase === 'lobby' }"
+      v-if="step && !hidden[step.key]"
+      :key="step.key"
+    >
       <span class="owl">🦉</span>
       <div class="bubble">
         <b>Rehber</b>
@@ -27,7 +32,7 @@ export default {
       if (s.phase === "lobby") {
         return {
           key: "lobby",
-          text: "Hoş geldin! Bu bir deneme oyunu: 5 bot seninle oynayacak. Hazır olunca aşağıdaki ▶ Oyunu başlat düğmesine dokun.",
+          text: "Hoş geldin! Beş bot seninle oynayacak. Hazır olduğunda Oyunu başlat düğmesine dokun.",
         };
       }
       if (s.phase === "roles" && !me.role) {
@@ -108,6 +113,10 @@ export default {
   display: flex;
   align-items: flex-end;
   gap: 8px;
+}
+.coach.lobby {
+  top: calc(66px + env(safe-area-inset-top));
+  bottom: auto;
 }
 .owl {
   font-size: 40px;

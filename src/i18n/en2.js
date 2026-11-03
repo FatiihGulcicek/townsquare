@@ -54,6 +54,10 @@ export default {
   Anladım: "Got it",
   "Hoş geldin! Bu bir deneme oyunu: 5 bot seninle oynayacak. Hazır olunca aşağıdaki ▶ Oyunu başlat düğmesine dokun.":
     "Welcome! This is a practice game: 5 bots will play with you. When you're ready, tap ▶ Start the game below.",
+  "Hoş geldin! Beş bot seninle oynayacak. Hazır olduğunda Oyunu başlat düğmesine dokun.":
+    "Welcome! Five bots will play with you. Tap Start game when you're ready.",
+  "Beş bot hazır. Gözcü rolüyle gece araştırmayı ve gündüz oy vermeyi öğreneceksin.":
+    "Five bots are ready. As the Seer, you'll learn to investigate at night and vote during the day.",
   "Masadan bir kart seç. Kart senin rolünü belirler; kimseye gösterme!":
     "Pick a card from the table. It decides your role; show no one!",
   "Sen Gözcüsün! Her gece bir kişinin vampir olup olmadığını öğrenirsin. Gece birazdan başlıyor.":
