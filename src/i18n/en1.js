@@ -191,6 +191,7 @@ export default {
   "🤖 Bot ekle": "🤖 Add bot",
   "Botları çıkar": "Remove bots",
   "▶️ Oyunu başlat": "▶️ Start the game",
+  "Oyunu başlat": "Start the game",
   "Oyunu kuran kişi herkes gelince başlatacak.":
     "The room owner will start once everyone is here.",
   "Oyun başlamış, şu an izleyicisin. Bir sonraki oyunda katılabilirsin.":

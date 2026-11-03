@@ -437,10 +437,12 @@
         <div class="start-dock" v-if="s.me.isOwner">
           <button
             class="btn gold big-start"
-            :class="{ dim: s.players.length < s.min }"
+            :class="{ dim: s.players.length < s.min, 'tutorial-start': s.tutorial }"
+            type="button"
             @click="start"
           >
-            ▶️ Oyunu başlat
+            <span class="start-play" aria-hidden="true"></span>
+            <span>Oyunu başlat</span>
           </button>
         </div>
         <p class="center muted" v-else-if="s.me.seated">
@@ -2732,8 +2734,32 @@ small.gozcu {
   bottom: calc(84px + env(safe-area-inset-bottom));
   z-index: 20;
   margin: 6px 0 14px;
-  .big-start {
+  .btn.big-start {
     margin: 0 auto;
+    width: min(100%, 380px);
+    max-width: 380px;
+    height: 64px;
+    min-height: 64px;
+    padding: 0 28px;
+    gap: 12px;
+    white-space: nowrap;
+    font-size: clamp(17px, 4.5vw, 21px);
+    line-height: 1;
+  }
+  .btn.tutorial-start {
+    background-image: url("../assets/btn-crimson-v4.webp");
+    color: #ffe2a1;
+    text-shadow: 0 2px 2px #36040b;
+  }
+  .start-play {
+    display: block;
+    flex: 0 0 auto;
+    width: 0;
+    height: 0;
+    border-top: 9px solid transparent;
+    border-bottom: 9px solid transparent;
+    border-left: 15px solid currentColor;
+    filter: drop-shadow(0 1px 2px rgba(35, 5, 4, 0.8));
   }
 }
 .room {
