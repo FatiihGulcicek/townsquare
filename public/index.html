@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <title>Vampir Köylü · Kasaba Meydanı</title>
   <meta name="description" content="Arkadaşlarınla telefondan Vampir Köylü oyna: otomatik anlatıcı, bildirimler ve sesli anlatım. Ücretsiz.">
   <meta name="application-name" content="Kasaba Meydanı">
@@ -27,6 +27,9 @@
   <style>
     /* loading screen while the app starts (and updates itself) */
     html { background: #05060d; } body { margin: 0; }
+    /* no double-tap or pinch zoom: it is a game, not a document */
+    html, body, button, a, input, select, textarea, label, [role=button] { touch-action: manipulation; }
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     #boot { position: fixed; inset: 0; z-index: 9999; overflow: hidden; background: linear-gradient(#1d2233, #10131f 60%, #05060d); transition: opacity .5s ease; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     #boot.out { opacity: 0; pointer-events: none; }
     /* wide screens: a blurred copy of the artwork fills the sides */
@@ -58,6 +61,10 @@
   </div>
   <img class="logo" src="static/darkspire-logo.webp" alt="Darkspire · Vampir Köylü">
 </div>
+<script>
+/* iPhone ignores user-scalable=no: block pinch zoom gestures here */
+document.addEventListener("gesturestart", function (e) { e.preventDefault(); }, { passive: false });
+</script>
 <script>
 /*
  * Loading screen: fills the bar while the game loads, checks the server for a

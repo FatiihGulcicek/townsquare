@@ -413,6 +413,12 @@ h3,
   }
 }
 
+/* iPhone zooms into text fields smaller than 16px: keep them at least 16px */
+input,
+select,
+textarea {
+  font-size: max(16px, 1em);
+}
 input.field {
   width: 100%;
   min-height: 50px;
