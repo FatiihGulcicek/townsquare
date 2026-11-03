@@ -4,7 +4,8 @@
     <div class="me-bar">
       <div class="profile-strip">
         <button class="photo-btn" @click="choosePhoto" aria-label="Profil fotoğrafı">
-          <Avatar :name="name || '?'" :size="46" :src="game.myPhoto" />
+          <Avatar v-if="game.myPhoto" :name="name || '?'" :size="54" :src="game.myPhoto" />
+          <img v-else class="default-avatar" src="static/default-avatar-v4.webp" alt="" />
           <span class="cam">📷</span>
         </button>
         <div class="identity">
@@ -483,6 +484,12 @@ export default {
   background: none;
   padding: 0;
   cursor: pointer;
+  .default-avatar {
+    display: block;
+    width: 54px;
+    height: 54px;
+    object-fit: contain;
+  }
   .cam {
     position: absolute;
     right: -4px;
@@ -534,7 +541,7 @@ export default {
   height: clamp(64px, 18vw, 82px);
   margin: 0 auto;
   border: 0;
-  background: url("../assets/panel.webp") center / 100% 100% no-repeat;
+  background: url("../assets/btn-crimson-v4.webp") center / 100% 100% no-repeat;
   color: #f3dcae;
   font: inherit;
   font-size: clamp(20px, 5.5vw, 26px);
@@ -565,6 +572,7 @@ export default {
 }
 .join-open {
   color: #efcc8c;
+  background-image: url("../assets/btn-amber-v4.webp");
   filter: drop-shadow(0 0 7px rgba(185, 119, 28, 0.48));
 }
 .join {
