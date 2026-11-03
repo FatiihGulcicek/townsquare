@@ -231,25 +231,25 @@
     </div>
 
     <!-- bottom tabs -->
-    <nav class="tabs">
-      <button :class="{ on: tab === 'play' }" @click="tab = 'play'">
+    <nav class="tabs" aria-label="Ana gezinme">
+      <button :class="{ on: tab === 'play' && !profileTab && !clanOpen }" @click="tab = 'play'; profileTab = null; clanOpen = false">
         <img src="static/nav-home-v6.webp" alt="" />
         Ana Menü
       </button>
-      <button :class="{ on: tab === 'square' }" @click="tab = 'square'">
+      <button :class="{ on: tab === 'square' && !profileTab && !clanOpen }" @click="tab = 'square'; profileTab = null; clanOpen = false">
         <img src="static/nav-rooms-v6.webp" alt="" />
         Odalar
         <i class="badge" v-if="others">{{ others }}</i>
       </button>
-      <button @click="profileTab = 'me'">
+      <button :class="{ on: profileTab === 'me' }" @click="profileTab = 'me'; clanOpen = false">
         <img src="static/nav-profile-v6.webp" alt="" />
         Profil
       </button>
-      <button @click="clanOpen = true">
+      <button :class="{ on: clanOpen }" @click="clanOpen = true; profileTab = null">
         <img src="static/nav-clan-v6.webp" alt="" />
         Klan
       </button>
-      <button @click="profileTab = 'badges'">
+      <button :class="{ on: profileTab === 'badges' }" @click="profileTab = 'badges'; clanOpen = false">
         <img src="static/nav-collection-v6.webp" alt="" />
         Koleksiyon
       </button>
@@ -911,50 +911,85 @@ export default {
   right: 0;
   bottom: 0;
   z-index: 100;
-  display: flex;
-  justify-content: space-around;
-  padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
-  background: linear-gradient(180deg, rgba(46, 5, 12, 0.96), rgba(10, 3, 9, 0.98));
-  border-top: 1px solid rgba(233, 180, 76, 0.6);
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 2px;
+  padding: 5px 5px calc(5px + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(ellipse 55% 18px at 50% 0, rgba(178, 76, 28, 0.23), transparent),
+    linear-gradient(180deg, rgba(28, 13, 17, 0.98), rgba(5, 5, 9, 0.99));
+  border-top: 1px solid #bc7a3e;
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.72), inset 0 2px rgba(255, 224, 155, 0.09);
+  &::before {
+    content: "";
+    position: absolute;
+    top: -5px;
+    left: calc(50% - 4px);
+    width: 8px;
+    height: 8px;
+    transform: rotate(45deg);
+    background: linear-gradient(135deg, #fff0bb, #ba671e 65%, #682616);
+    border: 1px solid #3b170e;
+    box-shadow: 0 0 9px rgba(255, 154, 54, 0.65);
+  }
   button {
     position: relative;
-    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
+    justify-content: center;
+    gap: 1px;
+    min-width: 0;
+    min-height: 56px;
     border: 1px solid transparent;
-    border-radius: 10px;
+    border-radius: 12px;
     background: none;
-    color: #dbbd8e;
+    color: #d8c4aa;
     font: inherit;
-    font-size: clamp(10px, 2.7vw, 12px);
+    font-size: clamp(9px, 2.7vw, 12px);
     font-weight: 600;
-    padding: 4px 0;
+    line-height: 1.15;
+    white-space: nowrap;
+    padding: 3px 1px;
     cursor: pointer;
+    transition: background 0.16s, border-color 0.16s, color 0.16s;
+    &:not(:first-child)::before {
+      content: "";
+      position: absolute;
+      left: -3px;
+      top: 11px;
+      bottom: 11px;
+      width: 1px;
+      background: linear-gradient(transparent, rgba(198, 137, 70, 0.46), transparent);
+    }
     img {
-      width: 28px;
-      height: 28px;
+      width: 29px;
+      height: 29px;
       object-fit: contain;
-      filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.8));
+      filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.85));
     }
     &.on {
-      color: #ffe0a7;
-      border-color: rgba(233, 180, 76, 0.55);
-      background: linear-gradient(180deg, rgba(124, 15, 31, 0.92), rgba(42, 5, 15, 0.94));
-      box-shadow: inset 0 1px rgba(255, 216, 143, 0.2), 0 0 12px rgba(183, 38, 46, 0.3);
-      text-shadow: 0 0 6px rgba(233, 180, 76, 0.5);
+      color: #ffebc7;
+      border-color: #d39450;
+      background:
+        radial-gradient(ellipse at 50% 6%, rgba(238, 59, 47, 0.48), transparent 68%),
+        linear-gradient(180deg, #74101d, #2c0710 88%);
+      box-shadow: inset 0 0 0 2px rgba(37, 3, 9, 0.8), inset 0 1px rgba(255, 228, 173, 0.34), 0 0 14px rgba(196, 36, 35, 0.28);
+      text-shadow: 0 1px 2px #160308, 0 0 6px rgba(255, 174, 82, 0.45);
+      img { filter: drop-shadow(0 0 6px rgba(255, 157, 53, 0.65)); }
     }
+    &:focus-visible { outline: 2px solid #ffe0a0; outline-offset: 1px; }
   }
   .badge {
     position: absolute;
-    top: 2px;
-    left: 56%;
+    top: 0;
+    left: 57%;
     min-width: 18px;
     height: 18px;
     border-radius: 9px;
-    background: #2fbf71;
-    color: white;
+    border: 1px solid #f2b860;
+    background: #8d101c;
+    color: #fff0cf;
     font-style: normal;
     font-size: 11px;
     line-height: 18px;
