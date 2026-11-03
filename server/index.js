@@ -145,6 +145,7 @@ function createRoom(mode, creatorId, wanted, tutorial, password) {
   if (tutorial) {
     // a practice game against bots with calm timings
     entry.room.tutorial = true;
+    entry.room.tutorialOwnerId = creatorId;
     Object.assign(entry.room.settings, {
       dayMinutes: 3,
       nightSeconds: 90,

@@ -257,6 +257,7 @@ class Room {
       mvpVotes: this.mvpVotes,
       mvp: this.mvp,
       tutorial: this.tutorial,
+      tutorialOwnerId: this.tutorialOwnerId,
       tour: this.tour,
       runoff: this.runoff,
       deathOrder: this.deathOrder,
@@ -1114,7 +1115,7 @@ class Room {
     const isSt = this.stId === id;
     switch (params.type) {
       case "settings":
-        if (!isBoss || this.phase !== "lobby") return;
+        if (!isBoss || this.phase !== "lobby" || this.tutorial) return;
         Object.keys(SETTINGS).forEach((key) => {
           if (params[key] === undefined) return;
           const v = parseInt(params[key], 10);
@@ -1159,6 +1160,7 @@ class Room {
       case "kick": {
         if (!isBoss) return;
         const p = this.byPid(params.target);
+        if (this.tutorial && p && p.bot) return;
         if (!p || p.id === id) return;
         this.kicked.add(p.id);
         this.voice.delete(p.id);
@@ -1241,7 +1243,7 @@ class Room {
         return this.update();
       }
       case "addBot": {
-        if (!isBoss || this.phase !== "lobby") return;
+        if (!isBoss || this.phase !== "lobby" || this.tutorial) return;
         if (this.players.length >= MAX_PLAYERS) return;
         const used = new Set(this.players.map((p) => p.name));
         let k = 1;
@@ -1257,7 +1259,7 @@ class Room {
         return this.update();
       }
       case "removeBots":
-        if (!isBoss || this.phase !== "lobby") return;
+        if (!isBoss || this.phase !== "lobby" || this.tutorial) return;
         this.players = this.players.filter((p) => !p.bot);
         return this.update();
       case "leave":
@@ -1350,6 +1352,9 @@ class Room {
 
   join(id, name) {
     if (id === this.stId || this.player(id) || this.kicked.has(id)) {
+      return this.sendState(id);
+    }
+    if (this.tutorial && this.tutorialOwnerId && id !== this.tutorialOwnerId) {
       return this.sendState(id);
     }
     if (this.phase !== "lobby" || this.players.length >= MAX_PLAYERS) {
