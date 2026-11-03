@@ -254,14 +254,7 @@
       </div>
     </div>
 
-    <div class="sheet-bg" v-if="clanOpen" @click.self="clanOpen = false">
-      <div class="sheet feature-sheet">
-        <img src="static/nav-clan-v6.webp" alt="" />
-        <h2>Klan</h2>
-        <p>Klanlar yakında açılacak.</p>
-        <button class="btn ghost" @click="clanOpen = false">Kapat</button>
-      </div>
-    </div>
+    <Social v-if="clanOpen" @close="clanOpen = false" />
 
     <!-- bottom tabs -->
     <nav class="tabs" aria-label="Ana gezinme">
@@ -305,6 +298,7 @@ import {
 import { unlockVoice } from "../voice";
 import { askNotifications } from "../notifications";
 import Profile from "./Profile";
+import Social from "./Social";
 import Avatar from "./Avatar";
 import OnlineList from "./OnlineList";
 import LobbyChat from "./LobbyChat";
@@ -313,7 +307,7 @@ import { pickPhoto } from "../photo";
 import { progress, levelFor, xpForLevel } from "../progress";
 
 export default {
-  components: { Profile, Avatar, OnlineList, LobbyChat },
+  components: { Profile, Social, Avatar, OnlineList, LobbyChat },
   data() {
     return {
       profileTab: null,

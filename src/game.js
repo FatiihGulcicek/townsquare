@@ -466,6 +466,14 @@ export function setName(name) {
   if (game.name && game.code) send("join", { name: game.name });
 }
 
+export function setAccountIdentity(account) {
+  if (!account || !/^[a-z0-9]{8,40}$/.test(account.playerId)) return;
+  playerId = account.playerId;
+  game.playerId = account.playerId;
+  store("vkPlayerId", account.playerId);
+  setName(account.name);
+}
+
 export async function createRoom(mode, wanted, tutorial, password) {
   const response = await fetch("/api/room", {
     method: "POST",
@@ -555,6 +563,7 @@ export async function fetchLeaderboard(period = "week") {
 
 /** move a profile to this device with its code */
 export function useProfileCode(code) {
+  if (store("vkAuthEnabled") === "1") return false;
   code = (code || "").trim().toLowerCase();
   if (!/^[a-z0-9]{8,40}$/.test(code)) return false;
   playerId = code;

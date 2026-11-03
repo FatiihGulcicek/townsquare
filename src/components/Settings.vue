@@ -55,6 +55,10 @@
           <button class="setting-row" type="button" @click="profile = true">
             <span class="setting-copy"><strong>Profil ve istatistikler</strong></span><span class="chevron" aria-hidden="true">›</span>
           </button>
+          <div v-if="account.user" class="setting-row"><span class="setting-copy"><strong>{{ account.user.email }}</strong><small>E-posta hesabın</small></span></div>
+          <button v-if="account.user && !game.code" class="setting-row" type="button" @click="logout">
+            <span class="setting-copy"><strong>Çıkış yap</strong></span><span class="chevron" aria-hidden="true">›</span>
+          </button>
           <button class="setting-row" type="button" @click="switchLang">
             <span class="setting-copy"><strong>Dil · Language</strong></span><span class="setting-status on">{{ lang === "en" ? "English" : "Türkçe" }}</span>
           </button>
@@ -96,12 +100,14 @@ import { musicState, setMusic } from "../music";
 import { lobby, setArrivalNotifications, unblockUser } from "../lobby";
 import { lang, setLang } from "../i18n";
 import Profile from "./Profile";
+import { account, signOut } from "../account";
 
 export default {
   components: { Profile },
   data() {
     return {
       game,
+      account,
       lang,
       voice: voiceState,
       pwa: pwaState,
@@ -123,6 +129,10 @@ export default {
     },
   },
   methods: {
+    async logout() {
+      try { await signOut(); }
+      catch (e) { toast("Çıkış yapılamadı. Tekrar dene.", "warning"); }
+    },
     switchLang() {
       setLang(lang === "en" ? "tr" : "en");
     },
@@ -155,12 +165,14 @@ export default {
       )
         return;
       try {
-        await fetch("/api/me/delete", {
+        const response = await fetch("/api/me/delete", {
           method: "POST",
           headers: { "X-Player-Id": game.playerId },
         });
+        if (!response.ok) throw new Error("delete");
       } catch (e) {
-        // the phone's copy is removed anyway
+        toast("Hesap silinemedi. Bağlantını kontrol edip tekrar dene.", "warning");
+        return;
       }
       leave(true);
       storedKeys()

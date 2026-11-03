@@ -74,7 +74,9 @@ function presence() {
   if (sub) send("push", sub);
 }
 
+let active = false;
 function open() {
+  if (!active) return;
   clearTimeout(retry);
   const proto = location.protocol === "https:" ? "wss://" : "ws://";
   const ws = new WebSocket(proto + location.host + "/lobby/" + game.playerId);
@@ -139,6 +141,7 @@ function open() {
 }
 
 export function startLobby() {
+  active = true;
   if (!socket) open();
 }
 
@@ -181,7 +184,7 @@ export function setArrivalNotifications(on) {
 
 document.addEventListener("visibilitychange", () => {
   presence();
-  if (document.visibilityState === "visible" && !socket) open();
+  if (active && document.visibilityState === "visible" && !socket) open();
 });
 onPushSubscription(() => presence());
 setInterval(() => send("ping"), 25000);

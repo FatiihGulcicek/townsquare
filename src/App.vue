@@ -8,11 +8,14 @@
       <span v-if="theme === 'snow'" class="snow s2"></span>
       <span v-if="theme === 'swamp'" class="fog"></span>
     </div>
-    <Home v-if="!game.code" @settings="settingsOpen = true" />
-    <Room v-else @settings="settingsOpen = true" />
-    <RoleCard />
-    <Welcome v-if="onboarding" @done="finishOnboarding" />
-    <LiveStory />
+    <AuthGate v-if="account.ready && account.enabled && !account.user" @done="finishLogin" />
+    <template v-if="account.ready && (!account.enabled || account.user)">
+      <Home v-if="!game.code" @settings="settingsOpen = true" />
+      <Room v-else @settings="settingsOpen = true" />
+      <RoleCard />
+      <Welcome v-if="onboarding" @done="finishOnboarding" />
+      <LiveStory />
+    </template>
     <div class="sheet-bg invite-bg" v-if="lobby.invite">
       <div class="sheet center">
         <div class="inv-emoji">📨</div>
@@ -79,6 +82,8 @@ import RoleCard from "./components/RoleCard";
 import Settings from "./components/Settings";
 import LiveStory from "./components/LiveStory";
 import Welcome from "./components/Welcome";
+import AuthGate from "./components/AuthGate";
+import { account, loadAccount } from "./account";
 import { setMood, setTheme } from "./music";
 import { pwaState, applyUpdate } from "./pwa";
 import { lobby, startLobby, acceptInvite, declineInvite } from "./lobby";
@@ -86,11 +91,12 @@ import { game, restore, join } from "./game";
 import { getItem, setItem } from "./storage";
 
 export default {
-  components: { Home, Room, RoleCard, Settings, LiveStory, Welcome },
+  components: { Home, Room, RoleCard, Settings, LiveStory, Welcome, AuthGate },
   data() {
     const onboarding = getItem("vkOnboarded") !== "1";
     return {
       game,
+      account,
       settingsOpen: false,
       pwa: pwaState,
       lobby,
@@ -146,7 +152,7 @@ export default {
       },
     },
   },
-  mounted() {
+  async mounted() {
     // the loading screen fades out (unless it is installing an update)
     if (window.__hideBoot) window.__hideBoot();
     else {
@@ -154,11 +160,12 @@ export default {
       if (boot) boot.remove();
     }
     // first visit: profile and permissions first, then the room from the link
-    if (!this.onboarding) restore();
-    startLobby();
+    await loadAccount();
+    if (!account.enabled) this.startGame();
+    else if (account.user) this.finishLogin();
     window.addEventListener("hashchange", () => {
       const code = location.hash.replace("#", "");
-      if (this.onboarding) return;
+      if (this.onboarding || (account.enabled && !account.user)) return;
       if (/^[A-Za-z]{4}$/.test(code) && code.toUpperCase() !== game.code) {
         restore();
         startLobby();
@@ -166,6 +173,15 @@ export default {
     });
   },
   methods: {
+    startGame() {
+      if (!this.onboarding) restore();
+      startLobby();
+    },
+    finishLogin() {
+      setItem("vkOnboarded", "1");
+      this.onboarding = false;
+      this.startGame();
+    },
     acceptInvite() {
       acceptInvite();
     },
