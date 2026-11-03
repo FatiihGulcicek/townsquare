@@ -1,6 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /api/
-Disallow: /healthz
-Disallow: /push/
-Sitemap: https://darkspire.co/sitemap.xml

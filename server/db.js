@@ -32,58 +32,6 @@ let pool = null;
 let ready = null;
 
 const TABLES = [
-  `CREATE TABLE IF NOT EXISTS vk_accounts (
-    id CHAR(32) NOT NULL PRIMARY KEY,
-    email VARCHAR(254) NOT NULL UNIQUE,
-    name VARCHAR(24) NOT NULL,
-    player_id VARCHAR(40) NOT NULL UNIQUE,
-    friend_code CHAR(8) NOT NULL UNIQUE,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-  `CREATE TABLE IF NOT EXISTS vk_login_codes (
-    email VARCHAR(254) NOT NULL PRIMARY KEY,
-    code_hash CHAR(64) NOT NULL,
-    expires_at DATETIME NOT NULL,
-    sent_at DATETIME NOT NULL,
-    attempts TINYINT NOT NULL DEFAULT 0
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-  `CREATE TABLE IF NOT EXISTS vk_sessions (
-    token_hash CHAR(64) NOT NULL PRIMARY KEY,
-    account_id CHAR(32) NOT NULL,
-    expires_at DATETIME NOT NULL,
-    KEY account_id (account_id),
-    KEY expires_at (expires_at)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-  `CREATE TABLE IF NOT EXISTS vk_friend_links (
-    account_a CHAR(32) NOT NULL,
-    account_b CHAR(32) NOT NULL,
-    requested_by CHAR(32) NOT NULL,
-    status VARCHAR(10) NOT NULL DEFAULT 'pending',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (account_a, account_b),
-    KEY account_b (account_b)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-  `CREATE TABLE IF NOT EXISTS vk_clans (
-    id CHAR(32) NOT NULL PRIMARY KEY,
-    tag VARCHAR(8) NOT NULL UNIQUE,
-    name VARCHAR(40) NOT NULL,
-    owner_id CHAR(32) NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-  `CREATE TABLE IF NOT EXISTS vk_clan_members (
-    account_id CHAR(32) NOT NULL PRIMARY KEY,
-    clan_id CHAR(32) NOT NULL,
-    joined_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    KEY clan_id (clan_id)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
-  `CREATE TABLE IF NOT EXISTS vk_clan_invites (
-    clan_id CHAR(32) NOT NULL,
-    account_id CHAR(32) NOT NULL,
-    invited_by CHAR(32) NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (clan_id, account_id),
-    KEY account_id (account_id)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
   `CREATE TABLE IF NOT EXISTS vk_rooms (
     code CHAR(4) NOT NULL PRIMARY KEY,
     data LONGTEXT NOT NULL,
@@ -185,7 +133,6 @@ module.exports = {
   kind: "mysql",
   enabled: () => ENABLED,
   init,
-  withDb: run,
   stats: () => ({
     enabled: ENABLED,
     kind: "mysql",

@@ -257,8 +257,6 @@ class Room {
       mvpVotes: this.mvpVotes,
       mvp: this.mvp,
       tutorial: this.tutorial,
-      tutorialOwnerId: this.tutorialOwnerId,
-      botGame: this.botGame,
       tour: this.tour,
       runoff: this.runoff,
       deathOrder: this.deathOrder,
@@ -285,9 +283,6 @@ class Room {
       io,
     });
     room.settings = { ...DEFAULT_SETTINGS, ...(data.settings || {}) };
-    room.botGame = data.botGame === undefined
-      ? room.players.some((p) => p.bot)
-      : !!data.botGame;
     room.lastActivity = Date.now();
     room.schedule();
     room.botsAct();
@@ -323,7 +318,6 @@ class Room {
     this.winner = null;
     this.seerLog = {};
     this.startedAt = 0;
-    this.botGame = false;
     this.cards = null;
     this.penalties = null;
     this.deathOrder = [];
@@ -949,7 +943,6 @@ class Room {
       penalties: this.phase === "over" ? this.penalties : null,
       locked: !!this.password,
       tutorial: !!this.tutorial,
-      botGame: !!this.botGame || this.players.some((p) => p.bot),
       tour: this.tour || null,
       myGuesses: me ? (this.guesses || {})[me.pid] || [] : [],
       ghostResults: this.phase === "over" ? this.ghostResults || [] : [],
@@ -976,8 +969,6 @@ class Room {
         level: p.level || 1,
         frame: p.frame || "",
         chatColor: p.chatColor || "",
-        avatar: p.avatar || "",
-        emblem: p.emblem || "",
         noVote: !!p.noVote,
         kicked: !!p.kicked,
         role: this.visibleRole(viewer, p),
@@ -1101,8 +1092,6 @@ class Room {
           : "";
       me.frame = ok(params.frame, "frame");
       me.chatColor = ok(params.chat, "chat");
-      me.avatar = ok(params.avatar, "avatar");
-      me.emblem = ok(params.emblem, "emblem");
       this.update();
       return;
     }
@@ -1125,7 +1114,7 @@ class Room {
     const isSt = this.stId === id;
     switch (params.type) {
       case "settings":
-        if (!isBoss || this.phase !== "lobby" || this.tutorial) return;
+        if (!isBoss || this.phase !== "lobby") return;
         Object.keys(SETTINGS).forEach((key) => {
           if (params[key] === undefined) return;
           const v = parseInt(params[key], 10);
@@ -1170,7 +1159,6 @@ class Room {
       case "kick": {
         if (!isBoss) return;
         const p = this.byPid(params.target);
-        if (this.tutorial && p && p.bot) return;
         if (!p || p.id === id) return;
         this.kicked.add(p.id);
         this.voice.delete(p.id);
@@ -1253,7 +1241,7 @@ class Room {
         return this.update();
       }
       case "addBot": {
-        if (!isBoss || this.phase !== "lobby" || this.tutorial) return;
+        if (!isBoss || this.phase !== "lobby") return;
         if (this.players.length >= MAX_PLAYERS) return;
         const used = new Set(this.players.map((p) => p.name));
         let k = 1;
@@ -1269,7 +1257,7 @@ class Room {
         return this.update();
       }
       case "removeBots":
-        if (!isBoss || this.phase !== "lobby" || this.tutorial) return;
+        if (!isBoss || this.phase !== "lobby") return;
         this.players = this.players.filter((p) => !p.bot);
         return this.update();
       case "leave":
@@ -1364,9 +1352,6 @@ class Room {
     if (id === this.stId || this.player(id) || this.kicked.has(id)) {
       return this.sendState(id);
     }
-    if (this.tutorial && this.tutorialOwnerId && id !== this.tutorialOwnerId) {
-      return this.sendState(id);
-    }
     if (this.phase !== "lobby" || this.players.length >= MAX_PLAYERS) {
       return this.sendState(id);
     }
@@ -1408,7 +1393,6 @@ class Room {
     const n = this.players.length;
     if (n < MIN_PLAYERS) return;
     this.reset();
-    this.botGame = this.players.some((p) => p.bot);
     this.gameId++;
     const total = this.settings.tournament || 0;
     if (!total) this.tour = null;
@@ -2018,7 +2002,6 @@ class Room {
     this.io.gameOver({
       room: this.code,
       mode: this.mode,
-      botGame: !!this.botGame || this.players.some((p) => p.bot),
       winner,
       rounds: this.round,
       startedAt: this.startedAt || Date.now(),
@@ -2080,7 +2063,7 @@ class Room {
   /** tournament: win 3 points, survive +1, player of the game +2 */
   tourPoints(winner) {
     const t = this.tour;
-    if (!t || t.done || this.botGame) return;
+    if (!t || t.done) return;
     this.players
       .filter((p) => !p.kicked)
       .forEach((p) => {
@@ -2175,7 +2158,7 @@ class Room {
     const top = Object.keys(tally).filter((t) => tally[t] === max);
     const p = this.byPid(pick(top));
     this.mvp = { pid: p.pid, name: p.name, votes: max };
-    if (!this.botGame && this.tour && this.tour.scores[p.pid]) {
+    if (this.tour && this.tour.scores[p.pid]) {
       this.tour.scores[p.pid].pts += 2;
       this.tour.scores[p.pid].mvp = (this.tour.scores[p.pid].mvp || 0) + 1;
     }
