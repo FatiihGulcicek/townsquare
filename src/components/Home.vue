@@ -18,16 +18,21 @@
             autocomplete="nickname"
             @change="saveName"
           />
-          <span class="level-line">Seviye {{ level }} · 🪙 {{ coins }}</span>
+          <span class="level-line">Seviye {{ level }}</span>
           <span class="xp-track"><i :style="{ width: levelPct + '%' }"></i></span>
         </div>
       </div>
+      <div class="currency-bar" aria-label="Altın bakiyesi">
+        <img src="static/ic-coin-v6.webp" alt="" />
+        <strong>{{ coins }}</strong>
+        <button @click="profileTab = 'shop'" aria-label="Mağazayı aç">+</button>
+      </div>
       <div class="header-actions">
-        <button class="icon" @click="switchLang" aria-label="Dil">
-          <img src="static/ic-lang.webp" alt="" />
-        </button>
         <button class="icon" @click="askNotifications" aria-label="Bildirimler">
           <img src="static/ic-bell.webp" alt="" />
+        </button>
+        <button class="icon" @click="tab = 'square'" aria-label="Mesajlar">
+          <img src="static/ic-mail-v6.webp" alt="" />
         </button>
         <button class="icon" @click="$emit('settings')" aria-label="Ayarlar">
           <img src="static/ic-settings.webp" alt="" />
@@ -95,9 +100,9 @@
           <img src="static/tile-shop-v2.webp" alt="" loading="lazy" />
           <span class="label">Mağaza</span>
         </button>
-        <button class="art-tile" @click="profileTab = 'badges'">
+        <button class="art-tile" @click="tasksOpen = true">
           <img src="static/tile-badges-v2.webp" alt="" loading="lazy" />
-          <span class="label">Rozetler</span>
+          <span class="label">Görevler</span>
         </button>
       </div>
 
@@ -203,33 +208,50 @@
       @close="profileTab = null"
     />
 
+    <div class="sheet-bg" v-if="tasksOpen" @click.self="tasksOpen = false">
+      <div class="sheet feature-sheet">
+        <img src="static/tile-badges-v2.webp" alt="" />
+        <h2>Görevler</h2>
+        <p>Oynadıkça bu hedefleri tamamlarsın.</p>
+        <div class="task-row" v-for="task in tasks" :key="task.title">
+          <div><b>{{ task.title }}</b><small>{{ task.current }}/{{ task.goal }}</small></div>
+          <span class="task-track"><i :style="{ width: (100 * task.current / task.goal) + '%' }"></i></span>
+        </div>
+        <button class="btn ghost" @click="tasksOpen = false">Kapat</button>
+      </div>
+    </div>
+
+    <div class="sheet-bg" v-if="clanOpen" @click.self="clanOpen = false">
+      <div class="sheet feature-sheet">
+        <img src="static/nav-clan-v6.webp" alt="" />
+        <h2>Klan</h2>
+        <p>Klanlar yakında açılacak.</p>
+        <button class="btn ghost" @click="clanOpen = false">Kapat</button>
+      </div>
+    </div>
+
     <!-- bottom tabs -->
     <nav class="tabs">
       <button :class="{ on: tab === 'play' }" @click="tab = 'play'">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M5 3l16 16-2 2L3 5l2-2Zm14 0L3 19l2 2L21 5l-2-2ZM4 15l5 5m6 0 5-5" />
-        </svg>
-        Oyna
+        <img src="static/nav-home-v6.webp" alt="" />
+        Ana Menü
       </button>
       <button :class="{ on: tab === 'square' }" @click="tab = 'square'">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M3 21V9l3-2 3 2V5l3-2 3 2v4l3-2 3 2v12H3Zm7 0v-6h4v6M3 12h18M7 12v2m10-2v2" />
-        </svg>
-        Meydan
+        <img src="static/nav-rooms-v6.webp" alt="" />
+        Odalar
         <i class="badge" v-if="others">{{ others }}</i>
       </button>
       <button @click="profileTab = 'me'">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="8" r="4" />
-          <path d="M4 21c0-4 3.5-7 8-7s8 3 8 7H4Z" />
-        </svg>
+        <img src="static/nav-profile-v6.webp" alt="" />
         Profil
       </button>
-      <button @click="profileTab = 'shop'">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 9h16l-1 12H5L4 9Zm4 0V7a4 4 0 0 1 8 0v2M3 9l2-5h14l2 5" />
-        </svg>
-        Mağaza
+      <button @click="clanOpen = true">
+        <img src="static/nav-clan-v6.webp" alt="" />
+        Klan
+      </button>
+      <button @click="profileTab = 'badges'">
+        <img src="static/nav-collection-v6.webp" alt="" />
+        Koleksiyon
       </button>
     </nav>
   </div>
@@ -248,7 +270,6 @@ import {
   fetchLeaderboard,
 } from "../game";
 import { unlockVoice } from "../voice";
-import { lang, setLang } from "../i18n";
 import { askNotifications } from "../notifications";
 import Profile from "./Profile";
 import Avatar from "./Avatar";
@@ -263,6 +284,8 @@ export default {
   data() {
     return {
       profileTab: null,
+      clanOpen: false,
+      tasksOpen: false,
       tab: "play",
       creating: false,
       lobby,
@@ -293,6 +316,16 @@ export default {
     coins() {
       return (this.progress.totals.coins || 0).toLocaleString("tr-TR");
     },
+    tasks() {
+      const games = this.progress.totals.games || 0;
+      const wins = this.progress.totals.wins || 0;
+      return [
+        { title: "İlk oyununu tamamla", current: Math.min(games, 1), goal: 1 },
+        { title: "Üç oyun oyna", current: Math.min(games, 3), goal: 3 },
+        { title: "İlk galibiyetini kazan", current: Math.min(wins, 1), goal: 1 },
+        { title: "On oyun oyna", current: Math.min(games, 10), goal: 10 },
+      ];
+    },
     others() {
       return this.lobby.online.filter((p) => p.pub !== this.lobby.me).length;
     },
@@ -316,9 +349,6 @@ export default {
     },
   },
   methods: {
-    switchLang() {
-      setLang(lang === "en" ? "tr" : "en");
-    },
     askNotifications,
     async choosePhoto() {
       if (
@@ -414,21 +444,24 @@ export default {
   padding-bottom: calc(76px + env(safe-area-inset-bottom));
 }
 .me-bar {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: 36px 36px;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  padding: 5px 7px;
-  border: 1px solid $line;
-  border-radius: 18px;
-  background: linear-gradient(135deg, rgba(34, 8, 18, 0.94), rgba(9, 7, 13, 0.94));
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.54), inset 0 1px rgba(255, 223, 157, 0.08);
+  gap: 3px 8px;
   .profile-strip {
+    grid-column: 1;
+    grid-row: 1 / 3;
     display: flex;
     align-items: center;
     gap: 7px;
-    flex: 1;
     min-width: 0;
+    height: 72px;
+    padding: 4px 8px 4px 4px;
+    border: 1px solid $line;
+    border-radius: 36px 10px 10px 36px;
+    background: linear-gradient(90deg, rgba(41, 10, 24, 0.95), rgba(9, 8, 15, 0.92));
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
   }
   .identity {
     min-width: 0;
@@ -452,7 +485,7 @@ export default {
   }
   .level-line {
     color: $gold;
-    font-size: 11px;
+    font-size: 12px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -472,11 +505,43 @@ export default {
     }
   }
 }
-.header-actions {
+.currency-bar {
+  grid-column: 2;
+  grid-row: 1;
   display: flex;
   align-items: center;
-  gap: 2px;
-  flex: none;
+  gap: 4px;
+  height: 33px;
+  min-width: 112px;
+  padding: 2px 3px 2px 5px;
+  border: 1px solid rgba(233, 189, 112, 0.65);
+  border-radius: 18px;
+  background: rgba(14, 9, 13, 0.94);
+  box-shadow: inset 0 1px rgba(255, 217, 138, 0.14), 0 4px 12px rgba(0, 0, 0, 0.5);
+  img { width: 27px; height: 27px; object-fit: contain; }
+  strong { flex: 1; text-align: center; font-size: 14px; font-variant-numeric: tabular-nums; }
+  button {
+    display: grid;
+    place-items: center;
+    width: 27px;
+    height: 27px;
+    padding: 0;
+    border: 1px solid rgba(233, 189, 112, 0.6);
+    border-radius: 50%;
+    background: linear-gradient(#5c2b1c, #241015);
+    color: #ffdb96;
+    font-size: 21px;
+    line-height: 1;
+    cursor: pointer;
+  }
+}
+.header-actions {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 5px;
 }
 .photo-btn {
   position: relative;
@@ -499,12 +564,12 @@ export default {
 }
 .icon {
   flex: none;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   background: radial-gradient(circle at 35% 25%, #44221b, #0d080d 75%);
   border: 1px solid rgba(233, 189, 112, 0.56);
   border-radius: 50%;
-  padding: 6px;
+  padding: 5px;
   cursor: pointer;
   transition: transform 0.12s;
   img {
@@ -523,23 +588,23 @@ export default {
 }
 .home-logo {
   display: block;
-  width: min(80vw, 350px);
+  width: min(86vw, 420px);
   height: auto;
-  margin: 2px auto 6px;
+  margin: 0 auto 12px;
   filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.8));
 }
 .hero-actions {
   display: grid;
-  gap: 4px;
-  margin-bottom: 10px;
+  gap: 3px;
+  margin-bottom: 12px;
 }
 .panel-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  width: min(82vw, 320px);
-  height: clamp(54px, 15vw, 64px);
+  width: min(78vw, 360px);
+  height: clamp(58px, 16vw, 72px);
   margin: 0 auto;
   border: 0;
   background: url("../assets/btn-crimson-v4.webp") center / 100% 100% no-repeat;
@@ -569,10 +634,13 @@ export default {
 }
 .play-btn {
   color: #ffe1a7;
+  font-size: clamp(21px, 5.8vw, 28px);
   filter: drop-shadow(0 0 10px rgba(220, 19, 37, 0.78));
 }
 .join-open {
   color: #efcc8c;
+  width: min(70vw, 320px);
+  height: clamp(52px, 14vw, 64px);
   background-image: url("../assets/btn-amber-v4.webp");
   filter: drop-shadow(0 0 7px rgba(185, 119, 28, 0.48));
 }
@@ -610,15 +678,10 @@ export default {
 }
 .quick {
   display: grid;
-  grid-template-columns: repeat(2, min(42vw, 145px));
+  grid-template-columns: repeat(2, min(41vw, 160px));
   justify-content: center;
   gap: 8px;
   margin: 8px 0;
-}
-@media (min-width: 600px) {
-  .quick {
-    grid-template-columns: repeat(4, min(21vw, 145px));
-  }
 }
 .art-tile {
   position: relative;
@@ -749,6 +812,23 @@ export default {
     line-height: 1.45;
   }
 }
+@media (min-width: 360px) {
+  .quick {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: min(100%, 480px);
+    gap: 4px;
+    margin: clamp(96px, 15vh, 130px) auto 0;
+  }
+  .art-tile .label {
+    font-size: clamp(10px, 2.8vw, 14px);
+  }
+  .rules {
+    margin-top: 28vh;
+  }
+}
+@media (min-width: 360px) and (max-height: 700px) {
+  .quick { margin-top: 24px; }
+}
 .create {
   .mode {
     display: flex;
@@ -793,6 +873,38 @@ export default {
     margin: 4px 0 8px;
   }
 }
+.feature-sheet {
+  text-align: center;
+  > img {
+    display: block;
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+    margin: 0 auto 4px;
+  }
+  h2 { margin: 0 0 6px; }
+  p { margin: 0 0 14px; color: $muted; font-size: 14px; }
+  > .btn { max-width: 320px; margin: 14px auto 0; }
+}
+.task-row {
+  text-align: left;
+  padding: 10px 12px;
+  margin: 7px 0;
+  border: 1px solid $line;
+  border-radius: 12px;
+  background: rgba(28, 7, 17, 0.9);
+  > div { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
+  small { color: $gold; white-space: nowrap; }
+}
+.task-track {
+  display: block;
+  height: 5px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  i { display: block; height: 100%; background: linear-gradient(90deg, #b46125, #ffd887); }
+}
 .tabs {
   position: fixed;
   left: 0;
@@ -801,7 +913,7 @@ export default {
   z-index: 100;
   display: flex;
   justify-content: space-around;
-  padding: 5px 6px calc(5px + env(safe-area-inset-bottom));
+  padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
   background: linear-gradient(180deg, rgba(46, 5, 12, 0.96), rgba(10, 3, 9, 0.98));
   border-top: 1px solid rgba(233, 180, 76, 0.6);
   button {
@@ -816,18 +928,14 @@ export default {
     background: none;
     color: #dbbd8e;
     font: inherit;
-    font-size: 12px;
+    font-size: clamp(10px, 2.7vw, 12px);
     font-weight: 600;
-    padding: 5px 0;
+    padding: 4px 0;
     cursor: pointer;
-    svg {
-      width: 23px;
-      height: 23px;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 1.6;
-      stroke-linecap: round;
-      stroke-linejoin: round;
+    img {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
       filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.8));
     }
     &.on {
