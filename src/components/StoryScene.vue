@@ -419,7 +419,7 @@ export default {
   position: relative;
   overflow: hidden;
   border-radius: 14px;
-  background: #070815;
+  background: #0a0409;
   color: white;
   isolation: isolate;
   &.card {
@@ -444,15 +444,14 @@ export default {
 .town {
   overflow: hidden;
   animation: kenburns 9s ease-out both;
-  /* larger than the scene so the artist's credit corner stays hidden */
   &::before {
     content: "";
     position: absolute;
     top: 0;
     left: 0;
-    right: -25%;
-    bottom: -25%;
-    background: url("../assets/background.webp") 40% 30% / cover no-repeat;
+    right: 0;
+    bottom: 0;
+    background: url("../assets/darkspire-castle-v3.webp") center 30% / cover no-repeat;
   }
   &::after {
     content: "";
@@ -466,7 +465,7 @@ export default {
   }
 }
 .sky {
-  background: linear-gradient(180deg, #000 0%, #01162e 55%, #002746 100%);
+  background: linear-gradient(180deg, #070207 0%, #270816 55%, #4b1427 100%);
   .clouds {
     position: absolute;
     inset: 0;

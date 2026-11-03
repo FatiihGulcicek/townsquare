@@ -2,32 +2,36 @@
   <div class="page home">
     <!-- me: photo, name, settings -->
     <div class="me-bar">
-      <button
-        class="photo-btn"
-        @click="choosePhoto"
-        aria-label="Profil fotoğrafı"
-      >
-        <Avatar :name="name || '?'" :size="46" :src="game.myPhoto" />
-        <span class="cam">📷</span>
-      </button>
-      <input
-        id="name"
-        class="name-in"
-        v-model="name"
-        maxlength="24"
-        placeholder="Adın"
-        autocomplete="nickname"
-        @change="saveName"
-      />
-      <button class="icon" @click="switchLang" aria-label="Dil">
-        <img src="static/ic-lang.webp" alt="" />
-      </button>
-      <button class="icon" @click="askNotifications" aria-label="Bildirimler">
-        <img src="static/ic-bell.webp" alt="" />
-      </button>
-      <button class="icon" @click="$emit('settings')" aria-label="Ayarlar">
-        <img src="static/ic-settings.webp" alt="" />
-      </button>
+      <div class="profile-strip">
+        <button class="photo-btn" @click="choosePhoto" aria-label="Profil fotoğrafı">
+          <Avatar :name="name || '?'" :size="46" :src="game.myPhoto" />
+          <span class="cam">📷</span>
+        </button>
+        <div class="identity">
+          <input
+            id="name"
+            class="name-in"
+            v-model="name"
+            maxlength="24"
+            placeholder="Adın"
+            autocomplete="nickname"
+            @change="saveName"
+          />
+          <span class="level-line">Seviye {{ level }} · 🪙 {{ coins }}</span>
+          <span class="xp-track"><i :style="{ width: levelPct + '%' }"></i></span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="icon" @click="switchLang" aria-label="Dil">
+          <img src="static/ic-lang.webp" alt="" />
+        </button>
+        <button class="icon" @click="askNotifications" aria-label="Bildirimler">
+          <img src="static/ic-bell.webp" alt="" />
+        </button>
+        <button class="icon" @click="$emit('settings')" aria-label="Ayarlar">
+          <img src="static/ic-settings.webp" alt="" />
+        </button>
+      </div>
     </div>
 
     <!-- ========== PLAY ========== -->
@@ -39,7 +43,26 @@
         alt="Darkspire · Vampir Köylü"
       />
 
-      <div class="join">
+      <div class="hero-actions">
+        <button class="panel-btn play-btn" :disabled="busy" @click="newRoom">
+          ▶ Oyun Kur
+        </button>
+        <button
+          class="panel-btn join-open"
+          :aria-expanded="showJoin ? 'true' : 'false'"
+          aria-controls="join-form"
+          @click="showJoin = !showJoin"
+        >
+          <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="9" cy="8" r="3" />
+            <circle cx="17" cy="9" r="2.5" />
+            <path d="M2 20c0-4 2.7-6.5 7-6.5s7 2.5 7 6.5H2Zm14-5.8c3.5 0 6 2.2 6 5.8h-4" />
+          </svg>
+          Odaya Katıl
+        </button>
+      </div>
+
+      <div id="join-form" class="join" v-if="showJoin">
         <input
           class="field code"
           v-model="code"
@@ -54,7 +77,7 @@
           :disabled="code.length !== 4"
           @click="joinRoom"
         >
-          Odaya Katıl
+          Katıl
         </button>
       </div>
 
@@ -66,6 +89,14 @@
         <button class="art-tile" @click="profileTab = 'top'">
           <img src="static/tile-rank.webp" alt="" />
           <span class="label">Sıralama</span>
+        </button>
+        <button class="art-tile" @click="profileTab = 'shop'">
+          <img src="static/tile-shop-v2.webp" alt="" loading="lazy" />
+          <span class="label">Mağaza</span>
+        </button>
+        <button class="art-tile" @click="profileTab = 'badges'">
+          <img src="static/tile-badges-v2.webp" alt="" loading="lazy" />
+          <span class="label">Rozetler</span>
         </button>
       </div>
 
@@ -111,11 +142,6 @@
         <p class="muted">4–20 oyuncu. Oyunu kuran kişi başlatır.</p>
       </details>
 
-      <div class="play-dock">
-        <button class="panel-btn play-btn" :disabled="busy" @click="newRoom">
-          ▶ Oyun kur
-        </button>
-      </div>
     </section>
 
     <!-- ========== TOWN SQUARE ========== -->
@@ -229,6 +255,7 @@ import OnlineList from "./OnlineList";
 import LobbyChat from "./LobbyChat";
 import { lobby } from "../lobby";
 import { pickPhoto } from "../photo";
+import { progress, levelFor, xpForLevel } from "../progress";
 
 export default {
   components: { Profile, Avatar, OnlineList, LobbyChat },
@@ -239,6 +266,8 @@ export default {
       creating: false,
       lobby,
       game,
+      progress,
+      showJoin: false,
       wanted: "",
       roomPass: "",
       champion: null,
@@ -249,6 +278,20 @@ export default {
     };
   },
   computed: {
+    level() {
+      return levelFor(this.progress.totals.xp);
+    },
+    levelPct() {
+      const start = xpForLevel(this.level);
+      const end = xpForLevel(this.level + 1);
+      return Math.min(
+        100,
+        Math.round((100 * (this.progress.totals.xp - start)) / (end - start)),
+      );
+    },
+    coins() {
+      return (this.progress.totals.coins || 0).toLocaleString("tr-TR");
+    },
     others() {
       return this.lobby.online.filter((p) => p.pub !== this.lobby.me).length;
     },
@@ -372,24 +415,67 @@ export default {
 .me-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 4px 2px 8px;
-  .name-in {
+  justify-content: space-between;
+  gap: 6px;
+  padding: 5px 7px;
+  border: 1px solid $line;
+  border-radius: 18px;
+  background: rgba(12, 4, 11, 0.88);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.5);
+  .profile-strip {
+    display: flex;
+    align-items: center;
+    gap: 7px;
     flex: 1;
     min-width: 0;
-    height: 42px;
-    border-radius: 21px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    background: rgba(0, 0, 0, 0.35);
+  }
+  .identity {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .name-in {
+    width: 100%;
+    min-width: 0;
+    height: 24px;
+    border: 0;
+    background: transparent;
     color: $text;
-    padding: 0 14px;
+    padding: 0;
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 800;
     outline: none;
-    &:focus {
-      border-color: $gold;
+    text-overflow: ellipsis;
+  }
+  .level-line {
+    color: $gold;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .xp-track {
+    display: block;
+    width: min(100%, 150px);
+    height: 5px;
+    border: 1px solid $line;
+    border-radius: 6px;
+    background: #17070f;
+    overflow: hidden;
+    i {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, #ae5d1d, #ffd58c);
     }
   }
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
 }
 .photo-btn {
   position: relative;
@@ -406,8 +492,8 @@ export default {
 }
 .icon {
   flex: none;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   background: none;
   border: 0;
   padding: 2px;
@@ -424,48 +510,34 @@ export default {
   }
 }
 .play {
-  padding-top: 8px;
-  /* room for the play button docked above the tab bar */
-  padding-bottom: 110px;
+  padding-top: 10px;
+  padding-bottom: 20px;
 }
 .home-logo {
   display: block;
-  width: min(76vw, 330px);
+  width: min(88vw, 450px);
   height: auto;
-  margin: 0 auto 18px;
+  margin: 2px auto 6px;
   filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.8));
 }
-.play-dock {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: calc(72px + env(safe-area-inset-bottom));
-  z-index: 99;
-  padding: 0 16px 10px;
-  pointer-events: none;
-  .play-btn {
-    pointer-events: auto;
-    margin: 0 auto;
-  }
-}
-.play-btn {
-  animation: breathe 2.6s ease-in-out infinite;
-}
-@keyframes breathe {
-  50% {
-    transform: scale(1.02);
-  }
+.hero-actions {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 4px;
 }
 .panel-btn {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   width: min(84vw, 360px);
-  aspect-ratio: 1000 / 308;
+  height: clamp(64px, 18vw, 82px);
   margin: 0 auto;
   border: 0;
   background: url("../assets/panel.webp") center / 100% 100% no-repeat;
   color: #f3dcae;
   font: inherit;
-  font-size: 24px;
+  font-size: clamp(20px, 5.5vw, 26px);
   font-weight: 800;
   letter-spacing: 0.02em;
   text-shadow: 0 2px 3px rgba(0, 0, 0, 0.85);
@@ -480,9 +552,26 @@ export default {
     cursor: default;
   }
 }
+.button-icon {
+  width: 25px;
+  height: 25px;
+  fill: $gold;
+  stroke: $gold;
+  stroke-width: 1.4;
+}
+.play-btn {
+  color: #ffe1a7;
+  filter: drop-shadow(0 0 10px rgba(220, 19, 37, 0.78));
+}
+.join-open {
+  color: #efcc8c;
+  filter: drop-shadow(0 0 7px rgba(185, 119, 28, 0.48));
+}
 .join {
   display: flex;
   gap: 8px;
+  max-width: 360px;
+  margin: 0 auto 8px;
   .code {
     flex: 1;
     margin: 0;
@@ -512,10 +601,15 @@ export default {
 }
 .quick {
   display: grid;
-  grid-template-columns: repeat(2, min(36vw, 150px));
+  grid-template-columns: repeat(2, min(39vw, 150px));
   justify-content: center;
-  gap: 18px;
-  margin: 14px 0 6px;
+  gap: 8px;
+  margin: 8px 0 6px;
+}
+@media (min-width: 600px) {
+  .quick {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 .art-tile {
   position: relative;
@@ -693,8 +787,6 @@ export default {
   padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
   background: linear-gradient(180deg, rgba(46, 5, 12, 0.96), rgba(10, 3, 9, 0.98));
   border-top: 1px solid rgba(233, 180, 76, 0.6);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   button {
     position: relative;
     flex: 1;

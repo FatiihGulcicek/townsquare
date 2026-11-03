@@ -461,12 +461,14 @@ export default {
   display: flex;
   gap: 6px;
   margin-bottom: 14px;
+  overflow-x: auto;
+  scrollbar-width: thin;
   button {
-    flex: 1;
+    flex: 0 0 auto;
     min-height: 44px;
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid $line;
+    background: $panel;
     color: $text;
     font-size: 13px;
     font-weight: 600;
@@ -531,8 +533,8 @@ export default {
     text-align: center;
     padding: 10px 6px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: $panel;
+    border: 1px solid $line;
     .pv {
       font-size: 28px;
     }
@@ -666,7 +668,8 @@ export default {
   gap: 8px;
   margin: 14px 0;
   div {
-    background: rgba(255, 255, 255, 0.06);
+    background: $panel;
+    border: 1px solid $line;
     border-radius: 12px;
     padding: 10px 4px;
     text-align: center;

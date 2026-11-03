@@ -314,6 +314,10 @@ export default {
     "Delete your profile, stats, photo and all game data on this phone? This cannot be undone.",
 
   "▶ Oyun kur": "▶ New game",
+  "▶ Oyun Kur": "▶ New game",
+  "Odaya Katıl": "Join a room",
+  Rozetler: "Badges",
+  "Seviye {} · 🪙 {}": "Level {} · 🪙 {}",
   "Yeni oda": "New room",
   "Kendi kodun ve şifre (isteğe bağlı)":
     "Your own code and password (optional)",

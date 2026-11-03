@@ -116,7 +116,7 @@ h3 {
   margin: 6px 0;
   padding: 7px 10px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(71, 17, 37, 0.74);
   max-width: 88%;
   font-size: 15px;
   line-height: 1.35;
@@ -128,7 +128,7 @@ h3 {
   }
   &.mine {
     margin-left: auto;
-    background: rgba(123, 108, 255, 0.25);
+    background: rgba(114, 68, 28, 0.72);
   }
   &:not(.mine) {
     cursor: pointer;
@@ -164,8 +164,8 @@ h3 {
     flex: 1;
     min-height: 44px;
     border-radius: 22px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid $line;
+    background: rgba(13, 4, 10, 0.88);
     color: $text;
     padding: 0 14px;
     font-size: 16px;

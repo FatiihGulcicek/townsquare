@@ -214,7 +214,7 @@ export default {
   height: 58px;
   border-radius: 50%;
   border: 1px solid rgba(233, 180, 76, 0.6);
-  background: linear-gradient(160deg, #2a2340, #120f1e);
+  background: linear-gradient(160deg, #701a34, #230713);
   font-size: 26px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
   cursor: pointer;
@@ -244,12 +244,12 @@ export default {
   right: 0;
   bottom: 0;
   z-index: 130;
-  height: min(70vh, 560px);
-  max-width: 560px;
+  height: min(70dvh, 560px);
+  max-width: 640px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  background: #0c0e1b;
+  background: linear-gradient(160deg, #3a1022, #11050e 70%);
   border-top: 2px solid $gold;
   border-radius: 18px 18px 0 0;
   box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.7);
@@ -260,8 +260,8 @@ export default {
   padding: 10px 10px 6px;
   border-bottom: 1px solid $line;
   button {
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid $line;
+    background: $panel;
     color: $text;
     border-radius: 20px;
     padding: 7px 12px;
@@ -289,7 +289,7 @@ export default {
   margin: 6px 0;
   padding: 7px 10px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(71, 17, 37, 0.74);
   max-width: 88%;
   line-height: 1.35;
   font-size: 15px;
@@ -313,7 +313,7 @@ export default {
   }
   &.mine {
     margin-left: auto;
-    background: rgba(123, 108, 255, 0.25);
+    background: rgba(114, 68, 28, 0.72);
   }
   &.sys {
     max-width: 100%;
@@ -333,8 +333,8 @@ export default {
     flex: 1;
     min-height: 46px;
     border-radius: 23px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid $line;
+    background: rgba(13, 4, 10, 0.88);
     color: $text;
     padding: 0 16px;
     font-size: 16px;

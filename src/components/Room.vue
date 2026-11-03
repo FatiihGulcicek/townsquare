@@ -1710,8 +1710,7 @@ export default {
   gap: 8px;
   margin: -12px -14px 4px;
   padding: calc(8px + env(safe-area-inset-top)) 12px 8px;
-  background: rgba(5, 6, 12, 0.88);
-  backdrop-filter: blur(10px);
+  background: linear-gradient(180deg, rgba(60, 11, 26, 0.97), rgba(23, 5, 14, 0.97));
   border-bottom: 1px solid $line;
 }
 .code {
@@ -1780,11 +1779,7 @@ h3 {
   padding: 10px 14px;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.16);
-  background: linear-gradient(
-    120deg,
-    rgba(30, 40, 90, 0.75),
-    rgba(15, 18, 40, 0.75)
-  );
+  background: linear-gradient(120deg, rgba(64, 16, 36, 0.94), rgba(19, 5, 16, 0.94));
   color: $text;
   text-align: left;
   cursor: pointer;
@@ -1873,7 +1868,7 @@ h3 {
   padding: 10px 4px 8px;
   border-radius: 14px;
   border: 1px solid transparent;
-  background: rgba(255, 255, 255, 0.04);
+  background: $panel;
   color: $text;
   font: inherit;
   text-align: center;
@@ -1918,9 +1913,9 @@ h3 {
     transform: scale(0.96);
   }
   &.selected {
-    background: rgba(123, 108, 255, 0.35);
-    border-color: #b4a9ff;
-    box-shadow: 0 0 0 2px rgba(180, 169, 255, 0.4);
+    background: rgba(116, 28, 52, 0.88);
+    border-color: $gold;
+    box-shadow: 0 0 0 2px rgba(233, 189, 112, 0.3);
   }
   &:disabled {
     opacity: 0.35;
@@ -2551,8 +2546,8 @@ img.mini {
   }
 }
 .night {
-  border-color: rgba(123, 108, 255, 0.5);
-  box-shadow: 0 0 40px rgba(123, 108, 255, 0.12);
+  border-color: rgba(154, 112, 183, 0.6);
+  box-shadow: 0 0 40px rgba(154, 112, 183, 0.16);
 }
 .team {
   font-size: 15px;
