@@ -1,5 +1,6 @@
 import Vue from "vue";
 import { game, setAccountIdentity } from "./game";
+import { getItem, setItem } from "./storage";
 
 export const account = Vue.observable({ ready: false, enabled: false, user: null });
 
@@ -13,10 +14,10 @@ export async function loadAccount() {
     if (account.user) setAccountIdentity(account.user);
   } catch (e) {
     // A temporary network error must not silently bypass a previously enabled login.
-    account.enabled = localStorage.getItem("vkAuthEnabled") === "1";
+    account.enabled = getItem("vkAuthEnabled") === "1";
     account.user = null;
   }
-  if (account.enabled) localStorage.setItem("vkAuthEnabled", "1");
+  if (account.enabled) setItem("vkAuthEnabled", "1");
   account.ready = true;
   return account;
 }
