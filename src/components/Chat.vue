@@ -311,6 +311,10 @@ export default {
   b.chat-purple {
     color: #c39bff;
   }
+  b.chat-amber { color: #ffcc75; }
+  b.chat-pink { color: #ff9dc8; }
+  b.chat-cyan { color: #80e4e9; }
+  b.chat-silver { color: #e4e8ef; }
   &.mine {
     margin-left: auto;
     background: rgba(114, 68, 28, 0.72);

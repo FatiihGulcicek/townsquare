@@ -27,19 +27,25 @@
       <template v-if="tab === 'shop'">
         <p class="coins">
           🪙 <b>{{ prog.totals.coins || 0 }}</b> altın
-          <small class="muted">(oynadıkça XP kadar altın kazanırsın)</small>
+          <small class="muted">(gerçek oyuncularla oynadıkça altın kazanırsın)</small>
         </p>
-        <div v-for="group in shopGroups" :key="group.type">
-          <h4>{{ group.title }}</h4>
+        <nav class="shop-filters" aria-label="Mağaza kategorileri">
+          <button v-for="group in shopGroups" :key="group.type" :class="{ active: shopCategory === group.type }" @click="shopCategory = group.type">{{ group.short }}</button>
+        </nav>
+        <div v-if="activeShopGroup">
+          <h4>{{ activeShopGroup.title }}</h4>
+          <p v-if="activeShopGroup.hint" class="muted small shop-hint">{{ activeShopGroup.hint }}</p>
           <div class="shop">
             <div
-              v-for="item in group.items"
+              v-for="item in activeShopGroup.items"
               :key="item.id"
               class="item"
-              :class="{ on: equipped(item), owned: owned(item) }"
+              :class="[item.id, { on: equipped(item), owned: owned(item) }]"
             >
-              <img v-if="item.image" class="pv card-preview" :src="item.image" :alt="item.name" loading="lazy" />
-              <span v-else class="pv">{{ item.preview }}</span>
+              <span v-if="item.type === 'frame'" class="pv frame-preview" :class="item.id"><img src="static/default-avatar-v4.webp" alt="" /></span>
+              <img v-else-if="item.image" class="pv" :class="item.type === 'back' ? 'card-preview' : 'avatar-preview'" :src="item.image" :alt="item.name" loading="lazy" />
+              <span v-else-if="item.type === 'chat'" class="pv chat-preview" :style="{ color: item.color }">Adın</span>
+              <span v-else class="pv emblem-preview">{{ item.preview }}</span>
               <b>{{ item.name }}</b>
               <button
                 v-if="owned(item)"
@@ -134,8 +140,7 @@
       <template v-else-if="tab === 'me'">
         <div class="head">
           <div class="profile-portrait">
-            <Avatar v-if="game.myPhoto" :name="name" :size="72" :src="game.myPhoto" />
-            <img v-else src="static/default-avatar-v4.webp" alt="" />
+            <Avatar :name="name" :size="72" :src="game.myPhoto || 'static/default-avatar-v4.webp'" self />
           </div>
           <div>
             <h3>{{ name || "İsimsiz" }}</h3>
@@ -330,6 +335,7 @@ export default {
       champion: null,
       periods: { week: "Bu hafta", month: "Bu ay", all: "Tüm zamanlar" },
       replayIndex: 0,
+      shopCategory: "back",
     };
   },
   computed: {
@@ -362,10 +368,15 @@ export default {
     },
     shopGroups() {
       return [
-        { type: "back", title: "🃏 Kart arkaları" },
-        { type: "frame", title: "🖼️ Avatar çerçeveleri" },
-        { type: "chat", title: "💬 Sohbet adı renkleri" },
+        { type: "back", short: "Kart", title: "Kart arkaları" },
+        { type: "frame", short: "Çerçeve", title: "Avatar çerçeveleri" },
+        { type: "avatar", short: "Fotoğraf", title: "Profil fotoğrafları", hint: "Hazır portre seçebilir veya kendi fotoğrafını kullanabilirsin." },
+        { type: "chat", short: "Sohbet", title: "Sohbet adı renkleri" },
+        { type: "emblem", short: "Simge", title: "Profil simgeleri", hint: "Profil fotoğrafının yanında görünür; başarı rozetlerinden ayrıdır." },
       ].map((g) => ({ ...g, items: SHOP.filter((i) => i.type === g.type) }));
+    },
+    activeShopGroup() {
+      return this.shopGroups.find((group) => group.type === this.shopCategory);
     },
     badgeCount() {
       return Object.keys(this.prog.totals.badges).length;
@@ -622,6 +633,42 @@ export default {
       object-fit: cover;
       border-radius: 3px;
     }
+    .avatar-preview {
+      width: 52px;
+      height: 52px;
+      border: 2px solid #d9a866;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #1b0b1b;
+    }
+    .frame-preview {
+      display: block;
+      width: 52px;
+      height: 52px;
+      border: 3px solid #d9a866;
+      border-radius: 50%;
+      box-shadow: 0 0 12px #d9a866;
+      img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+      &.frame-fire { border-color: #ff8b2c; box-shadow: 0 0 12px #f52; }
+      &.frame-ice { border-color: #a6efff; box-shadow: 0 0 12px #5bcfff; }
+      &.frame-rose { border-color: #ff75a7; box-shadow: 0 0 12px #ff5d91; }
+      &.frame-shadow { border-color: #5e4382; box-shadow: 0 0 12px #a452da; }
+      &.frame-moon { border-color: #d5bdf0; box-shadow: 0 0 12px #a786dc; }
+      &.frame-thorn { border-color: #b8455a; box-shadow: 0 0 12px #d93858; }
+      &.frame-royal { border-color: #ffdb84; box-shadow: 0 0 12px #e5ad39; }
+      &.frame-emerald { border-color: #85e9bd; box-shadow: 0 0 12px #32b986; }
+    }
+    .chat-preview {
+      display: grid;
+      place-items: center;
+      min-height: 52px;
+      font-size: 16px;
+      font-weight: 800;
+      text-shadow: 0 2px 5px #000;
+    }
+    .emblem-preview { display: grid; place-items: center; min-height: 52px; }
+    &.back-eclipse .card-preview { filter: hue-rotate(45deg) brightness(0.82); }
+    &.back-royal .card-preview { filter: saturate(0.65) hue-rotate(30deg); }
     b {
       font-size: 12px;
     }
@@ -637,6 +684,26 @@ export default {
     }
   }
 }
+.shop-filters {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 0 0 8px;
+  scrollbar-width: none;
+  button {
+    flex: 0 0 auto;
+    padding: 7px 11px;
+    border: 1px solid rgba(211, 141, 69, 0.48);
+    border-radius: 999px;
+    background: #1c0e17;
+    color: #d9b991;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    &.active { background: #8b2432; border-color: #f4bb75; color: #ffe5b6; }
+  }
+}
+.shop-hint { margin: -4px 0 10px; }
 .badges {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));

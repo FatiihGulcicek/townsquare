@@ -371,6 +371,22 @@ export const SHOP = [
     preview: "🌌",
   },
   {
+    id: "back-eclipse",
+    type: "back",
+    name: "Tutulma kart arkası",
+    price: 140,
+    preview: "🌘",
+    image: castleCardBack,
+  },
+  {
+    id: "back-royal",
+    type: "back",
+    name: "Kraliyet kart arkası",
+    price: 160,
+    preview: "👑",
+    image: crescentCardBack,
+  },
+  {
     id: "frame-fire",
     type: "frame",
     name: "Ateş çerçeve",
@@ -398,12 +414,21 @@ export const SHOP = [
     price: 200,
     preview: "🌑",
   },
+  { id: "frame-moon", type: "frame", name: "Ay ışığı çerçeve", price: 130, preview: "🌙" },
+  { id: "frame-thorn", type: "frame", name: "Diken çerçeve", price: 170, preview: "🥀" },
+  { id: "frame-royal", type: "frame", name: "Kraliyet çerçeve", price: 220, preview: "👑" },
+  { id: "frame-emerald", type: "frame", name: "Zümrüt çerçeve", price: 160, preview: "💚" },
+  { id: "avatar-vampir", type: "avatar", name: "Vampir portresi", price: 90, preview: "🧛", image: "/static/roles/vampir-s.webp" },
+  { id: "avatar-gozcu", type: "avatar", name: "Gözcü portresi", price: 90, preview: "👁️", image: "/static/roles/gozcu-s.webp" },
+  { id: "avatar-cadi", type: "avatar", name: "Cadı portresi", price: 100, preview: "🧙", image: "/static/roles/cadi-s.webp" },
+  { id: "avatar-kurtadam", type: "avatar", name: "Kurtadam portresi", price: 100, preview: "🐺", image: "/static/roles/kurtadam-s.webp" },
   {
     id: "chat-red",
     type: "chat",
     name: "Kızıl sohbet adı",
     price: 40,
     preview: "🔴",
+    color: "#ff6b6b",
   },
   {
     id: "chat-blue",
@@ -411,6 +436,7 @@ export const SHOP = [
     name: "Mavi sohbet adı",
     price: 40,
     preview: "🔵",
+    color: "#6fb6ff",
   },
   {
     id: "chat-green",
@@ -418,6 +444,7 @@ export const SHOP = [
     name: "Yeşil sohbet adı",
     price: 40,
     preview: "🟢",
+    color: "#6be38b",
   },
   {
     id: "chat-purple",
@@ -425,14 +452,39 @@ export const SHOP = [
     name: "Mor sohbet adı",
     price: 60,
     preview: "🟣",
+    color: "#c39bff",
   },
+  { id: "chat-amber", type: "chat", name: "Amber sohbet adı", price: 65, preview: "🟠", color: "#ffcc75" },
+  { id: "chat-pink", type: "chat", name: "Pembe sohbet adı", price: 55, preview: "🩷", color: "#ff9dc8" },
+  { id: "chat-cyan", type: "chat", name: "Turkuaz sohbet adı", price: 55, preview: "🩵", color: "#80e4e9" },
+  { id: "chat-silver", type: "chat", name: "Gümüş sohbet adı", price: 75, preview: "⚪", color: "#e4e8ef" },
+  { id: "emblem-bat", type: "emblem", name: "Yarasa simgesi", price: 80, preview: "🦇" },
+  { id: "emblem-wolf", type: "emblem", name: "Kurt simgesi", price: 80, preview: "🐺" },
+  { id: "emblem-crown", type: "emblem", name: "Taç simgesi", price: 120, preview: "👑" },
+  { id: "emblem-moon", type: "emblem", name: "Ay simgesi", price: 90, preview: "🌙" },
 ];
+
+export const AVATAR_PRESETS = {
+  "avatar-vampir": "/static/roles/vampir-s.webp",
+  "avatar-gozcu": "/static/roles/gozcu-s.webp",
+  "avatar-cadi": "/static/roles/cadi-s.webp",
+  "avatar-kurtadam": "/static/roles/kurtadam-s.webp",
+};
+
+export const EMBLEM_PRESETS = {
+  "emblem-bat": "🦇",
+  "emblem-wolf": "🐺",
+  "emblem-crown": "👑",
+  "emblem-moon": "🌙",
+};
 
 function ensureShop() {
   const t = progress.totals;
   if (t.coins === undefined) Vue.set(t, "coins", t.xp || 0);
   if (!t.owned) Vue.set(t, "owned", []);
-  if (!t.equipped) Vue.set(t, "equipped", { back: "", frame: "", chat: "" });
+  if (!t.equipped) Vue.set(t, "equipped", { back: "", frame: "", chat: "", avatar: "", emblem: "" });
+  if (t.equipped.avatar === undefined) Vue.set(t.equipped, "avatar", "");
+  if (t.equipped.emblem === undefined) Vue.set(t.equipped, "emblem", "");
 }
 ensureShop();
 
@@ -453,9 +505,17 @@ export function equip(id) {
   if (!item) return;
   const t = progress.totals;
   if (!t.owned.includes(id)) return;
-  t.equipped[item.type] = t.equipped[item.type] === id ? "" : id;
+  Vue.set(t.equipped, item.type, t.equipped[item.type] === id ? "" : id);
   save();
   if (onCosmetics) onCosmetics(t.equipped);
+}
+
+export function clearAvatarPreset() {
+  ensureShop();
+  if (!progress.totals.equipped.avatar) return;
+  Vue.set(progress.totals.equipped, "avatar", "");
+  save();
+  if (onCosmetics) onCosmetics(progress.totals.equipped);
 }
 
 let onCosmetics = null;

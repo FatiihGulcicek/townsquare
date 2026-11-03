@@ -11,7 +11,7 @@
   >
     <img v-if="photo" :src="photo" alt="" class="photo" />
     <span v-else class="initials">{{ initials }}</span>
-    <span class="badge" v-if="badge">{{ badge }}</span>
+    <span class="badge" v-if="displayBadge">{{ displayBadge }}</span>
     <span class="skull" v-if="dead">💀</span>
     <span class="mic" v-if="mic">🎙️</span>
     <span class="lvl" v-if="lvl >= 3 && size >= 44">{{ lvl }}</span>
@@ -20,7 +20,7 @@
 
 <script>
 import { game } from "../game";
-import { progress, levelFor } from "../progress";
+import { progress, levelFor, AVATAR_PRESETS, EMBLEM_PRESETS } from "../progress";
 
 const PALETTE = [
   ["#7b2cbf", "#3c096c"],
@@ -52,6 +52,7 @@ export default {
     pid: { type: String, default: "" },
     src: { type: String, default: "" },
     mic: Boolean,
+    self: Boolean,
   },
   computed: {
     player() {
@@ -63,11 +64,11 @@ export default {
       );
     },
     lvl() {
-      if (this.src) return levelFor(progress.totals.xp); // own avatar
+      if (this.self || this.src) return levelFor(progress.totals.xp); // own avatar
       return this.player ? this.player.level || 1 : 1;
     },
     frame() {
-      const bought = this.src
+      const bought = this.self || this.src
         ? (progress.totals.equipped || {}).frame
         : this.player && this.player.frame;
       if (bought) return "c-" + bought;
@@ -80,13 +81,26 @@ export default {
       return "";
     },
     photo() {
+      if (this.self) {
+        const preset = (progress.totals.equipped || {}).avatar;
+        if (AVATAR_PRESETS[preset]) return AVATAR_PRESETS[preset];
+      }
       if (this.src) return this.src;
+      if (this.player && AVATAR_PRESETS[this.player.avatar])
+        return AVATAR_PRESETS[this.player.avatar];
       let pid = this.pid;
       if (!pid && game.state && this.name) {
         const p = game.state.players.find((x) => x.name === this.name);
         pid = p ? p.pid : "";
       }
       return pid ? game.photos[pid] || "" : "";
+    },
+    displayBadge() {
+      if (this.badge) return this.badge;
+      const chosen = this.self
+        ? (progress.totals.equipped || {}).emblem
+        : this.player && this.player.emblem;
+      return EMBLEM_PRESETS[chosen] || "";
     },
     initials() {
       // letters only (skip emoji such as the bot's 🤖)
@@ -227,6 +241,22 @@ export default {
   box-shadow:
     0 0 0 3px #1b1b1b,
     0 0 22px rgba(120, 0, 200, 0.9);
+}
+.avatar.c-frame-moon {
+  box-shadow: 0 0 0 2px #e5cead, 0 0 0 5px #6b4c9b,
+    0 0 20px rgba(190, 154, 255, 0.75);
+}
+.avatar.c-frame-thorn {
+  box-shadow: 0 0 0 2px #b8455a, 0 0 0 5px #3f1428,
+    0 0 17px rgba(217, 56, 88, 0.7);
+}
+.avatar.c-frame-royal {
+  box-shadow: 0 0 0 2px #fff0b8, 0 0 0 5px #bf852b,
+    0 0 21px rgba(255, 203, 83, 0.8);
+}
+.avatar.c-frame-emerald {
+  box-shadow: 0 0 0 2px #c9f8bd, 0 0 0 5px #258561,
+    0 0 20px rgba(74, 211, 158, 0.72);
 }
 .avatar.speaking {
   box-shadow:

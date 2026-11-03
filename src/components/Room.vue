@@ -2451,6 +2451,14 @@ h3 {
 .play-card.back-gold .back {
   background-image: url("../assets/card-back-crescent-v1.jpg");
 }
+.play-card.back-eclipse .back {
+  background-image: linear-gradient(rgba(54, 5, 40, 0.35), rgba(14, 3, 29, 0.42)),
+    url("../assets/card-back-castle-v1.jpg");
+}
+.play-card.back-royal .back {
+  background-image: linear-gradient(rgba(32, 8, 86, 0.2), rgba(50, 7, 62, 0.35)),
+    url("../assets/card-back-crescent-v1.jpg");
+}
 .play-card.back-forest .back {
   background: repeating-linear-gradient(
       -45deg,

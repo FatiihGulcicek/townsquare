@@ -4,8 +4,7 @@
     <div class="me-bar">
       <div class="profile-strip">
         <button class="photo-btn" @click="choosePhoto" aria-label="Profil fotoğrafı">
-          <Avatar v-if="game.myPhoto" :name="name || '?'" :size="54" :src="game.myPhoto" />
-          <img v-else class="default-avatar" src="static/default-avatar-v4.webp" alt="" />
+          <Avatar :name="name || '?'" :size="54" :src="game.myPhoto || 'static/default-avatar-v4.webp'" self />
           <span class="cam">📷</span>
         </button>
         <div class="identity">

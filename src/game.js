@@ -13,6 +13,7 @@ import {
   titleFor,
   levelFor,
   progress,
+  clearAvatarPreset,
 } from "./progress";
 import {
   bindVoice,
@@ -519,6 +520,7 @@ export function setRoomPassword(value) {
 }
 
 export function setMyPhoto(data) {
+  if (data) clearAvatarPreset();
   game.myPhoto = data || "";
   store("vkPhoto", data ? data : null);
   send("photo", data || null);
