@@ -51,7 +51,17 @@
 
       <div class="hero-actions">
         <button class="panel-btn play-btn" :disabled="busy" @click="newRoom">
-          ▶ Oyun Kur
+          <svg class="play-icon" viewBox="0 0 36 36" aria-hidden="true">
+            <defs>
+              <linearGradient id="play-gold" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#fff3bd" />
+                <stop offset="0.5" stop-color="#ffc45c" />
+                <stop offset="1" stop-color="#ad4d15" />
+              </linearGradient>
+            </defs>
+            <path d="M9 4.5a2 2 0 0 1 3 .1l19 11.8a2 2 0 0 1 0 3.2L12 31.4a2 2 0 0 1-3-1.7V6.3a2 2 0 0 1 0-1.8Z" fill="url(#play-gold)" stroke="#ffe1a0" stroke-width="1.4" />
+          </svg>
+          <span>Oyun Kur</span>
         </button>
         <button
           class="panel-btn join-open"
@@ -59,12 +69,8 @@
           aria-controls="join-form"
           @click="showJoin = !showJoin"
         >
-          <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="9" cy="8" r="3" />
-            <circle cx="17" cy="9" r="2.5" />
-            <path d="M2 20c0-4 2.7-6.5 7-6.5s7 2.5 7 6.5H2Zm14-5.8c3.5 0 6 2.2 6 5.8h-4" />
-          </svg>
-          Odaya Katıl
+          <img class="join-icon" src="static/nav-rooms-v6.webp" alt="" />
+          <span>Odaya Katıl</span>
         </button>
       </div>
 
@@ -602,9 +608,9 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  width: min(78vw, 360px);
-  height: clamp(58px, 16vw, 72px);
+  gap: 10px;
+  width: min(92vw, 440px);
+  height: clamp(70px, 21vw, 88px);
   margin: 0 auto;
   border: 0;
   background: url("../assets/btn-crimson-v4.webp") center / 100% 100% no-repeat;
@@ -624,23 +630,30 @@ export default {
     opacity: 0.55;
     cursor: default;
   }
+  &:focus-visible { outline: 2px solid #ffe4a2; outline-offset: 2px; }
 }
-.button-icon {
-  width: 21px;
-  height: 21px;
-  fill: $gold;
-  stroke: $gold;
-  stroke-width: 1.4;
+.play-icon {
+  width: clamp(24px, 7.5vw, 32px);
+  height: clamp(24px, 7.5vw, 32px);
+  flex: none;
+  filter: drop-shadow(0 2px 1px #4e1806) drop-shadow(0 0 5px rgba(255, 179, 65, 0.55));
+}
+.join-icon {
+  width: clamp(26px, 8vw, 34px);
+  height: clamp(26px, 8vw, 34px);
+  flex: none;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px #2a130b);
 }
 .play-btn {
   color: #ffe1a7;
-  font-size: clamp(21px, 5.8vw, 28px);
+  font-size: clamp(22px, 6.2vw, 30px);
   filter: drop-shadow(0 0 10px rgba(220, 19, 37, 0.78));
 }
 .join-open {
   color: #efcc8c;
-  width: min(70vw, 320px);
-  height: clamp(52px, 14vw, 64px);
+  width: min(84vw, 390px);
+  height: clamp(62px, 17vw, 76px);
   background-image: url("../assets/btn-amber-v4.webp");
   filter: drop-shadow(0 0 7px rgba(185, 119, 28, 0.48));
 }

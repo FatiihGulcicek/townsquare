@@ -5,8 +5,8 @@
  * - hashed build assets (js/css/img/fonts/media): cache first, they never change
  * - live game traffic (WebSocket) and server endpoints are never cached
  */
-const SHELL = "km-shell-v18";
-const ASSETS = "km-assets-v16";
+const SHELL = "km-shell-v19";
+const ASSETS = "km-assets-v17";
 const MAX_ASSETS = 400;
 
 self.addEventListener("install", (event) => {

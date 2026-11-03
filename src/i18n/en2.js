@@ -315,6 +315,7 @@ export default {
 
   "▶ Oyun kur": "▶ New game",
   "▶ Oyun Kur": "▶ New game",
+  "Oyun Kur": "New game",
   "Odaya Katıl": "Join a room",
   Rozetler: "Badges",
   "Seviye {}": "Level {}",
