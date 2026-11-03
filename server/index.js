@@ -13,6 +13,8 @@ const WebSocket = require("ws");
 const push = require("./push");
 const { Room } = require("./vk");
 const db = require("./db");
+const auth = require("./auth");
+const social = require("./social");
 if (db.init) db.init(); // create the MySQL tables right away
 if (db.enabled()) push.attach(db); // notifications survive restarts
 const { Lobby } = require("./lobby");
@@ -33,33 +35,36 @@ const VALID_ID = /^[a-z0-9_-]{4,40}$/i;
 const ROOM_CODE = /^[A-Z]{4}$/;
 const CODE_LETTERS = "ABCDEFGHJKLMNPRSTUVYZ";
 
-const OWN_HOSTS = process.env.PUBLIC_URL
-  ? [new URL(process.env.PUBLIC_URL).hostname.toLowerCase()]
-  : [];
-const hostname = (h) =>
-  (h || "").split(",")[0].trim().toLowerCase().replace(/:\d+$/, "");
+const PUBLIC_ORIGIN = process.env.PUBLIC_URL
+  ? new URL(process.env.PUBLIC_URL).origin.toLowerCase()
+  : null;
 
 function isAllowedOrigin(origin, req) {
   if (!origin) return false;
-  let originHost;
+  let parsed;
   try {
-    originHost = new URL(origin).hostname.toLowerCase();
+    parsed = new URL(origin);
   } catch (e) {
     return false;
   }
+  if (!["http:", "https:"].includes(parsed.protocol)) return false;
+  const exactOrigin = parsed.origin.toLowerCase();
+  if (PUBLIC_ORIGIN && exactOrigin === PUBLIC_ORIGIN) return true;
+  if (
+    EXTRA_ORIGINS.some((allowed) => {
+      try {
+        return new URL(allowed).origin.toLowerCase() === exactOrigin;
+      } catch (e) {
+        return false;
+      }
+    })
+  )
+    return true;
   const headers = (req && req.headers) || {};
-  const candidates = [
-    hostname(headers.host),
-    hostname(headers["x-forwarded-host"]),
-    ...OWN_HOSTS,
-  ].filter(Boolean);
-  if (candidates.includes(originHost)) return true;
-  if (/^(localhost|127\.0\.0\.1)$/i.test(originHost)) return true;
-  return EXTRA_ORIGINS.some((o) =>
-    new RegExp("^https?://" + o.replace(/^https?:\/\//, "") + "$", "i").test(
-      origin,
-    ),
-  );
+  const requestHost = String(headers.host || "").trim().toLowerCase();
+  const local = /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(requestHost);
+  if (local) return parsed.host.toLowerCase() === requestHost;
+  return !PUBLIC_ORIGIN && parsed.host.toLowerCase() === requestHost;
 }
 
 // ---------- rooms ----------
@@ -111,6 +116,7 @@ function roomIo(code, entry) {
     profile: (playerId, name) =>
       db.enabled() && db.touchProfile(playerId, name),
     gameOver: (record) => {
+      if (record.botGame) return;
       // results are also kept in memory for the weekly board
       record.players.forEach((p) =>
         recentResults.push({
@@ -142,6 +148,7 @@ function createRoom(mode, creatorId, wanted, tutorial, password) {
   if (tutorial) {
     // a practice game against bots with calm timings
     entry.room.tutorial = true;
+    entry.room.tutorialOwnerId = creatorId;
     Object.assign(entry.room.settings, {
       dayMinutes: 3,
       nightSeconds: 90,
@@ -219,11 +226,23 @@ const diagnostics = { accepted: 0, rejected: 0 };
 const wss = new WebSocket.Server({
   server,
   maxPayload: 128 * 1024, // profile photos (~58 KB) travel over the socket
-  verifyClient: (info) => {
-    const ok = isAllowedOrigin(info.origin, info.req);
-    if (ok) diagnostics.accepted++;
-    else diagnostics.rejected++;
-    return ok;
+  verifyClient: (info, done) => {
+    if (!isAllowedOrigin(info.origin, info.req)) {
+      diagnostics.rejected++;
+      return done(false, 403, "Origin forbidden");
+    }
+    if (!auth.enabled()) {
+      diagnostics.accepted++;
+      return done(true);
+    }
+    auth.session(info.req).then((account) => {
+      const parts = info.req.url.split("?")[0].split("/").filter(Boolean);
+      const id = parts[0] === "lobby" ? parts[1] : parts[0] === "vk" ? parts[2] : "";
+      const ok = !!(account && account.playerId === id);
+      if (ok) diagnostics.accepted++;
+      else diagnostics.rejected++;
+      done(ok, 401, "Login required");
+    }).catch(() => { diagnostics.rejected++; done(false, 503, "Login unavailable"); });
   },
 });
 
@@ -353,6 +372,7 @@ const MIME = {
   ".woff2": "font/woff2",
   ".ttf": "font/ttf",
   ".txt": "text/plain; charset=utf-8",
+  ".xml": "application/xml; charset=utf-8",
   ".webmanifest": "application/manifest+json",
 };
 const COMPRESSIBLE = new Set([
@@ -362,6 +382,7 @@ const COMPRESSIBLE = new Set([
   ".json",
   ".svg",
   ".txt",
+  ".xml",
   ".map",
   ".webmanifest",
 ]);
@@ -538,6 +559,13 @@ function readBody(req, limit = 4096) {
 }
 
 server.on("request", async (req, res) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader(
+    "Content-Security-Policy",
+    "frame-ancestors 'none'; base-uri 'self'; object-src 'none'",
+  );
   const url = new URL(req.url, "http://localhost");
   if (url.pathname === "/healthz") {
     return json(res, 200, {
@@ -547,6 +575,7 @@ server.on("request", async (req, res) => {
       connections: diagnostics,
       push: push.stats(),
       db: db.stats(),
+      auth: { enabled: auth.enabled() },
       lobby: lobby.stats(),
       updater: updater.status(),
       turn: !!(
@@ -559,6 +588,46 @@ server.on("request", async (req, res) => {
   if (url.pathname === "/push/key") {
     return json(res, 200, { enabled: push.enabled(), key: push.publicKey() });
   }
+  if (url.pathname === "/api/auth/me") {
+    return json(res, 200, { enabled: auth.enabled(), user: await auth.session(req) });
+  }
+  if (url.pathname.startsWith("/api/auth/")) {
+    if (req.method !== "POST") return json(res, 405, { error: "POST" });
+    if (!isAllowedOrigin(req.headers.origin, req)) return json(res, 403, { error: "origin" });
+    const body = await readBody(req);
+    let result;
+    if (url.pathname === "/api/auth/request")
+      result = await auth.requestCode(body.email, req.socket.remoteAddress || "");
+    else if (url.pathname === "/api/auth/verify")
+      result = await auth.verifyCode(body, req, res);
+    else if (url.pathname === "/api/auth/logout") {
+      await auth.logout(req, res);
+      result = { ok: true };
+    } else return json(res, 404, { error: "not_found" });
+    return json(res, result.error ? (result.error === "rate" || result.error === "wait" ? 429 : 400) : 200, result);
+  }
+  if (url.pathname === "/api/social") {
+    const account = await auth.session(req);
+    if (!account) return json(res, 401, { error: "login" });
+    if (req.method === "GET") return json(res, 200, (await social.state(account)) || { error: "unavailable" });
+    if (req.method !== "POST") return json(res, 405, { error: "POST" });
+    if (!isAllowedOrigin(req.headers.origin, req)) return json(res, 403, { error: "origin" });
+    const body = await readBody(req);
+    const result = {
+      friendRequest: () => social.friend(account, "request", body.code),
+      friendAccept: () => social.friend(account, "accept", body.code),
+      friendDecline: () => social.friend(account, "decline", body.code),
+      friendRemove: () => social.friend(account, "remove", body.code),
+      clanCreate: () => social.createClan(account, body.name, body.tag),
+      clanInvite: () => social.invite(account, body.code),
+      clanAccept: () => social.respondInvite(account, body.clanId, true),
+      clanDecline: () => social.respondInvite(account, body.clanId, false),
+      clanLeave: () => social.leaveClan(account),
+    }[body.action];
+    if (!result) return json(res, 400, { error: "action" });
+    const answer = (await result()) || { error: "unavailable" };
+    return json(res, answer.error ? 400 : 200, answer);
+  }
   if (url.pathname === "/api/room") {
     if (req.method !== "POST") return json(res, 405, { error: "POST" });
     if (!isAllowedOrigin(req.headers.origin, req)) {
@@ -567,6 +636,10 @@ server.on("request", async (req, res) => {
     const body = await readBody(req);
     if (!VALID_ID.test(body.playerId || "")) {
       return json(res, 400, { error: "playerId" });
+    }
+    if (auth.enabled()) {
+      const account = await auth.session(req);
+      if (!account || account.playerId !== body.playerId) return json(res, 401, { error: "login" });
     }
     // a chosen, permanent code ("CUMA"): reuse the room if it still exists
     let wanted = null;
@@ -638,6 +711,8 @@ server.on("request", async (req, res) => {
     }
     const id = req.headers["x-player-id"] || "";
     if (!VALID_ID.test(id)) return json(res, 400, { error: "id" });
+    const account = auth.enabled() ? await auth.session(req) : null;
+    if (auth.enabled() && (!account || account.playerId !== id)) return json(res, 401, { error: "login" });
     const key = db.profileKey(id);
     for (let i = recentResults.length - 1; i >= 0; i--) {
       if (recentResults[i].key === key) recentResults.splice(i, 1);
@@ -645,11 +720,16 @@ server.on("request", async (req, res) => {
     Object.keys(leaderboardCache).forEach((k) => delete leaderboardCache[k]);
     push.unregisterEverywhere(id);
     if (db.enabled()) await db.deleteProfile(id);
+    if (account) { await social.deleteAccount(account); await auth.logout(req, res); }
     return json(res, 200, { ok: true });
   }
   if (url.pathname === "/api/me") {
     const id = req.headers["x-player-id"] || "";
     if (!VALID_ID.test(id)) return json(res, 400, { error: "id" });
+    if (auth.enabled()) {
+      const account = await auth.session(req);
+      if (!account || account.playerId !== id) return json(res, 401, { error: "login" });
+    }
     if (!db.enabled()) return json(res, 200, { enabled: false });
     const profile = await db.getProfile(id);
     return json(res, 200, { enabled: true, profile });
@@ -675,10 +755,20 @@ server.on("request", async (req, res) => {
     res.statusCode = 405;
     return res.end();
   }
-  let file = path.normalize(
-    path.join(STATIC_DIR, decodeURIComponent(url.pathname)),
-  );
-  if (!file.startsWith(STATIC_DIR)) {
+  let pathname;
+  try {
+    pathname = decodeURIComponent(url.pathname);
+  } catch (e) {
+    res.statusCode = 400;
+    return res.end();
+  }
+  let file = path.resolve(STATIC_DIR, "." + pathname);
+  const relative = path.relative(STATIC_DIR, file);
+  if (
+    relative === ".." ||
+    relative.startsWith(".." + path.sep) ||
+    path.isAbsolute(relative)
+  ) {
     res.statusCode = 403;
     return res.end();
   }

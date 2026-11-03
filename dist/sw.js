@@ -1,12 +1,12 @@
-/* Kasaba Meydanı service worker
+/* Darkspire service worker
  * - pages: the cached app shell opens instantly (even while the free server
  *   is still waking up) and is refreshed in the background; the app shows a
  *   "new version" banner when a newer build is online
  * - hashed build assets (js/css/img/fonts/media): cache first, they never change
  * - live game traffic (WebSocket) and server endpoints are never cached
  */
-const SHELL = "km-shell-v14";
-const ASSETS = "km-assets-v12";
+const SHELL = "km-shell-v28";
+const ASSETS = "km-assets-v25";
 const MAX_ASSETS = 400;
 
 self.addEventListener("install", (event) => {
@@ -56,7 +56,7 @@ self.addEventListener("push", (event) => {
   } catch (e) {
     data = { body: event.data ? event.data.text() : "" };
   }
-  const title = data.title || "Kasaba Meydanı";
+  const title = data.title || "Darkspire";
   // always show it: iOS cancels subscriptions that receive silent pushes
   // (the server only pushes to players whose app is in the background)
   event.waitUntil(
