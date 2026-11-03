@@ -468,14 +468,15 @@ export default {
     min-height: 44px;
     border-radius: 12px;
     border: 1px solid $line;
-    background: $panel;
+    background: linear-gradient(160deg, rgba(54, 11, 26, 0.96), rgba(16, 7, 15, 0.96));
     color: $text;
     font-size: 13px;
     font-weight: 600;
     padding: 0 4px;
     &.active {
       border-color: $gold;
-      background: rgba(233, 180, 76, 0.18);
+      color: #ffe0a7;
+      background: linear-gradient(180deg, rgba(125, 19, 39, 0.96), rgba(48, 7, 19, 0.96));
     }
   }
 }

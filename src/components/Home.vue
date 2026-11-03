@@ -421,8 +421,8 @@ export default {
   padding: 5px 7px;
   border: 1px solid $line;
   border-radius: 18px;
-  background: rgba(12, 4, 11, 0.88);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(135deg, rgba(34, 8, 18, 0.94), rgba(9, 7, 13, 0.94));
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.54), inset 0 1px rgba(255, 223, 157, 0.08);
   .profile-strip {
     display: flex;
     align-items: center;
@@ -501,16 +501,17 @@ export default {
   flex: none;
   width: 36px;
   height: 36px;
-  background: none;
-  border: 0;
-  padding: 2px;
+  background: radial-gradient(circle at 35% 25%, #44221b, #0d080d 75%);
+  border: 1px solid rgba(233, 189, 112, 0.56);
+  border-radius: 50%;
+  padding: 6px;
   cursor: pointer;
   transition: transform 0.12s;
   img {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.6));
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
   }
   &:active {
     transform: scale(0.9);
@@ -529,8 +530,8 @@ export default {
 }
 .hero-actions {
   display: grid;
-  gap: 3px;
-  margin-bottom: 8px;
+  gap: 4px;
+  margin-bottom: 10px;
 }
 .panel-btn {
   display: flex;
@@ -543,11 +544,11 @@ export default {
   border: 0;
   background: url("../assets/btn-crimson-v4.webp") center / 100% 100% no-repeat;
   color: #f3dcae;
-  font: inherit;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(18px, 5vw, 22px);
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.85);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-shadow: 0 2px 0 #542009, 0 3px 5px rgba(0, 0, 0, 0.9);
   cursor: pointer;
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
   transition: transform 0.12s, opacity 0.2s;
@@ -609,14 +610,14 @@ export default {
 }
 .quick {
   display: grid;
-  grid-template-columns: repeat(2, min(37vw, 130px));
+  grid-template-columns: repeat(2, min(42vw, 145px));
   justify-content: center;
-  gap: 6px;
-  margin: 6px 0;
+  gap: 8px;
+  margin: 8px 0;
 }
 @media (min-width: 600px) {
   .quick {
-    grid-template-columns: repeat(4, min(21vw, 130px));
+    grid-template-columns: repeat(4, min(21vw, 145px));
   }
 }
 .art-tile {
@@ -626,7 +627,10 @@ export default {
   background: none;
   cursor: pointer;
   aspect-ratio: 1;
-  transition: transform 0.12s;
+  transition: transform 0.12s, filter 0.18s;
+  &:hover {
+    filter: brightness(1.12);
+  }
   img {
     width: 100%;
     height: 100%;
@@ -728,13 +732,18 @@ export default {
   }
 }
 .rules {
-  margin-top: 14px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: rgba(16, 18, 34, 0.7);
+  max-width: 320px;
+  margin: 30px auto 0;
+  padding: 8px 12px;
+  border: 1px solid $line;
+  border-radius: 10px;
+  background: rgba(16, 7, 15, 0.8);
   summary {
     cursor: pointer;
     font-weight: 700;
+    font-size: 13px;
+    color: $gold;
+    text-align: center;
   }
   p {
     line-height: 1.45;
@@ -792,7 +801,7 @@ export default {
   z-index: 100;
   display: flex;
   justify-content: space-around;
-  padding: 4px 6px calc(4px + env(safe-area-inset-bottom));
+  padding: 5px 6px calc(5px + env(safe-area-inset-bottom));
   background: linear-gradient(180deg, rgba(46, 5, 12, 0.96), rgba(10, 3, 9, 0.98));
   border-top: 1px solid rgba(233, 180, 76, 0.6);
   button {
@@ -802,9 +811,10 @@ export default {
     flex-direction: column;
     align-items: center;
     gap: 2px;
-    border: 0;
+    border: 1px solid transparent;
+    border-radius: 10px;
     background: none;
-    color: $muted;
+    color: #dbbd8e;
     font: inherit;
     font-size: 12px;
     font-weight: 600;
@@ -821,8 +831,11 @@ export default {
       filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.8));
     }
     &.on {
-      color: $gold;
-      text-shadow: 0 0 8px rgba(233, 180, 76, 0.6);
+      color: #ffe0a7;
+      border-color: rgba(233, 180, 76, 0.55);
+      background: linear-gradient(180deg, rgba(124, 15, 31, 0.92), rgba(42, 5, 15, 0.94));
+      box-shadow: inset 0 1px rgba(255, 216, 143, 0.2), 0 0 12px rgba(183, 38, 46, 0.3);
+      text-shadow: 0 0 6px rgba(233, 180, 76, 0.5);
     }
   }
   .badge {

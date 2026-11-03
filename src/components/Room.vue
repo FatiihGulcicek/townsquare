@@ -1867,8 +1867,8 @@ h3 {
   gap: 4px;
   padding: 10px 4px 8px;
   border-radius: 14px;
-  border: 1px solid transparent;
-  background: $panel;
+  border: 1px solid $line;
+  background: linear-gradient(155deg, rgba(64, 12, 29, 0.94), rgba(15, 8, 17, 0.96));
   color: $text;
   font: inherit;
   text-align: center;
@@ -1905,7 +1905,7 @@ h3 {
 }
 .pick .tile {
   cursor: pointer;
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(233, 189, 112, 0.36);
   transition:
     transform 0.12s,
     background 0.12s;
