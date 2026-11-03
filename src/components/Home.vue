@@ -26,18 +26,7 @@
 
     <!-- ========== PLAY ========== -->
     <section v-if="tab === 'play'" class="play">
-      <header>
-        <img
-          src="static/darkspire-logo.webp"
-          alt="Darkspire · Vampir Köylü"
-          class="logo"
-        />
-        <h1 class="sr-only">Vampir Köylü</h1>
-      </header>
-
-      <button class="btn gold play-btn" :disabled="busy" @click="newRoom">
-        ▶ Oyun kur
-      </button>
+      <h1 class="sr-only">Vampir Köylü</h1>
 
       <div class="join">
         <input
@@ -109,6 +98,12 @@
         </p>
         <p class="muted">4–20 oyuncu. Oyunu kuran kişi başlatır.</p>
       </details>
+
+      <div class="play-dock">
+        <button class="btn gold play-btn" :disabled="busy" @click="newRoom">
+          ▶ Oyun kur
+        </button>
+      </div>
     </section>
 
     <!-- ========== TOWN SQUARE ========== -->
@@ -381,23 +376,25 @@ export default {
   padding: 6px;
   cursor: pointer;
 }
-header {
-  text-align: center;
-  .logo {
-    width: min(94vw, 440px);
-    height: auto;
-    filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.6));
-    animation: logo-in 0.8s cubic-bezier(0.2, 1.3, 0.4, 1) both;
-  }
+.play {
+  padding-top: 8px;
+  /* room for the play button docked above the tab bar */
+  padding-bottom: 110px;
 }
-@keyframes logo-in {
-  from {
-    transform: scale(0.6) rotate(-8deg);
-    opacity: 0;
+.play-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  z-index: 99;
+  padding: 0 16px 10px;
+  pointer-events: none;
+  .play-btn {
+    pointer-events: auto;
+    margin: 0 auto;
   }
 }
 .play-btn {
-  margin: 6px auto 12px;
   animation: breathe 2.6s ease-in-out infinite;
 }
 @keyframes breathe {
