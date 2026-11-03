@@ -23,14 +23,14 @@
       #boot::before { display: none; }
       #boot .stage { top: 0; bottom: auto; width: 100vw; aspect-ratio: 941 / 2042; background-image: url("static/loading-bg-tall.webp"); -webkit-mask-image: none; mask-image: none; }
       #boot .bar { top: 63.57%; height: 2.55%; }
-    }</style><script defer="defer" src="/js/chunk-vendors.04132a1e.js"></script><script defer="defer" src="/js/app.6ad26b63.js"></script><link href="/css/app.bc5708c0.css" rel="stylesheet"></head><body><noscript>Vampir Köylü için JavaScript gereklidir.</noscript><div id="boot"><div class="stage"><div class="bar"><i id="boot-bar"></i><small id="boot-text">Köy uyanıyor…</small></div></div><img class="logo" src="static/darkspire-logo.webp" alt="Darkspire · Vampir Köylü"></div><script>/* iPhone ignores user-scalable=no: block pinch zoom gestures here */
+    }</style><script defer="defer" src="/js/chunk-vendors.04132a1e.js"></script><script defer="defer" src="/js/app.209a86df.js"></script><link href="/css/app.92999bf8.css" rel="stylesheet"></head><body><noscript>Vampir Köylü için JavaScript gereklidir.</noscript><div id="boot"><div class="stage"><div class="bar"><i id="boot-bar"></i><small id="boot-text">Köy uyanıyor…</small></div></div><img class="logo" src="static/darkspire-logo.webp" alt="Darkspire · Vampir Köylü"></div><script>/* iPhone ignores user-scalable=no: block pinch zoom gestures here */
 document.addEventListener("gesturestart", function (e) { e.preventDefault(); }, { passive: false });</script><script>/*
  * Loading screen: fills the bar while the game loads, checks the server for a
  * newer version and, if there is one, installs it right here before the game
  * opens (clears the cached app and reloads once).
  */
 (function () {
-  var BUILD = "1793705418758";
+  var BUILD = "1793706130849";
   var en = (localStorage.getItem("vkLang") || (navigator.language || "tr").slice(0, 2)) === "en";
   var bar = document.getElementById("boot-bar");
   var text = document.getElementById("boot-text");

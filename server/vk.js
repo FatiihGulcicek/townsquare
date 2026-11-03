@@ -258,6 +258,7 @@ class Room {
       mvp: this.mvp,
       tutorial: this.tutorial,
       tutorialOwnerId: this.tutorialOwnerId,
+      botGame: this.botGame,
       tour: this.tour,
       runoff: this.runoff,
       deathOrder: this.deathOrder,
@@ -284,6 +285,9 @@ class Room {
       io,
     });
     room.settings = { ...DEFAULT_SETTINGS, ...(data.settings || {}) };
+    room.botGame = data.botGame === undefined
+      ? room.players.some((p) => p.bot)
+      : !!data.botGame;
     room.lastActivity = Date.now();
     room.schedule();
     room.botsAct();
@@ -319,6 +323,7 @@ class Room {
     this.winner = null;
     this.seerLog = {};
     this.startedAt = 0;
+    this.botGame = false;
     this.cards = null;
     this.penalties = null;
     this.deathOrder = [];
@@ -944,6 +949,7 @@ class Room {
       penalties: this.phase === "over" ? this.penalties : null,
       locked: !!this.password,
       tutorial: !!this.tutorial,
+      botGame: !!this.botGame || this.players.some((p) => p.bot),
       tour: this.tour || null,
       myGuesses: me ? (this.guesses || {})[me.pid] || [] : [],
       ghostResults: this.phase === "over" ? this.ghostResults || [] : [],
@@ -1398,6 +1404,7 @@ class Room {
     const n = this.players.length;
     if (n < MIN_PLAYERS) return;
     this.reset();
+    this.botGame = this.players.some((p) => p.bot);
     this.gameId++;
     const total = this.settings.tournament || 0;
     if (!total) this.tour = null;
@@ -2007,6 +2014,7 @@ class Room {
     this.io.gameOver({
       room: this.code,
       mode: this.mode,
+      botGame: !!this.botGame || this.players.some((p) => p.bot),
       winner,
       rounds: this.round,
       startedAt: this.startedAt || Date.now(),
@@ -2068,7 +2076,7 @@ class Room {
   /** tournament: win 3 points, survive +1, player of the game +2 */
   tourPoints(winner) {
     const t = this.tour;
-    if (!t || t.done) return;
+    if (!t || t.done || this.botGame) return;
     this.players
       .filter((p) => !p.kicked)
       .forEach((p) => {
@@ -2163,7 +2171,7 @@ class Room {
     const top = Object.keys(tally).filter((t) => tally[t] === max);
     const p = this.byPid(pick(top));
     this.mvp = { pid: p.pid, name: p.name, votes: max };
-    if (this.tour && this.tour.scores[p.pid]) {
+    if (!this.botGame && this.tour && this.tour.scores[p.pid]) {
       this.tour.scores[p.pid].pts += 2;
       this.tour.scores[p.pid].mvp = (this.tour.scores[p.pid].mvp || 0) + 1;
     }
