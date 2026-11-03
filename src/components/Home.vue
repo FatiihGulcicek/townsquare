@@ -423,8 +423,9 @@ export default {
 }
 .quick {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: repeat(2, min(36vw, 150px));
+  justify-content: center;
+  gap: 18px;
   margin: 14px 0 6px;
 }
 .art-tile {
