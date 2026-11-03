@@ -976,6 +976,8 @@ class Room {
         level: p.level || 1,
         frame: p.frame || "",
         chatColor: p.chatColor || "",
+        avatar: p.avatar || "",
+        emblem: p.emblem || "",
         noVote: !!p.noVote,
         kicked: !!p.kicked,
         role: this.visibleRole(viewer, p),
@@ -1099,6 +1101,8 @@ class Room {
           : "";
       me.frame = ok(params.frame, "frame");
       me.chatColor = ok(params.chat, "chat");
+      me.avatar = ok(params.avatar, "avatar");
+      me.emblem = ok(params.emblem, "emblem");
       this.update();
       return;
     }
