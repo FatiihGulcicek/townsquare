@@ -278,4 +278,5 @@ export default {
   "Bildirimler açık: sıra sana gelince haber vereceğim.":
     "Notifications are on: I'll tell you when it's your turn.",
   Dil: "Language",
+  "Oyuna gir": "Join game",
 };

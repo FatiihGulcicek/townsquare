@@ -44,15 +44,14 @@
           autocomplete="off"
           @keyup.enter="joinRoom"
         />
-        <button
-          class="btn"
-          :class="{ primary: code.length === 4 }"
-          :disabled="code.length !== 4"
-          @click="joinRoom"
-        >
-          Katıl
-        </button>
       </div>
+      <button
+        class="panel-btn"
+        :disabled="code.length !== 4"
+        @click="joinRoom"
+      >
+        Oyuna gir
+      </button>
 
       <div class="quick">
         <button class="art-tile" :disabled="busy" @click="tutorial">
@@ -356,22 +355,17 @@ export default {
   .name-in {
     flex: 1;
     min-width: 0;
-    height: 50px;
-    border: 0;
-    border-radius: 0;
-    background: url("../assets/panel.webp") center / 100% 100% no-repeat;
-    color: #f3dcae;
-    padding: 0 22px;
+    height: 42px;
+    border-radius: 21px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.35);
+    color: $text;
+    padding: 0 14px;
     font-size: 16px;
-    font-weight: 700;
-    text-align: center;
+    font-weight: 600;
     outline: none;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-    &::placeholder {
-      color: rgba(243, 220, 174, 0.55);
-    }
     &:focus {
-      filter: brightness(1.15);
+      border-color: $gold;
     }
   }
 }
@@ -431,6 +425,30 @@ export default {
 @keyframes breathe {
   50% {
     transform: scale(1.02);
+  }
+}
+.panel-btn {
+  display: block;
+  width: min(66vw, 270px);
+  aspect-ratio: 1000 / 308;
+  margin: 10px auto 0;
+  border: 0;
+  background: url("../assets/panel.webp") center / 100% 100% no-repeat;
+  color: #f3dcae;
+  font: inherit;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.85);
+  cursor: pointer;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+  transition: transform 0.12s, opacity 0.2s;
+  &:active {
+    transform: scale(0.96);
+  }
+  &:disabled {
+    opacity: 0.55;
+    cursor: default;
   }
 }
 .join {
