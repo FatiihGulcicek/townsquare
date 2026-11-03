@@ -50,7 +50,7 @@ export default {
       if (me.seated && !me.alive && s.phase !== "over") {
         return {
           key: "dead",
-          text: "Öldün! Ama oyun bitmedi: 👻 Hayalet tahmini ile vampirleri tahmin et, doğru tahmin başına XP kazan.",
+          text: "Öldün! Ama oyun bitmedi: 👻 Hayalet tahmini ile vampirleri tahmin etmeyi deneyebilirsin. Botlu oyunlarda ödül verilmez.",
         };
       }
       if (s.phase === "night" && s.night && !s.night.done) {

@@ -251,6 +251,14 @@ function save() {
   write("vkHistory", progress.history);
 }
 
+export function isBotGame(state) {
+  return !!(
+    state.botGame ||
+    state.tutorial ||
+    (state.players || []).some((p) => p.bot)
+  );
+}
+
 /** called once when a game this player was in ends; returns new badges */
 export function recordGame(state) {
   const key = state.code + ":" + state.gameId;
@@ -274,8 +282,16 @@ export function recordGame(state) {
     })),
     stats: state.myStats || {},
     tutorial: !!state.tutorial,
+    botGame: isBotGame(state),
     events: (state.events || []).slice(-60),
   };
+  if (g.botGame) {
+    g.xp = 0;
+    progress.history.unshift(g);
+    progress.history.splice(20);
+    save();
+    return { fresh: [], xp: 0, levelUp: 0 };
+  }
   g.xp = xpFor(g);
   const t = progress.totals;
   const before = levelFor(t.xp);

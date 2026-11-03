@@ -95,7 +95,7 @@
           </div>
           <div class="ml">
             <span>{{ roleLabel(g.role) }}</span>
-            <span class="muted small">+{{ g.xp }} XP</span>
+            <span class="muted small">{{ g.botGame ? "Botlu · ödülsüz" : "+" + g.xp + " XP" }}</span>
             <button
               class="btn small"
               v-if="g.events && g.events.length"
@@ -324,7 +324,6 @@ export default {
       top: [],
       importCode: "",
       prog: progress,
-      badges: BADGES,
       replaying: null,
       period: "week",
       champion: null,
@@ -333,6 +332,11 @@ export default {
     };
   },
   computed: {
+    badges() {
+      return BADGES.filter(
+        (b) => b.id !== "ogrenci" || this.prog.totals.badges.ogrenci,
+      );
+    },
     name() {
       return (this.profile && this.profile.name) || game.name;
     },

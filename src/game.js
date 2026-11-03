@@ -7,6 +7,7 @@ import { keepAwake } from "./wakelock";
 import {
   onCosmeticsChange,
   recordGame,
+  isBotGame,
   awardMvp,
   penaltyDone,
   titleFor,
@@ -246,7 +247,7 @@ function onState(next) {
     }
   }
   // chosen as player of the game
-  if (next.mvp && next.me.pid && next.mvp.pid === next.me.pid) {
+  if (!isBotGame(next) && next.mvp && next.me.pid && next.mvp.pid === next.me.pid) {
     const award = awardMvp(next.code + ":" + next.gameId);
     if (award) {
       toast("⭐ Oyunun yıldızı seçildin! +15 XP", "success", 7000);
@@ -265,7 +266,7 @@ function onState(next) {
     }
   }
   // my penalty done: a badge
-  if (next.penalties && next.me.pid) {
+  if (!isBotGame(next) && next.penalties && next.me.pid) {
     const mine = next.penalties.find((x) => x.pid === next.me.pid);
     if (mine && mine.done) {
       const badge = penaltyDone();

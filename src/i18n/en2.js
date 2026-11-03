@@ -58,12 +58,18 @@ export default {
     "Welcome! Five bots will play with you. Tap Start game when you're ready.",
   "Beş bot hazır. Gözcü rolüyle gece araştırmayı ve gündüz oy vermeyi öğreneceksin.":
     "Five bots are ready. As the Seer, you'll learn to investigate at night and vote during the day.",
+  "Botlu oyunlar ödül ve sıralama puanı kazandırmaz.":
+    "Games with bots do not award rewards or leaderboard points.",
+  "Botlu oyun · ödül ve sıralama puanı verilmez.":
+    "Bot game · no rewards or leaderboard points.",
+  "Botlu oyunlarda ödül verilmez.": "Games with bots do not award rewards.",
+  "Botlu · ödülsüz": "Bot game · no rewards",
   "Masadan bir kart seç. Kart senin rolünü belirler; kimseye gösterme!":
     "Pick a card from the table. It decides your role; show no one!",
   "Sen Gözcüsün! Her gece bir kişinin vampir olup olmadığını öğrenirsin. Gece birazdan başlıyor.":
     "You're the Seer! Every night you learn whether someone is a vampire. Night starts soon.",
-  "Öldün! Ama oyun bitmedi: 👻 Hayalet tahmini ile vampirleri tahmin et, doğru tahmin başına XP kazan.":
-    "You died! But the game isn't over: guess the vampires with 👻 Ghost guess and earn XP for each right guess.",
+  "Öldün! Ama oyun bitmedi: 👻 Hayalet tahmini ile vampirleri tahmin etmeyi deneyebilirsin. Botlu oyunlarda ödül verilmez.":
+    "You died, but the game isn't over: try guessing the vampires with 👻 Ghost guess. Games with bots do not award rewards.",
   "Gece oldu. Şüphelendiğin birine dokun; vampir olup olmadığını hemen göreceksin.":
     "Night has fallen. Tap someone you suspect; you'll see right away whether they're a vampire.",
   "Sonucu gördün! Unutmamak için oyuncuya dokunup 🔴 Şüpheli ya da 🟢 Temiz diye not al. Sabahı bekle.":

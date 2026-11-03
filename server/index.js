@@ -114,6 +114,7 @@ function roomIo(code, entry) {
     profile: (playerId, name) =>
       db.enabled() && db.touchProfile(playerId, name),
     gameOver: (record) => {
+      if (record.botGame) return;
       // results are also kept in memory for the weekly board
       record.players.forEach((p) =>
         recentResults.push({

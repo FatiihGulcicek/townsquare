@@ -225,6 +225,7 @@
             Beş bot hazır. Gözcü rolüyle gece araştırmayı ve gündüz oy vermeyi
             öğreneceksin.
           </p>
+          <p class="muted small">Botlu oyunlar ödül ve sıralama puanı kazandırmaz.</p>
         </div>
         <div class="card setup-card" v-else-if="s.me.isOwner">
           <div class="setup-head">
@@ -248,6 +249,9 @@
               Botları çıkar
             </button>
           </div>
+          <p class="muted small" v-if="hasBots">
+            Botlu oyunlar ödül ve sıralama puanı kazandırmaz.
+          </p>
         </div>
         <div class="sheet-bg" v-if="showSetup" @click.self="showSetup = false">
           <div class="sheet setup-sheet">
@@ -787,6 +791,9 @@
             }}
           </h2>
           <p v-if="myResult" class="result">{{ myResult }}</p>
+          <p v-if="s.botGame" class="muted small">
+            Botlu oyun · ödül ve sıralama puanı verilmez.
+          </p>
           <button
             class="btn primary"
             v-if="s.events && s.events.length"
@@ -950,8 +957,10 @@
       >
         <h3>👻 Hayalet tahmini</h3>
         <p class="muted small">
-          Öldün ama oyun bitmedi! Sence kimler vampir? Doğru tahmin başına +5
-          XP. İstediğin zaman değiştirebilirsin.
+          Öldün ama oyun bitmedi! Sence kimler vampir? İstediğin zaman
+          değiştirebilirsin.
+          <span v-if="s.botGame">Botlu oyunlarda ödül verilmez.</span>
+          <span v-else>Doğru tahmin başına +5 XP kazanırsın.</span>
         </p>
         <div class="grid pick">
           <button
